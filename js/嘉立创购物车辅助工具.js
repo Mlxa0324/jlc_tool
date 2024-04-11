@@ -572,7 +572,7 @@
                     Qmsg.info(`2秒后刷新优惠券页面...`)
 
                 // 由于调用接口领取，所以需要重新渲染优惠券页面
-                    setTimeout(lookCouponListModal, 4000);
+                    setTimeout(lookCouponListModal, 2000);
                 }, 2000);
             }
         })
@@ -606,8 +606,6 @@
      */
     const lookCouponListModal = async () => {
         
-        $('#couponModal').empty()
-
         let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
 
         // 优惠券的选取规则
@@ -637,6 +635,8 @@
         </div>
         <div class="mask"></div>`
 
+
+        $('#couponModal').empty()
         $('#couponModal').html(ht).append($cssLink).append($jsLink)
 
         $('#couponModal .all-coupon-page').append($main_wraper).append($navigation)
