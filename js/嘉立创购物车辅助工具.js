@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.5.5
+// @version      1.5.6
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -452,11 +452,13 @@
             const isChecked = $('.auto-get-coupon').is(':checked')
             if (isChecked) {
                 dataMp.keys().forEach(item => {
-                    // console.log(item);
+
                     // 查找优惠券
                     const $couponEle = $(`#couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
 
-                    $couponEle.find()
+                    if($couponEle.length === 0) {
+                        return
+                    }
 
                     //优惠券ID
                     const couponId = $couponEle.data('id')
