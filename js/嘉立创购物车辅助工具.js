@@ -1500,6 +1500,7 @@
                 $('.hideBtn').show()
                 $('.showBtn').hide()
                 setLocalData('SHOW_BOOL', true)
+                refresh()
             } else if ($bd.is(':visible')) {
                 $('.showBtn').show()
                 $('.hideBtn').hide()
