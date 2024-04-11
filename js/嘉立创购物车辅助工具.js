@@ -452,7 +452,27 @@
             const isChecked = $('.auto-get-coupon').is(':checked')
             if (isChecked) {
                 dataMp.keys().forEach(item => {
-                    console.log(item);
+                    // console.log(item);
+                    // 查找优惠券
+                    const $couponEle = $(`#couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
+
+                    $couponEle.find()
+
+                    //优惠券ID
+                    const couponId = $couponEle.data('id')
+
+                    // 优惠券名称
+                    const couponName = $couponEle.data('name')
+
+                    getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
+                        res = JSON.parse(res)
+                        if (res.code === 200 && res.msg === '') {
+                            Qmsg.success({
+                                msg: `${couponName} 优惠券领取成功`,
+                                timeout: 8000
+                            })
+                        }
+                    })
                 })
             }
             else {
