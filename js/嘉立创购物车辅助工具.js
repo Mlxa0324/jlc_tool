@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.3.5
+// @version      1.5.5
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -13,23 +13,25 @@
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/491619/%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.user.js
+// @updateURL https://update.greasyfork.org/scripts/491619/%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.meta.js
 // ==/UserScript==
 
-(async function() {
+(async function () {
     'use strict';
 
     // 引入message的css文件并加入html中
-    const css = GM_getResourceText("customCSS");
-    GM_addStyle(css);
+    const css = GM_getResourceText("customCSS")
+    GM_addStyle(css)
 
     /**
      * rgb颜色随机
      * @returns
      */
     const rgb = () => {
-        var r = Math.floor(Math.random() * 256);
-        var g = Math.floor(Math.random() * 256);
-        var b = Math.floor(Math.random() * 256);
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
         var rgb = 'rgb(' + r + ',' + g + ',' + b + ')';
         return rgb;
     }
@@ -40,9 +42,9 @@
      * @returns
      */
     const rgba = (a = 1) => {
-        var r = Math.floor(Math.random() * 256);
-        var g = Math.floor(Math.random() * 256);
-        var b = Math.floor(Math.random() * 256);
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
         var rgb = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
         return rgb;
     }
@@ -52,10 +54,10 @@
      * @returns
      */
     const color16 = () => {
-        var r = Math.floor(Math.random() * 256);
-        var g = Math.floor(Math.random() * 256);
-        var b = Math.floor(Math.random() * 256);
-        var color = '#' + r.toString(16) + g.toString(16) + b.toString(16);
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
+        var color = '#' + r.toString(16) + g.toString(16) + b.toString(16)
         return color;
     }
 
@@ -69,14 +71,14 @@
         try {
             res = /\(.+\)/g.exec(text)[0].replace(/\((.*?)\)/, '$1')
         } catch (e) {
-            console.error(e);
+
         }
         return res
     }
 
     /**
      * 获取本地缓存
-     * @param {*} key 
+     * @param {*} key
      */
     const getLocalData = (k) => {
         return localStorage.getItem(k)
@@ -84,7 +86,7 @@
 
     /**
      * 设置本地缓存
-     * @param {*} key 
+     * @param {*} key
      */
     const setLocalData = (k, v) => {
         localStorage.setItem(k, v)
@@ -95,15 +97,16 @@
 
     // 商品清单集合暂存
     const dataMp = new Map()
-        // 品牌对应颜色，用于快速查找位置。
+    // 品牌对应颜色，用于快速查找位置。
     const dataBrandColorMp = new Map()
-        // 优惠券页面，数据暂存。只保存16-15的优惠券
+    // 优惠券页面，数据暂存。只保存16-15的优惠券
     const couponMp = new Map()
 
     // 消息弹框全局参数配置
     Qmsg.config({
         showClose: true,
-        timeout: 2500,
+        timeout: 2800,
+        maxNums: 50
     })
 
     /**
@@ -112,17 +115,346 @@
      * @returns
      */
     const sortMapByValue = (map) => {
-        var arrayObj = Array.from(map);
+        var arrayObj = Array.from(map)
         //按照value值降序排序
-        arrayObj.sort(function(a, b) { return a[1] - b[1] });
+        arrayObj.sort(function (a, b) { return a[1] - b[1] })
         return arrayObj
+    }
+
+
+    /**
+     * GET请求封装
+     * @param {} data
+     */
+    const getAjax = (url) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                method: 'GET',
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => {
+                    reject(err)
+                }
+            })
+        })
+    }
+
+    /**
+     * POST请求封装
+     * @param {} data
+     */
+    const postAjaxJSON = (url, data) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                data,
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => {
+                    reject(err)
+                }
+            })
+        })
+    }
+
+    function jsonToUrlParam(json, ignoreFields = '') {
+        return Object.keys(json)
+            .filter(key => ignoreFields.indexOf(key) === -1)
+            .map(key => key + '=' + json[key]).join('&');
+    }
+
+    /**
+  * POST请求封装
+  * @param {} data
+  */
+    const postFormAjax = (url, jsonData) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                data: jsonToUrlParam(jsonData),
+                method: 'POST',
+                headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => { reject(err) }
+            })
+        })
+    }
+
+    /**
+     * 订购数量发生变化的时候
+     */
+    const onChangeCountHandler = () => {
+        // 订购数量
+        $('.product-item .cart-li input.input').on('change', () => {
+            setTimeout(refresh, 1000);
+        })
+        // 加减数量
+        $('.decrease,.increase').on('click', () => {
+            setTimeout(refresh, 1000);
+        })
+    }
+
+    /**
+     * 换仓按钮事件
+     * 一键换仓专用
+     * 
+      换仓逻辑
+        https://cart.szlcsc.com/cart/warehouse/deliverynum/update
+
+         cartKey规则：
+        标签id product-item-186525218
+        商品的跳转地址（商品id）20430799
+
+        cartKey: 186525218~0~20430799~RMB~CN
+        gdDeliveryNum: 0
+        jsDeliveryNum: 1
+     */
+    const onClickChangeDepotBtnHandler = () => {
+
+        /**
+         * 
+         * @param {*} this 标签
+         * @param {*} warehouseType 仓库类型    GUANG_DONG：广东，JIANG_SU
+         * @returns 
+         */
+
+        // 换仓封装
+        const _changeDepot = (that, warehouseType) => {
+
+            return new Promise((resolve, reject) => {
+
+                // 是否锁定样品
+                let isLocked = (that.find('.warehouse-wrap .warehouse:contains(广东仓)').length
+                    + that.find('.warehouse-wrap .warehouse:contains(江苏仓)').length) == 0
+
+                // 查找商品的属性
+                let infoElement = that.find('.cart-li:eq(1) a')
+
+                if (isLocked === true) {
+                    Qmsg.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
+                    console.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
+                    return
+                }
+
+                // 订购数量
+                let count = that.find('.cart-li:eq(-4) input').val()
+
+                // 物料ID1
+                let productId1 = /\d+/g.exec(that.attr('id'))[0]
+
+                // 物料ID2
+                let productId2 = /\d+/g.exec(infoElement.attr('href'))[0]
+
+                // 取最低起订量
+                let sinpleCount = /\d+/g.exec(that.find('.price-area:eq(0)').text())[0]
+
+                // 订购套数
+                let batchCount = count / sinpleCount
+
+                // 修改库存的参数体
+                let params = ''
+
+                // 当前是广东仓
+                if (warehouseType == 'GUANG_DONG') {
+                    params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${batchCount}&jsDeliveryNum=${0}`
+                }
+                // 其他情况当成是江苏仓
+                else if (warehouseType == 'JIANG_SU') {
+                    params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${0}&jsDeliveryNum=${batchCount}`
+                }
+
+                GM_xmlhttpRequest({
+                    url: `${webSiteShareData.lcscCartUrl}/cart/warehouse/deliverynum/update`,
+                    data: params,
+                    method: 'POST',
+                    headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                    onload: (r) => {
+                        console.log(r.response)
+                        resolve(r.response)
+                    },
+                    onerror: (err) => { reject(err) }
+                })
+            })
+        }
+
+
+        /**
+         * 动态刷新页面，不强制刷新
+         * ！！！暂时不能用，需要考虑订货商品还是现货
+         */
+        // const _reload = async () => {
+
+        //     // 购物车URL
+        //     const cartDataUrl = `${webSiteShareData.lcscCartUrl}/cart/display?isInit=false&isOrderBack=${window.isOrderBack}&${Date.now()}`
+        //     const res = await getAjax(cartDataUrl)
+        //     const resObj = JSON.parse(res)
+
+        //     // 合并订货和现货商品
+        //     const newArr = [...resObj.result.shoppingCartVO.rmbCnShoppingCart.currentlyProductList,
+        //     ...resObj.result.shoppingCartVO.rmbCnShoppingCart.isNeedProductList]
+
+        //     // 遍历物料编号
+        //     newArr.forEach(function (item) {
+
+        //         const {
+        //             jsDeliveryNum, // 江苏的订货量 
+        //             gdDeliveryNum, // 广东的订货量 
+        //             productCode,   // 物料编码
+        //             isChecked,     // 是否选中
+        //             jsValidStockNumber, // 江苏剩余库存
+        //             szValidStockNumber, // 广东剩余库存
+        //             jsDivideSplitDeliveryNum, // 江苏起订量的倍数
+        //             gdDivideSplitDeliveryNum,  // 广东起订量的倍数
+        //             shopCarMapKey              // 购物车主键
+        //         } = item
+
+        //         // 查找到这个物料编号所在的行
+        //         const ele = getAllLineInfoByBrandName(productCode)
+
+        //         // 计算出仓库名
+        //         const depotName = jsDeliveryNum > 0 ? '江苏仓' : (gdDeliveryNum > 0 ? '广东仓' : '')
+
+        //         const depotEle = ele.find('.warehouse-wrap .warehouse')
+
+        //         const newDepotName = (depotEle.html() || '').replace('江苏仓', depotName).replace('广东仓', depotName)
+
+        //         // 重新设置仓库名称
+        //         depotEle.html(newDepotName)
+
+        //     })
+        // }
+
+        // 换仓-江苏
+        $('.change-depot-btn-left').on('click', function () {
+
+            let count = 0;
+            const eles = getAllCheckedLineInfo()
+            eles.each(async function () {
+                count++
+                await _changeDepot($(this), 'JIANG_SU').then(res => {
+                    Qmsg.success('切换【江苏仓】成功！')
+                })
+
+                if (eles.length === count) {
+                    //  setTimeout(_reload, 500);
+                    setTimeout(function () {
+                        location.reload()
+                        // 官方刷新购物车
+                        // cartModuleLoadCartList()
+                    }, 2500);
+                }
+            })
+        })
+
+        // 换仓-广东
+        $('.change-depot-btn-right').on('click', function () {
+
+            let count = 0;
+            const eles = getAllCheckedLineInfo()
+            eles.each(async function () {
+                count++
+                await _changeDepot($(this), 'GUANG_DONG').then(res => {
+                    Qmsg.success('切换【广东仓】成功！')
+                })
+
+                if (eles.length === count) {
+                    //  setTimeout(_reload, 500);
+                    setTimeout(function () {
+                        location.reload()
+                        // 官方刷新购物车
+                        // cartModuleLoadCartList()
+                    }, 2500);
+                }
+            })
+        })
+    }
+
+    /**
+     * 选中仓库事件
+     * 一键选仓专用
+     */
+    const checkDepotBtnHandler = () => {
+
+        const _clickFunc = (depotName, fn) => {
+            const eles = fn()
+
+            // 先看看有没有指定仓            
+            const jsIsEmpty = getJsLineInfo().length === 0
+            const gdIsEmpty = getGdLineInfo().length === 0
+
+            if (depotName === 'JIANG_SU' && jsIsEmpty) {
+                Qmsg.error('购物车中并没有【江苏仓】的商品！')
+                return
+
+            } else if (depotName === 'GUANG_DONG' && gdIsEmpty) {
+                Qmsg.error('购物车中并没有【广东仓】的商品！')
+                return
+            }
+
+
+            // 是否有至少一个选中的
+            const isHave = eles.parents('.product-item').find('input.check-box:checked').length > 0
+
+            if (isHave) {
+                eles.each(function () {
+                    $(this).parents('.product-item').find('input.check-box:checked').click()
+                })
+            }
+            // 都未选中，则执行仓库全选操作
+            else {
+                eles.each(function () {
+                    $(this).parents('.product-item').find('input.check-box').click()
+                })
+            }
+        }
+
+        // 江苏仓
+        $(".check-js-btn-left").on('click', function () {
+            _clickFunc('JIANG_SU', getJsLineInfo)
+        })
+
+        // 广东仓
+        $(".check-gd-btn-right").on('click', function () {
+            _clickFunc('GUANG_DONG', getGdLineInfo)
+        })
     }
 
 
     // 控制按钮的生成
     const buttonListFactory = () => {
+
+        let isBool = getAllCheckedLineInfo().length > 0
+
         return `
-            <div class='mr10 flex flex-sx-center'><label style="font-size: 14px">自动领取优惠券</label><input style="zoom: 80%; margin: 0 8px;" type="checkbox" class="checkbox"/>(功能暂未开发)</div>
+        <div style="border: unset; position: relative;">
+            <div class='mr10 flex flex-sx-center'><label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label><input style="zoom: 80%; margin: 0 8px;" type="checkbox" class="checkbox"/>(暂未开发)</div>
+             
+            <div class='mr10 flex flex-sx-center'>
+                <label style="font-size: 14px;width: 105px;" class='ftw1000 box_'>一键选仓
+                    <div class="circle_ tooltip_" data-msg='第一次点是选中，第二次点是取消选中' style="margin-left: 5px;">?</div>
+                </label>
+                    <button class='check-js-btn-left btn-left' type='button'>江苏</button>
+                    <button class='check-gd-btn-right btn-right' type='button'>广东</button>
+             </div>
+
+             <div class='mr10 flex flex-sx-center'>
+                <label style="font-size: 14px;width: 105px;" class='ftw1000 box_'>一键换仓
+                    <div class="circle_ tooltip_" data-msg='只操作多选框选中的商品，包含订货商品' style="margin-left: 5px;">?</div>
+                </label>
+                    <button class='change-depot-btn-left btn-left' type='button'  ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>江苏</button>
+                    <button class='change-depot-btn-right btn-right' type='button' ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>广东</button>
+             </div>
+
+             <!-- 查看平台优惠券列表 -->
+             ${lookCouponListBtnFactory()}
+        </div>
         `
     }
 
@@ -131,6 +463,9 @@
      * 显示隐藏 小窗的的按钮展示
      */
     const showOrHideButtonFactory = () => {
+
+        $('.hideBtn,.showBtn').remove()
+
         return `
         <div class="hideBtn">
             收起助手 >
@@ -142,11 +477,222 @@
     }
 
     /**
+     * 查询购物车中的品牌数量总和（多选框选中）
+     */
+    const brandCountFactory = () => {
+        return `
+        <p class='small-sign'>
+            ${dataMp.size}
+        </p>
+        `
+    }
+
+    /**
+     * 计算总的金额
+     */
+    const totalMoneyFactory = () => {
+
+        let t = 0
+
+        if(dataMp.size > 0) {
+            t = dataMp.values().reduce((total, num) => total + num).toFixed(2)
+        }
+
+        return `
+        <p class='total-money_'>
+            ${t}
+        </p>
+        `
+    }
+
+    /**
+   * 查询16-15优惠券列表
+   */
+    const lookCouponListBtnFactory = () => {
+        return `
+        <p class='look-coupon-btn'>
+        优惠券专区
+        </p>
+        <p class="look-coupon-closebtn" style='display: none'>X</p>
+        `
+    }
+
+    /**
+     * 查看优惠券页面的扩展按钮，绑定事件
+     */
+    const lookCouponListExtendsBtnHandler = () => {
+
+        // 查看已领取的优惠券
+        $('.filter-haved').click(function () {
+            $('.coupon-item:visible:not(:contains(立即使用))').hide()
+        })
+
+        // 过滤16-15的优惠券
+        $('.filter-16-15').click(function () {
+            $('.coupon-item:visible:not(:contains(满16可用))').hide()
+        })
+
+        // 过滤新人优惠券
+        $('.filter-newone').click(function () {
+            $('.coupon-item:visible:not(:contains(新人专享))').hide()
+        })
+
+         // 一键领取当前显示的所有优惠券
+         $('.get-all').click(function () {
+            const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
+
+            let totalCount = 0, successCount = 0
+            $couponEles.each(function() {
+               
+                //优惠券ID
+                const couponId = $(this).data('id')
+
+                // 优惠券名称
+                const couponName = $(this).data('name')
+
+                getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
+                    res = JSON.parse(res)
+                    if(res.code === 200 && res.msg === '') {
+                        successCount++
+                        console.log(`${couponName} 优惠券领取成功`)
+                    } else {
+                        console.error(`${couponName} 优惠券领取失败，或者 已经没有可以领取的优惠券！`)
+                    }
+                })
+
+                totalCount++
+            })
+
+            if(successCount === 0) {
+                Qmsg.error(`优惠券领取失败！请稍候再试`)
+            } 
+            else if($couponEles.length === totalCount) {
+                Qmsg.success(`优惠券领取成功！成功：${successCount}条，失败：${totalCount-successCount}条。`)
+                setTimeout(() => {
+                    Qmsg.info(`2秒后刷新优惠券页面...`)
+
+                // 由于调用接口领取，所以需要重新渲染优惠券页面
+                    setTimeout(lookCouponListModal, 4000);
+                }, 2000);
+            }
+        })
+
+        // 过滤新人优惠券
+        $('.filter-clear').click(function () {
+            $('.coupon-item:hidden').show()
+        })
+    }
+
+    /**
+     * 查看优惠券列表的按钮
+     */
+    const lookCouponListHandler = () => {
+        const _lookCouponClick = () => {
+            if ($('#couponModal').is(':hidden')) {
+                $('#couponModal').show()
+                $('.look-coupon-closebtn').show()
+                $('.extend-btn-group_').show()
+            } else if ($('#couponModal').is(':visible')) {
+                $('#couponModal').hide()
+                $('.look-coupon-closebtn').hide()
+                $('.extend-btn-group_').hide()
+            }
+        }
+        $('.look-coupon-btn,.look-coupon-closebtn').click(_lookCouponClick)
+    }
+
+    /**
+     * 优惠券模态框
+     */
+    const lookCouponListModal = async () => {
+        
+        $('#couponModal').empty()
+
+        let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
+
+        // 优惠券的选取规则
+        const couponRule = '满16可用'
+
+        const $couponHTML = $(couponHTML)
+
+        let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML
+        let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML
+
+        let $main_wraper = $couponHTML.find('.main_wraper')
+        let $navigation = $couponHTML.find('.navigation')
+
+        let ht = `<div class="all-coupon-page"></div>
+        <div class="common-alert-success-tip-tmpl common-confirm-del">
+        <div class="common-confirm-del-title">
+            <h3>成功提示</h3>
+            <a style="cursor: pointer;" class="common-confirm-del-close"></a>
+        </div>
+        <div class="common-confirm-del-content">
+            <p class="common-confirm-del-content-txt success">content</p>
+            <div class="common-confirm-del-btn">
+            <input type="button" class="common-confirm-a" value="确定">
+            </div>
+            <div class="common-confirm-del-icon-success"></div>
+        </div>
+        </div>
+        <div class="mask"></div>`
+
+        $('#couponModal').html(ht).append($cssLink).append($jsLink)
+
+        $('#couponModal .all-coupon-page').append($main_wraper).append($navigation)
+    }
+
+
+    /**
+     * 获取勾选框选中的物料编号集合，波浪线分割
+     */
+    // const myGetCK = () => {
+    //     return [...getAllCheckedLineInfo().map(function () {
+    //         return $(this).attr('id').split('-')[2]
+    //     })].join('~')
+    // }
+
+
+    /**
+     * 更新购物车勾选
+     */
+    // const cartUpdateChecked = () => {
+    //     return new Promise((resolve, reject) => {
+    //         try {
+    //             postFormAjax(`${webSiteShareData.lcscCartUrl}/page/home/cart/update/checked`, { ck: (myGetCK() || 'false') }).then(res => {
+    //                 res = JSON.parse(res)
+    //                 if (res.code === 200 && res.msg === null) {
+    //                     resolve('true')
+    //                 } else {
+    //                     resolve('true')
+    //                 }
+    //             })
+    //         } catch (error) {
+    //             console.error(error);
+    //             reject('false')
+    //         }
+    //     })
+    // }
+
+    /**
      * 追加的html
      * @returns
      */
     const htmlFactory = () => {
+
         let tempHtml = `
+        ${$('#couponModal').length === 0 ? `
+        <div class="extend-btn-group_" style="display: none;">
+            <p class="coupon-item-btn-text_ filter-clear"">清空筛选</p>
+            <p class="coupon-item-btn-text_ filter-haved">查看已领取</p>
+            <p class="coupon-item-btn-text_ filter-16-15">筛选16-15</p>
+            <p class="coupon-item-btn-text_ filter-newone">筛选新人券</p>
+
+            <p class="coupon-item-btn-text_ get-all" style="padding: 10px 7px; height: auto;">一键领取当前展示优惠券</p>
+        </div>
+        
+        <div id="couponModal" style="display: none;"></div>` : ''}
+
         ${showOrHideButtonFactory()}
         <div class="bd">
         ${buttonListFactory()}
@@ -155,9 +701,17 @@
         const head = `
         <li class='li-cs' style="position: sticky; top: 0px; background-color: white;">
                 <div>
-                    <span style='font-weight: 1000; color: black;width: 110px;' class="flex flex-zy-center">品牌名称</br>(现货)</span>
-                    <span style='font-weight: 1000; color: black; width: 80px;' class="flex flex-zy-center">总金额</span>
-                    <span style='font-weight: 1000; color: black;' class="flex flex-zy-center">优惠券</br>(16-15) </span>
+                <!-- 勾选的品牌数量 -->
+                    ${brandCountFactory()}
+
+                    <!-- 计算所有的总金额 -->
+                    ${totalMoneyFactory()}
+
+                    <span style='font-weight: 1000; color: black;width: 165px; line-height: 24px;' class="flex flex-zy-center">品牌名称
+                    </br>(现货)</span>
+                    <span style='font-weight: 1000; color: black; width: 90px;line-height: 24px;' class="flex flex-zy-center">总金额</span>
+                    <span style='font-weight: 1000; color: black; width: 80px;line-height: 24px;' class="flex flex-zy-center">差额</span>
+                    <span style='font-weight: 1000; color: black; line-height: 24px;' class="flex flex-zy-center">优惠券</br>(16-15) </span>
                 </div>
             </li>
         `
@@ -165,12 +719,12 @@
         tempHtml += head
 
         for (var [key, val] of sortMapByValue(dataMp)) {
-            // <a href='https://www.szlcsc.com/huodong.html?from=dh' class="to_cou" target="_blank">优惠券入口</a>
             tempHtml += `
-            <li class='li-cs click-hv'>
+            <li class='li-cs click-hv ftw500'>
                 <div>
-                    <span class='key sort_' style="width: 110px;">${key}</span>
-                    <span class='val sort_' style="width: 80px;">${val}</span>
+                    <span class='key sort_' style="width: 165px;">${key}</span>
+                    <span class='val sort_' style="width: 90px;">${val}</span>
+                    <span class='val sort_' style="width: 80px;">${(16 - val).toFixed(2)}</span>
                     ${couponHTMLFactory(key)}
                 </div>
             </li>
@@ -199,7 +753,7 @@
                     <span style="font-size: 12px;">已领取-${couponEntity.isNew === false ? '普通券' : '新人券'}</span>
                 </span> `
             } else {
-                buttonLine = `<span class='flex-sx-center flex-zy-center flex' style="padding: 0; width: 160px; text-align: center; ">
+                buttonLine = `<span class='flex-sx-center flex-zy-center flex' style="padding: 0; width: 195px; text-align: center; ">
                     <button type="button" class="to_cou">${couponEntity.isNew === false ? '普通券' : '新人券'}</button>
                  </span> `
             }
@@ -215,22 +769,63 @@
      */
     const cssFactory = () => `
     <style id="myCss">
+
+    #couponModal {
+        height: 88vh;
+        position: fixed;
+        top: 40px;
+        right: 430px;
+        z-index: 100;
+        overflow: auto;
+        background-color: white;
+        border: 3px solid #3498db;
+        border-radius: 5px;
+        padding: 5px;
+        padding-left: 120px;
+    }
+
+    .look-coupon-closebtn {
+        position: fixed;
+        top: 9px;
+        right: 186px;
+        border: 2px solid #3498db !important;
+        background-color: white;
+        padding: 5px 20px;
+        width: min-content !important;
+        border-radius: 5px;
+        z-index: 10000;
+        zoom: 200%;
+    }
+
     .bd {
         position: fixed;
         top: 40px;
-        right: 40px;
+        right: 33px;
         background-color: white;
         border: 2px solid #3498db;
-        width: 320px;
+        width: 380px;
         padding: 3px;
         border-radius: 5px;
-        z-index: 10;
+        z-index: 1500;
         overflow: auto;
     }
-
-    .hideBtn, .showBtn {
+    
+    .ftw400 {
+        font-weight: 400;
+    }
+    
+    .ftw500 {
+        font-weight: 500;
+    }
+    
+    .ftw1000 {
+        font-weight: 1000;
+    }
+    
+    .hideBtn,
+    .showBtn {
         position: fixed;
-        top: 25px;
+        top: 20px;
         right: 10px;
         background-color: white;
         border: 2px solid #3498db;
@@ -240,76 +835,73 @@
         padding: 3px;
         font-weight: 800;
         border-radius: 5px;
-        z-index: 11;
+        z-index: 1501;
         font-size: 16px;
     }
-
+    
     .hide_ {
         display: none;
     }
-
+    
     .mr10 {
         margin: 10px;
     }
-
+    
     .flex {
         display: flex;
     }
-
+    
     .flex-sx-center {
         /*上下居中*/
         align-items: center;
     }
-
+    
     .flex-zy-center {
         /*左右居中*/
         justify-content: center;
     }
-
-    .li-cs{
-     margin: 5px;
-     font-size: 14px;
-     box-sizing:border-box;
+    
+    .li-cs {
+        margin: 5px;
+        font-size: 14px;
+        box-sizing: border-box;
     }
-
-    .click-hv:hover span, .li-cs button:hover {
-      color: #444 !important;
-      cursor: pointer;
+    
+    .box_ {
+        box-sizing: border-box;
     }
-
-    .li-cs div {
+    
+    .click-hv:hover span {
+        color: #444 !important;
+        cursor: pointer;
+    }
+    
+    .li-cs div, .li-cs p {
         display: flex;
         width: 100%;
         border: 2px solid #3498db;
         border-radius: 5px;
     }
-
+    
     .li-cs span {
         padding: 10px;
         width: 50%;
         color: white;
-        text-shadow: 1px 1px 1px white;
-        box-sizing:border-box;
+        box-sizing: border-box;
     }
-
+    
     .li-cs .to_cou {
         border: 1px solid white;
         border-radius: 3px;
         background-color: rgba(255, 255, 255, 0.6);
-        padding: 3px 4px;
+        padding: 5px 15px;
         color: #2c4985;
-        text-shadow: 1px 1px 1px white;
     }
-
+    
     .cart-li-pro-info div:hover {
-        color:rgba(57, 46, 74, 0.9) !important;
-        text-shadow: 1px 1px 1px white;
+        color: rgba(57, 46, 74, 0.9) !important;
     }
-     .li-cs .to_cou:hover {
-        color:black !important;
-        text-shadow: 1px 1px 1px white;
-    }
-
+    
     .checkbox {
         appearance: none;
         width: 64px;
@@ -319,7 +911,7 @@
         cursor: pointer;
         background-color: #777;
     }
-
+    
     .checkbox:before {
         content: "";
         position: absolute;
@@ -331,7 +923,7 @@
         border-radius: 50%;
         transition: left cubic-bezier(0.3, 1.5, 0.7, 1) 0.3s;
     }
-
+    
     .checkbox:after {
         content: "开 关";
         text-indent: 12px;
@@ -342,45 +934,251 @@
         font: 14px/30px monospace;
         font-weight: bold;
     }
-
-    ..checkbox:hover:before {
+    
+    .checkbox:hover:before {
         box-shadow: inset 0px 0px 5px 0px #3498db;
     }
+    
     .checkbox:checked {
-        background-color: limegreen;
+        background-color: #3498db;
     }
+    
     .checkbox:checked:before {
         left: 34px;
     }
+    
     .checkbox:checked:after {
-        color: black;
+        color: #fff;
+    }
+    
+    .small-sign {
+        position: absolute;
+        top: 35px;
+        left: 70px;
+        padding: 2px 3px;
+        width: min-content !important;
+        font-weight: bold;
+    }
+
+    .total-money_ {
+        position: absolute;
+        top: 35px;
+        left: 115px;
+        padding: 2px 3px;
+        width: min-content !important;
+        font-weight: bold;
+    }
+
+
+    .look-coupon-btn {
+        font-weight: bold;
+        width: 110px !important;
+        height: 110px;
+        text-align: center;
+        line-height: 100px;
+        display: block !important;
+        background-color: #3498db;
+        position: absolute;
+        top: -4px;
+        right: 4px;
+        color: white;
+        font-size: 18px;
+        border-radius: 5px;
+        border: 2px solid #3498db;
+    }
+    
+    .btn-group_ {
+        border: 2px solid #3498db;
+    }
+    
+    .btn-left,
+    .btn-right {
+        width: 60px;
+        height: 30px;
+        border: unset;
+        background-color: white;
+    }
+    
+    .btn-right:hover,
+    .btn-left:hover,
+    .to_cou:hover,
+    .hideBtn:hover,
+    .look-coupon-closebtn:hover
+    {
+        background-color: #3498db;
+        color: white !important;
+        cursor: pointer;
+    }
+
+    .look-coupon-btn:hover {
+        background-color: white !important;
+        color: #3498db !important;
+        cursor: pointer;
+    }
+    
+    .btn-left {
+        border-left: 2px solid #3498db;
+        border-block: 2px solid #3498db;
+        border-radius: 5px 0 0 5px;
+        border-right: 2px solid #3498db;
+    }
+    
+    .btn-right {
+        border-right: 2px solid #3498db;
+        border-block: 2px solid #3498db;
+        border-radius: 0 5px 5px 0;
+    }
+    
+    .circle_ {
+        display: inline-block;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background-color: #77b0e2;
+        color: #fff;
+        font-size: 12px;
+        text-align: center;
+        line-height: 15px;
+        position: relative;
+    }
+    
+    .circle_::before {
+        content: "?";
+        font-size: 16px;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
+    
+    .tooltip_ {
+        position: relative;
+        font-size: 14px;
+        cursor: pointer;
+    }
+    
+    .tooltip_:hover::before {
+        word-break: keep-all;
+        white-space: nowrap;
+        content: attr(data-msg);
+        position: absolute;
+        padding: 8px 10px;
+        display: block;
+        color: #424343;
+        border: 2px solid #3498db;
+        border-radius: 5px;
+        font-size: 14px;
+        line-height: 20px;
+        top: -47px;
+        left: 50%;
+        transform: translateX(-25%);
+        background-color: white;
+    }
+    
+    .tooltip_:hover::after {
+        content: "﹀";
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        -webkit-transform: translateX(-50%);
+        -ms-transform: translateX(-50%);
+        transform: translateX(-50%);
+        background: #fff;
+        color: #3498db;
+        height: 7px;
+        line-height: 10px;
+        background-color: white;
+    }
+
+    
+    .all-coupon-page .navigation {
+        position: fixed;
+        left: 2200px !important;
+        top: 350px;
+        z-index: 10000;
+        margin-left: -720px !important;
+    }
+
+    .all-coupon-page .main_wraper {
+        width: 1200px;
+        margin: 0 125px 0 -100px !important;
+        padding-bottom: 30px;
+        background: #fff;
+    }
+
+    .extend-btn-group_  {
+        position: fixed;
+        right: 455px;
+        top: 80px;
+        z-index: 10000;
+        margin-left: -720px;
+    }
+
+    .extend-btn-group_ .coupon-item-btn-text_ {
+        box-sizing: border-box;
+        width: 100px;
+        height: 30px;
+        text-align: center;
+        background: #199fe9;
+        font-size: 14px;
+        font-weight: 400;
+        color: #fff;
+        line-height: 30px;
+        cursor: pointer;
+        border-radius: 4px;
+        margin-top: 10px;
+    }
+
+    .extend-btn-group_ .filter-clear {
+        color: #3498db; 
+        background: white; 
+        border: 1px solid #3498db;
+        font-weight: bolder;
     }
     </style>
     `
-
 
     /**
      * 追加到body
      */
     const appendHtml = () => {
+        // 计时开始点
+        console.time('appendHtml')
 
-        $('#myCss').remove()
+        if ($('#myCss').length === 0) {
+            $('body').append(cssFactory())
+        }
+
         $('.bd').remove()
+        $('body').append(htmlFactory())
 
-        $('body').append(cssFactory())
-            .append(htmlFactory())
+        // =========== 事件 ==============
+        clickBrandHandler()
+        getCouponClickHandler()
+        showOrHideModalHandler()
+        onClickChangeDepotBtnHandler()
+        checkDepotBtnHandler()
+        lookCouponListHandler()
+        lookCouponListExtendsBtnHandler()
+        // =============================
+        resizeHeight()
+
+        console.timeEnd('appendHtml')
     }
 
     /**
      * 基础配置优化
      */
     const basicSettings = () => {
+
+        console.time('basicSettings')
+
         // 多选框放大
         $('input[type*=checkbox]').css('zoom', '150%')
 
         // 点击物料图片，操作多选框
-        $('.product-img').each(function() {
-            $(this).on('click', function(target) {
+        $('.product-img').each(function () {
+            $(this).on('click', function (target) {
                 $(this).prev('.check-box').click()
             })
         })
@@ -388,9 +1186,12 @@
         // 购物车列表 点击品牌跳转到该品牌下的商品
         let brandElement = $('.product-item li.cart-li-pro-info').find('div:eq(2)')
         brandElement.css({ cursor: 'pointer' })
-        brandElement.on('click', function() {
-            window.open(`https://so.szlcsc.com/global.html?k=${getBrandNameByRe(this.innerText)}`)
+        brandElement.on('click', function () {
+            window.open(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRe(this.innerText)}`)
         })
+
+
+        console.timeEnd('basicSettings')
     }
 
 
@@ -398,14 +1199,17 @@
      * 遍历购物车清单，并计算品牌总金额
      */
     const eachCartList = () => {
+
+        console.time('eachCartList')
+
         dataMp.clear()
 
-        getHavedLineInfo().each(function(i) {
+        getHavedCheckedLineInfo().each(function (i) {
 
             let $this = $(this)
 
             // 物料编号
-            let productId = $this.find('ul li:eq(1) a').text().trim()
+            // let productNo = $this.find('ul li:eq(1) a').text().trim()
 
             // 品牌名称
             let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim()
@@ -413,9 +1217,9 @@
             // 查找到品牌名称
             brandName = getBrandNameByRe(brandName.split('\n')[brandName.split('\n').length - 1].trim())
 
-            if ($this.find('input:checked').length === 0) {
-                return
-            }
+            // if ($this.find('input:checked').length === 0) {
+            //     return
+            // }
 
             // 品牌下的单个商品总价
             let linePrice = parseFloat($this.find('.line-total-price').text().trim().replace('￥', ''))
@@ -434,6 +1238,9 @@
                 dataBrandColorMp.set(brandName, rgba('0.9'))
             }
         })
+
+
+        console.timeEnd('eachCartList')
     }
 
     /**
@@ -442,7 +1249,7 @@
     const setBrandColor = () => {
 
         //弹框 对品牌进行随机色设置
-        $('.li-cs').each(function(i) {
+        $('.li-cs').each(function (i) {
             $(this).css('background', dataBrandColorMp.get($(this).find('span:eq(0)').text().trim()))
         })
 
@@ -451,15 +1258,37 @@
             let brandElement = getHavedLineInfoByBrandName(k).find('ul li.cart-li-pro-info')
             brandElement.css({
                 'background-color': v,
-                'text-shadow': '0px 1px 1px white',
                 'color': 'white'
             })
 
             brandElement.find('a').css({
-                'text-shadow': '0px 1px 1px white',
                 'color': 'white'
             })
         })
+    }
+
+    /**
+    * 查找购物车中所有选中的行的元素（包含现货、订货）
+    *
+    */
+    const getAllCheckedLineInfo = () => {
+        return $('.product-list .product-item input:checked').parents('.product-item')
+    }
+
+    /**
+    * 查找购物车中所有选中的行的元素（包含现货、订货）指定：江苏仓
+    *
+    */
+    const getJsLineInfo = () => {
+        return $('.product-list .product-item .warehouse-wrap .warehouse:contains(江苏仓)')
+    }
+
+    /**
+    * 查找购物车中所有选中的行的元素（包含现货、订货）指定：广东仓
+    *
+    */
+    const getGdLineInfo = () => {
+        return $('.product-list .product-item .warehouse-wrap .warehouse:contains(广东仓)')
     }
 
     /**
@@ -470,6 +1299,13 @@
     }
 
     /**
+     * 购物车中所在行的元素（包含现货、订货）
+     */
+    const getAllLineInfo = () => {
+        return $('.product-list .product-item')
+    }
+
+    /**
      * 通过品牌名称，查找购物车中所在行的元素(只获取现货商品)
      */
     const getHavedLineInfoByBrandName = (brandName) => {
@@ -477,10 +1313,13 @@
     }
 
     /**
-     * 查找购物车中所在行的元素(只获取现货商品)
+     * 查找购物车中所在行的元素(只获取现货商品、选中的)
+     * product-list-dl eq 0 是现货
+     * product-list-dl eq 1 是订货
+     *
      */
-    const getHavedLineInfo = () => {
-        return $('.product-list .product-list-dl:eq(0) .product-item')
+    const getHavedCheckedLineInfo = () => {
+        return $('.product-list .product-list-dl:eq(0) .product-item input:checked').parents('.product-item')
     }
 
     /**
@@ -488,13 +1327,13 @@
      * 且该品牌下的物料，会自动排到购物车的前面几条
      */
     const clickBrandHandler = () => {
-        $('.click-hv .sort_').on('click', function(target) {
+        $('.click-hv .sort_').on('click', function (target) {
             let brandName = $(this).text().trim()
 
             let cutHtmlElement = []
 
             // 查找购物车 现货商品
-            getHavedLineInfoByBrandName(brandName).each(function(i) {
+            getHavedLineInfoByBrandName(brandName).each(function (i) {
                 cutHtmlElement.push($(this))
             })
 
@@ -508,58 +1347,19 @@
      * 多选框变化，刷新小窗口的计算结果
      */
     const checkStatusChangeHandler = () => {
-        $(".check-box").change(refresh);
+        $(".check-box,.check-box-checked-all").change(refresh)
     }
-
-
-    /**
-     * GET请求封装
-     * @param {} data
-     */
-    const getAjax = (url) => {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                url,
-                method: 'GET',
-                onload: (r) => {
-                    resolve(r.response)
-                },
-                onerror: (err) => {
-                    reject(err)
-                }
-            });
-        });
-    }
-
-    /**
-     * POST请求封装
-     * @param {} data
-     */
-    const postAjax = (url, data) => {
-        return new Promise((resolve, reject) => {
-            GM_xmlhttpRequest({
-                url,
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                data: JSON.stringify(data),
-                onload: (r) => {
-                    resolve(r.response)
-                },
-                onerror: (err) => {
-                    reject(err)
-                }
-            });
-        });
-    }
-
 
     /**
      * 获取优惠券列表信息，并暂存在变量集合中
      */
-    const getCouponHTML = async() => {
-        let couponHTML = await getAjax('https://www.szlcsc.com/huodong.html?from=dh#coupon2')
+    const getCouponHTML = async () => {
 
-        $(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function() {
+        console.time('getCouponHTML')
+
+        let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
+
+        $(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function () {
 
             let $this = $(this)
 
@@ -574,7 +1374,7 @@
 
             // 优惠券金额
             let couponPrice = couponName.replace(/^.*?\>(.*?)元.*$/, '$1')
-                // 品牌名称
+            // 品牌名称
             let brandName = couponName.replace(/^.*?元(.*?)品牌.*$/, '$1')
 
             // 是否新人优惠券
@@ -587,21 +1387,19 @@
                 brandName, // 品牌名称
                 couponId, // 优惠券id
                 isHaved, // 是否已经领取
-                couponLink: `https://www.szlcsc.com/getCoupon/${couponId}`, // 领券接口地址
+                couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
             })
 
-            // console.log(couponPrice, brandName)
         })
 
-
-        // console.log(couponMp)
+        console.timeEnd('getCouponHTML')
     }
 
     /**
      * 优惠券领取按钮的绑定事件
      */
     const getCouponClickHandler = () => {
-        $('.to_cou').click(async function(target) {
+        $('.to_cou').click(async function (target) {
             let brandName = $(this).parents('span').siblings('.key').text()
 
             // 优惠券实体
@@ -609,7 +1407,7 @@
 
             if (!$.isEmptyObject(couponEntity)) {
                 let res = await getAjax(couponEntity.couponLink)
-                    // console.log(res);
+                // console.log(res)
 
                 let resParseData = JSON.parse(res)
                 if (resParseData.result === 'success') {
@@ -624,7 +1422,7 @@
 
     // 隐藏/显示 小窗
     const showOrHideModalHandler = () => {
-        $('.showBtn,.hideBtn').click(function(target) {
+        $('.showBtn,.hideBtn').click(function (target) {
             let $bd = $('.bd')
 
             if ($bd.is(':hidden')) {
@@ -634,6 +1432,9 @@
             } else if ($bd.is(':visible')) {
                 $('.showBtn').show()
                 $('.hideBtn').hide()
+                $('#couponModal').hide()
+                $('.look-coupon-closebtn').hide()
+                $('.extend-btn-group_').hide()
                 setLocalData('SHOW_BOOL', false)
             }
 
@@ -654,7 +1455,7 @@
      * 刷新小窗口数据
      * @param {*} notRefreshCouponHtml 是否更新优惠券集合数据
      */
-    const refresh = async(notRefreshCouponHtml) => {
+    const refresh = async (notRefreshCouponHtml) => {
 
         // 是否更新优惠券集合数据，主要更新是否领取的状态
         if (notRefreshCouponHtml === true) {
@@ -663,41 +1464,33 @@
 
         eachCartList()
         appendHtml()
-        setBrandColor()
-        clickBrandHandler()
-        getCouponClickHandler()
-        showOrHideModalHandler()
-        resizeHeght()
-    }
 
+        setBrandColor()
+    }
 
     /**
      * 重置小窗口的高度
      */
-    const resizeHeght = () => {
+    const resizeHeight = () => {
 
-        let bdHeight = parseFloat($('.bd').css('height').replace('px', ''))
-
-        if ((window.innerHeight - 120) < bdHeight) {
-            $('.bd').css({ height: '82vh' })
+        if ((window.innerHeight - 120) < $('.bd').height()) {
+            $('.bd').height('82vh')
         } else {
-            $('.bd').css({ height: 'auto' })
+            $('.bd').height('auto')
         }
     }
 
-    window.addEventListener('resize', resizeHeght);
+    window.addEventListener('resize', resizeHeight)
 
     basicSettings()
     eachCartList()
     await getCouponHTML()
     appendHtml()
     setBrandColor()
-    clickBrandHandler()
+
     checkStatusChangeHandler()
-    getCouponClickHandler()
-    showOrHideModalHandler()
+    onChangeCountHandler()
+
     onloadSetShowOrHide()
-
-    resizeHeght()
-
-})();
+    lookCouponListModal()
+})()
