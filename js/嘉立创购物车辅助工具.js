@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.5.8
+// @version      1.5.9
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -452,7 +452,7 @@
                     dataMp.keys().forEach(item => {
 
                         // 查找优惠券
-                        const $couponEle = $(`#couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
+                        const $couponEle = $(`.couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
 
                         if ($couponEle.length === 0) {
                             return
@@ -571,7 +571,6 @@
             <p class='look-coupon-btn'>
             优惠券专区
             </p>
-            <p class="look-coupon-closebtn" style=''>X</p>
             `
         }
 
@@ -693,11 +692,11 @@
         </div>
         <div class="mask"></div>`
 
+            const $couponEle = $('.couponModal')
+            $couponEle.empty()
+            $couponEle.append(ht).append($cssLink).append($jsLink)
 
-            $('#couponModal').empty()
-            $('#couponModal').html(ht).append($cssLink).append($jsLink)
-
-            $('#couponModal .all-coupon-page').append($main_wraper).append($navigation)
+            $('.couponModal .all-coupon-page').append($main_wraper).append($navigation)
         }
 
 
@@ -739,7 +738,7 @@
         const htmlFactory = () => {
 
                 let tempHtml = `
-        ${$('#couponModal').length === 0 ? `
+        ${$('.couponModal').length === 0 ? `
         <div class="extend-btn-group_" style="display: none;">
             <p class="coupon-item-btn-text_ filter-clear"">清空筛选</p>
             <p class="coupon-item-btn-text_ filter-haved">查看已领取</p>
@@ -749,7 +748,14 @@
             <p class="coupon-item-btn-text_ get-all" style="padding: 10px 7px; height: auto;">一键领取当前展示优惠券</p>
         </div>
         
-        <div id="couponModal" style="display: none;"></div>` : ''}
+        <div id="couponModal" style="display: none;">
+            <p class="look-coupon-closebtn" style=''>X</p>
+            <div class="couponModal">
+                
+            </div>
+        </div>
+        
+        ` : ''}
 
         ${showOrHideButtonFactory()}
         <div class="bd">
@@ -833,7 +839,7 @@
         position: fixed;
         top: 40px;
         right: 430px;
-        z-index: 100;
+        z-index: 1500;
         overflow: auto;
         background-color: white;
         border: 3px solid #3498db;
@@ -851,7 +857,6 @@
         padding: 5px 20px;
         width: min-content !important;
         border-radius: 5px;
-        z-index: 10000;
         zoom: 200%;
     }
 
@@ -864,7 +869,7 @@
         width: 380px;
         padding: 3px;
         border-radius: 5px;
-        z-index: 1500;
+        z-index: 99;
         overflow: auto;
     }
     
@@ -1021,7 +1026,7 @@
     .total-money_ {
         position: absolute;
         top: 35px;
-        left: 115px;
+        left: 123px;
         padding: 2px 3px;
         width: min-content !important;
         font-weight: bold;
@@ -1222,8 +1227,8 @@
         showOrHideModalHandler()
         onClickChangeDepotBtnHandler()
         checkDepotBtnHandler()
-        lookCouponListHandler()
         lookCouponListExtendsBtnHandler()
+        lookCouponListHandler()
         // =============================
         resizeHeight()
 
@@ -1517,8 +1522,6 @@
         if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
             $('.auto-get-coupon').attr('checked', true)
         }
-        
-        $('.look-coupon-closebtn').hide()
     }
 
     /**
@@ -1526,6 +1529,10 @@
      * @param {*} notRefreshCouponHtml 是否更新优惠券集合数据
      */
     const refresh = async (notRefreshCouponHtml) => {
+
+        if (getLocalData('SHOW_BOOL') === 'false') {
+            return
+        }
 
         // 是否更新优惠券集合数据，主要更新是否领取的状态
         if (notRefreshCouponHtml === true) {
