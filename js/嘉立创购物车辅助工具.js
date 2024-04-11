@@ -101,6 +101,8 @@
     const dataBrandColorMp = new Map()
     // 优惠券页面，数据暂存。只保存16-15的优惠券
     const couponMp = new Map()
+    // 自动领券的定时器
+    let couponTimer = null
 
     // 消息弹框全局参数配置
     Qmsg.config({
@@ -427,14 +429,51 @@
     }
 
 
+    /**
+     * 自动领取优惠券的定时器
+     */
+    const autoGetCouponTimerHandler = () => {
+
+        $('.auto-get-coupon').off('change')
+
+        couponTimer = null
+
+        // 自动领取优惠券开关
+        $('.auto-get-coupon').on('change', function () {
+            debugger
+            const isChecked = $(this).is(':checked')
+            setLocalData('AUTO_GET_COUPON_BOOL', isChecked)
+
+            autoGetCouponTimerHandler()
+        })
+
+        couponTimer = setInterval(() => {
+            debugger
+            const isChecked = $('.auto-get-coupon').is(':checked')
+            if (isChecked) {
+                dataMp.keys().forEach(item => {
+                    console.log(item);
+                })
+            }
+            else {
+                clearInterval(couponTimer)
+                couponTimer = null
+            }
+        }, 5000);
+    }
+
+
     // 控制按钮的生成
     const buttonListFactory = () => {
 
         let isBool = getAllCheckedLineInfo().length > 0
 
         return `
-        <div style="border: unset; position: relative;">
-            <div class='mr10 flex flex-sx-center'><label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label><input style="zoom: 80%; margin: 0 8px;" type="checkbox" class="checkbox"/>(暂未开发)</div>
+            <div style="border: unset; position: relative;">
+            <div class='mr10 flex flex-sx-center'>
+                <label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label>
+                <input style="zoom: 80%; margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon"/>
+            </div>
              
             <div class='mr10 flex flex-sx-center'>
                 <label style="font-size: 14px;width: 105px;" class='ftw1000 box_'>一键选仓
@@ -494,7 +533,7 @@
 
         let t = 0
 
-        if(dataMp.size > 0) {
+        if (dataMp.size > 0) {
             t = dataMp.values().reduce((total, num) => total + num).toFixed(2)
         }
 
@@ -537,13 +576,13 @@
             $('.coupon-item:visible:not(:contains(新人专享))').hide()
         })
 
-         // 一键领取当前显示的所有优惠券
-         $('.get-all').click(function () {
+        // 一键领取当前显示的所有优惠券
+        $('.get-all').click(function () {
             const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
 
             let totalCount = 0, successCount = 0
-            $couponEles.each(function() {
-               
+            $couponEles.each(function () {
+
                 //优惠券ID
                 const couponId = $(this).data('id')
 
@@ -552,26 +591,26 @@
 
                 getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
                     res = JSON.parse(res)
-                    if(res.code === 200 && res.msg === '') {
+                    if (res.code === 200 && res.msg === '') {
                         successCount++
-                        console.log(`${couponName} 优惠券领取成功`)
+                        // console.log(`${couponName} 优惠券领取成功`)
                     } else {
-                        console.error(`${couponName} 优惠券领取失败，或者 已经没有可以领取的优惠券！`)
+                        // console.error(`${couponName} 优惠券领取失败，或者 已经没有可以领取的优惠券了！`)
                     }
                 })
 
                 totalCount++
             })
 
-            if(successCount === 0) {
-                Qmsg.error(`优惠券领取失败！请稍候再试`)
-            } 
-            else if($couponEles.length === totalCount) {
-                Qmsg.success(`优惠券领取成功！成功：${successCount}条，失败：${totalCount-successCount}条。`)
+            if (successCount === 0) {
+                Qmsg.error(`优惠券领取失败，或者已经没有可以领取的优惠券了！`)
+            }
+            else if ($couponEles.length === totalCount) {
+                Qmsg.success(`优惠券领取成功！成功：${successCount}条，失败：${totalCount - successCount}条。`)
                 setTimeout(() => {
                     Qmsg.info(`2秒后刷新优惠券页面...`)
 
-                // 由于调用接口领取，所以需要重新渲染优惠券页面
+                    // 由于调用接口领取，所以需要重新渲染优惠券页面
                     setTimeout(lookCouponListModal, 2000);
                 }, 2000);
             }
@@ -605,7 +644,7 @@
      * 优惠券模态框
      */
     const lookCouponListModal = async () => {
-        
+
         let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
 
         // 优惠券的选取规则
@@ -999,10 +1038,15 @@
         background-color: white;
     }
     
+    
+    .hideBtn {
+        cursor: pointer;
+    }
+
     .btn-right:hover,
     .btn-left:hover,
     .to_cou:hover,
-    .hideBtn:hover,
+    .showBtn:hover,
     .look-coupon-closebtn:hover
     {
         background-color: #3498db;
@@ -1445,9 +1489,13 @@
     /**
      * 页面加载的时候，控制小窗显示隐藏
      */
-    const onloadSetShowOrHide = () => {
+    const onLoadSet = () => {
         if (getLocalData('SHOW_BOOL') === 'false') {
             $('.hideBtn').click()
+        }
+
+        if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
+            $('.auto-get-coupon').attr('checked', true)
         }
     }
 
@@ -1490,7 +1538,8 @@
 
     checkStatusChangeHandler()
     onChangeCountHandler()
+    autoGetCouponTimerHandler()
 
-    onloadSetShowOrHide()
+    onLoadSet()
     lookCouponListModal()
 })()
