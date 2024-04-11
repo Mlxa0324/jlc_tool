@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.5.9
+// @version      1.5.10
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -835,23 +835,23 @@
     <style id="myCss">
 
     #couponModal {
-        height: 88vh;
+        height: 85vh;
         position: fixed;
         top: 40px;
         right: 430px;
-        z-index: 1500;
+        z-index: 100;
         overflow: auto;
         background-color: white;
         border: 3px solid #3498db;
         border-radius: 5px;
-        padding: 5px;
-        padding-left: 120px;
+        padding: 5px 150px 0 10px;
+        margin-left: 40px;
     }
 
     .look-coupon-closebtn {
         position: fixed;
-        top: 9px;
-        right: 186px;
+        top: 10px;
+        right: 210px;
         border: 2px solid #3498db !important;
         background-color: white;
         padding: 5px 20px;
@@ -1162,24 +1162,22 @@
     .all-coupon-page .navigation {
         position: fixed;
         left: unset !important;
-        right: 480px !important;
+        right: 505px !important;
         top: 350px;
-        z-index: 10000;
-        margin-left: -720px !important;
+        z-index: 1000;
     }
 
     .all-coupon-page .main_wraper {
-        width: 1200px;
-        margin: 0 125px 0 -100px !important;
-        padding-bottom: 30px;
         background: #fff;
+        zoom: 0.9;
+        width: unset !important;
     }
 
     .extend-btn-group_  {
         position: fixed;
-        right: 455px;
+        right: 480px;
         top: 80px;
-        z-index: 10000;
+        z-index: 888;
         margin-left: -720px;
     }
 
@@ -1203,6 +1201,10 @@
         background: white; 
         border: 1px solid #3498db;
         font-weight: bolder;
+    }
+
+    .coupon-item {
+        margin: 0 7px 10px 7px !important;
     }
     </style>
     `
