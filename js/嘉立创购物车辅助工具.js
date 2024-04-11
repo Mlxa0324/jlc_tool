@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.5.7
+// @version      1.5.8
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -387,7 +387,7 @@
             const _clickFunc = (depotName, fn) => {
                 const eles = fn()
 
-                // 先看看有没有指定仓            
+                // 先看看有没有指定仓
                 const jsIsEmpty = getJsLineInfo().length === 0
                 const gdIsEmpty = getGdLineInfo().length === 0
 
@@ -440,7 +440,6 @@
 
             // 自动领取优惠券开关
             $('.auto-get-coupon').on('change', function() {
-                debugger
                 const isChecked = $(this).is(':checked')
                 setLocalData('AUTO_GET_COUPON_BOOL', isChecked)
 
@@ -448,7 +447,6 @@
             })
 
             couponTimer = setInterval(() => {
-                debugger
                 const isChecked = $('.auto-get-coupon').is(':checked')
                 if (isChecked) {
                     dataMp.keys().forEach(item => {
@@ -497,7 +495,7 @@
             </div>
              
             <div class='mr10 flex flex-sx-center'>
-                <label style="font-size: 14px;width: 105px;" class='ftw1000 box_'>一键选仓
+                <label style="font-size: 14px; width: 105px; z-index: 2;" class='ftw1000 box_'>一键选仓
                     <div class="circle_ tooltip_" data-msg='第一次点是选中，第二次点是取消选中' style="margin-left: 5px;">?</div>
                 </label>
                     <button class='check-js-btn-left btn-left' type='button'>江苏</button>
@@ -505,7 +503,7 @@
              </div>
 
              <div class='mr10 flex flex-sx-center'>
-                <label style="font-size: 14px;width: 105px;" class='ftw1000 box_'>一键换仓
+                <label style="font-size: 14px; width: 105px;  z-index: 2;" class='ftw1000 box_'>一键换仓
                     <div class="circle_ tooltip_" data-msg='只操作多选框选中的商品，包含订货商品' style="margin-left: 5px;">?</div>
                 </label>
                     <button class='change-depot-btn-left btn-left' type='button'  ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>江苏</button>
@@ -570,11 +568,11 @@
          */
         const lookCouponListBtnFactory = () => {
             return `
-        <p class='look-coupon-btn'>
-        优惠券专区
-        </p>
-        <p class="look-coupon-closebtn" style='display: none'>X</p>
-        `
+            <p class='look-coupon-btn'>
+            优惠券专区
+            </p>
+            <p class="look-coupon-closebtn" style=''>X</p>
+            `
         }
 
         /**
@@ -1158,7 +1156,8 @@
     
     .all-coupon-page .navigation {
         position: fixed;
-        left: 2200px !important;
+        left: unset !important;
+        right: 480px !important;
         top: 350px;
         z-index: 10000;
         margin-left: -720px !important;
@@ -1518,6 +1517,8 @@
         if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
             $('.auto-get-coupon').attr('checked', true)
         }
+        
+        $('.look-coupon-closebtn').hide()
     }
 
     /**
