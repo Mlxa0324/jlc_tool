@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.6.2
+// @version      1.6.3
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -709,9 +709,9 @@
         // 手动刷新优惠券页面
         $('.refresh-coupon-page').click(function () {
             setTimeout(() => {
-                Qmsg.info(`2秒后刷新优惠券页面...`)
-                setTimeout(lookCouponListModal, 800);
-            }, 1000);
+                Qmsg.info(`1秒后刷新优惠券页面...`)
+                setTimeout(lookCouponListModal, 500);
+            }, 500);
 
         })
 
