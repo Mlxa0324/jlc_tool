@@ -618,7 +618,7 @@
                     <p class='ftw1000 box_ small_btn_ share-parse'>一键解析</p>
                 </div>
                 <div class="parse-text-box">
-                    <textarea class='textarea'></textarea>
+                    <textarea class='textarea' placeholder="请将他人分享的购物车文本，粘贴在此处，之后点击一键解析"></textarea>
                 </div>
              </div>
 
