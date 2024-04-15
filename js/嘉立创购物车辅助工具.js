@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.1
+// @version      1.7.2
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -68,7 +68,7 @@
          * @param {*} text
          * @returns
          */
-        const getBrandNameByRe = (text) => {
+        const getBrandNameByRegex = (text) => {
             let res = text
             try {
                 res = /\(.+\)/g.exec(text)[0].replace(/\((.*?)\)/, '$1')
@@ -98,11 +98,11 @@
         // 后续支持强排序按钮
 
         // 商品清单集合暂存
-        const dataMp = new Map()
+        const dataCartMp = new Map()
             // 品牌对应颜色，用于快速查找位置。
         const dataBrandColorMp = new Map()
             // 优惠券页面，数据暂存。只保存16-15的优惠券
-        const couponMp = new Map()
+        const all16_15CouponMp = new Map()
             // 自动领券的定时器
         let couponTimer = null
 
@@ -513,7 +513,7 @@
             couponTimer = setInterval(() => {
                 const isChecked = $('.auto-get-coupon').is(':checked')
                 if (isChecked) {
-                    dataMp.keys().forEach(item => {
+                    dataCartMp.keys().forEach(item => {
 
                         // 查找优惠券
                         const $couponEle = $(`.couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
@@ -714,7 +714,7 @@
         const brandCountFactory = () => {
             return `
         <p class='small-sign'>
-            ${dataMp.size}
+            ${dataCartMp.size}
         </p>
         `
         }
@@ -726,8 +726,8 @@
 
             let t = 0
 
-            if (dataMp.size > 0) {
-                t = [...dataMp.values()].reduce((total, num) => total + num).toFixed(2)
+            if (dataCartMp.size > 0) {
+                t = [...dataCartMp.values()].reduce((total, num) => total + num).toFixed(2)
             }
 
             return `
@@ -971,7 +971,7 @@
 
         tempHtml += head
 
-        for (var [key, val] of sortMapByValue(dataMp)) {
+        for (var [key, val] of sortMapByValue(dataCartMp)) {
             tempHtml += `
             <li class='li-cs click-hv ftw500'>
                 <div>
@@ -994,7 +994,7 @@
     const couponHTMLFactory = (brandName) => {
 
         // 优惠券实体
-        const couponEntity = couponMp.get(brandName)
+        const couponEntity = all16_15CouponMp.get(brandName)
 
         let buttonLine = ''
 
@@ -1518,7 +1518,7 @@
         let brandElement = $('.product-item li.cart-li-pro-info').find('div:eq(2)')
         brandElement.css({ cursor: 'pointer' })
         brandElement.on('click', function () {
-            window.open(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRe(this.innerText)}`)
+            window.open(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRegex(this.innerText)}`)
         })
     }
 
@@ -1527,7 +1527,7 @@
      * 遍历购物车清单，并计算品牌总金额
      */
     const eachCartList = () => {
-        dataMp.clear()
+        dataCartMp.clear()
 
         getHavedCheckedLineInfo().each(function (i) {
 
@@ -1540,7 +1540,7 @@
             let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim()
 
             // 查找到品牌名称
-            brandName = getBrandNameByRe(brandName.split('\n')[brandName.split('\n').length - 1].trim())
+            brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim())
 
             // if ($this.find('input:checked').length === 0) {
             //     return
@@ -1552,10 +1552,10 @@
             // 日志打印控制台
             // console.log(productId, brandName, linePrice)
 
-            let mpVal = $.isEmptyObject(dataMp.get(brandName)) ? 0 : dataMp.get(brandName)
+            let mpVal = $.isEmptyObject(dataCartMp.get(brandName)) ? 0 : dataCartMp.get(brandName)
 
             // 保存到Map中
-            dataMp.set(brandName, parseFloat((mpVal + linePrice).toFixed(2)))
+            dataCartMp.set(brandName, parseFloat((mpVal + linePrice).toFixed(2)))
 
 
             if ($.isEmptyObject(dataBrandColorMp.get(brandName))) {
@@ -1703,7 +1703,7 @@
             // 是否新人优惠券
             let isNew = couponName.split('新人专享').length >= 2
 
-            couponMp.set(brandName, {
+            all16_15CouponMp.set(brandName, {
                 couponName, // 优惠券名称
                 isNew, // 是否新人专享
                 couponPrice, //优惠券金额减免
@@ -1725,7 +1725,7 @@
             let brandName = $(this).parents('span').siblings('.key').text()
 
             // 优惠券实体
-            let couponEntity = couponMp.get(brandName)
+            let couponEntity = all16_15CouponMp.get(brandName)
 
             if (!$.isEmptyObject(couponEntity)) {
                 let res = await getAjax(couponEntity.couponLink)
@@ -1760,6 +1760,7 @@
             }
 
             $bd.fadeToggle()
+            f
         })
     }
 
@@ -1849,7 +1850,8 @@
     }
 
     /**
-     * 重置小窗口的高度
+     * 重置小窗口的高度f5
+     * 
      */
     const resizeHeight = () => {
 
@@ -1910,11 +1912,11 @@
 
             let findBrandName = text
             if (text.includes('(')) {
-                findBrandName = /\(.+\)/g.exec(text)[0].replace('(', '').replace(')', '')
+                findBrandName = getBrandNameByRegex(text)
             }
 
-            if (couponMp.has(findBrandName)) {
-                if (couponMp.get(findBrandName).isNew) {
+            if (all16_15CouponMp.has(findBrandName)) {
+                if (all16_15CouponMp.get(findBrandName).isNew) {
                     _setCssByBrandName(findBrandName)
                 } else {
                     _setCssByBrandName(findBrandName, 'deepskyblue')
@@ -1922,10 +1924,94 @@
             }
         })
 
+        /**
+         * 多选新人券
+         */
+        const getNewCoupon = () => {
+            const gp = [...$('.more-select:contains(品牌：) label.fuxuanku-lable')].map(function () {
+                
+                const brandName = getBrandNameByRegex($(this).attr('title'))
+                if (!all16_15CouponMp.has(brandName)) {
+                    // 优惠券实体
+                    return all16_15CouponMp.get(brandName).couponId
+                }
+            }).join('$')
+
+            $('#queryProductGradePlateId').val(gp)
+            // 多选品牌提交表单进行查询
+            $('#allProjectFrom').submit()
+        }
+        /**
+         * 多选非新人券
+         */
+        const getNotNewCoupon = () => {
+            const gp = [...$('.more-select:contains(品牌：) label.fuxuanku-lable')].map(function () {
+                
+                const brandName = getBrandNameByRegex($(this).attr('title'))
+                if (all16_15CouponMp.has(brandName)) {
+                    // 优惠券实体
+                    return all16_15CouponMp.get(brandName).couponId
+                }
+            }).join('$')
+
+            $('#queryProductGradePlateId').val(gp)
+            // 多选品牌提交表单进行查询
+            $('#allProjectFrom').submit()
+        }
+
         // 省略号去掉，方便查看
         $('.det-screen1 span').css({ 'display': 'unset' })
 
+        if ($('#_remind').length === 0) {
+            $('.det-screen:contains("品牌：")').append(`
+            <div id='_remind'>
+                <span class='row_center get_new_coupon'><p class='new_'></p>新人券</span>
+                <span class='row_center get_notnew_coupon'><p class='not_new_'></p>非新人券</span>
+            </div>
+            
+            <style>
+            #_remind {
+                display: inline-block;
+                position: absolute;
+                top: 0px;
+                right: 100px;
+                width: 100px;
+            }
+            .row_center {
+                display: inline-flex;
+                align-items: center;
+            }
+            .new_ {
+                background-color: aquamarine;
+                margin-right: 10px;
+                width: 20px;
+                height: 10px;
+            }
+            .not_new_ {
+                background-color: deepskyblue;
+                margin-right: 10px;
+                width: 20px;
+                height: 10px;
+            }
+            .get_new_coupon,
+            .get_notnew_coupon {
+                cursor: pointer;
+            }
+
+            .get_new_coupon:hover,
+            .get_notnew_coupon:hover {
+                background: #e1e1e1;
+            }
+            </style>
+            `)
+        }
+
         $('.screen-more .more-brand').on('click', searchStart)
+
+        // 多选新人券
+        $('.get_new_coupon').on('click', getNewCoupon)
+        // 多选非新人券
+        $('.get_notnew_coupon').on('click', getNotNewCoupon)
     }
 
     // 搜索页
