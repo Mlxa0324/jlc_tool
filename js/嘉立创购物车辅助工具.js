@@ -1861,7 +1861,7 @@
     }
 
     /**
-     * 重置小窗口的高度f5
+     * 重置小窗口的高度
      * 
      */
     const resizeHeight = () => {
@@ -1872,12 +1872,6 @@
             $('.bd').height('auto')
         }
     }
-
-
-
-
-
-    location.href.includes('https://so.szlcsc.com/global.html')
 
     /**
      * 购物车页面
