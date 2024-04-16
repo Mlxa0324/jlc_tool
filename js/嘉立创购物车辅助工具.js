@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.2
+// @version      1.7.3
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -19,171 +19,279 @@
 // @updateURL https://update.greasyfork.org/scripts/491619/%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.meta.js
 // ==/UserScript==
 
-(async function() {
-        'use strict';
+(async function () {
+    'use strict';
 
-        // 引入message的css文件并加入html中
-        const css = GM_getResourceText("customCSS")
-        GM_addStyle(css)
+    // 引入message的css文件并加入html中
+    const css = GM_getResourceText("customCSS")
+    GM_addStyle(css)
 
-        /**
-         * rgb颜色随机
-         * @returns
-         */
-        const rgb = () => {
-            var r = Math.floor(Math.random() * 256)
-            var g = Math.floor(Math.random() * 256)
-            var b = Math.floor(Math.random() * 256)
-            var rgb = 'rgb(' + r + ',' + g + ',' + b + ')';
-            return rgb;
+    /**
+     * rgb颜色随机
+     * @returns
+     */
+    const rgb = () => {
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
+        var rgb = 'rgb(' + r + ',' + g + ',' + b + ')';
+        return rgb;
+    }
+
+    /**
+     * rgba颜色随机
+     * @param {*} a
+     * @returns
+     */
+    const rgba = (a = 1) => {
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
+        var rgb = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+        return rgb;
+    }
+
+    /**
+     * 十六进制颜色随机
+     * @returns
+     */
+    const color16 = () => {
+        var r = Math.floor(Math.random() * 256)
+        var g = Math.floor(Math.random() * 256)
+        var b = Math.floor(Math.random() * 256)
+        var color = '#' + r.toString(16) + g.toString(16) + b.toString(16)
+        return color;
+    }
+
+    /**
+     * 正则获取品牌名称，需要传入xxxx(品牌名称) 这样的字符
+     * @param {*} text
+     * @returns
+     */
+    const getBrandNameByRegex = (text) => {
+        let res = text
+        try {
+            res = /\(.+\)/g.exec(text)[0].replace(/\((.*?)\)/, '$1')
+        } catch (e) {
+
         }
+        return res
+    }
 
-        /**
-         * rgba颜色随机
-         * @param {*} a
-         * @returns
-         */
-        const rgba = (a = 1) => {
-            var r = Math.floor(Math.random() * 256)
-            var g = Math.floor(Math.random() * 256)
-            var b = Math.floor(Math.random() * 256)
-            var rgb = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
-            return rgb;
-        }
-
-        /**
-         * 十六进制颜色随机
-         * @returns
-         */
-        const color16 = () => {
-            var r = Math.floor(Math.random() * 256)
-            var g = Math.floor(Math.random() * 256)
-            var b = Math.floor(Math.random() * 256)
-            var color = '#' + r.toString(16) + g.toString(16) + b.toString(16)
-            return color;
-        }
-
-        /**
-         * 正则获取品牌名称，需要传入xxxx(品牌名称) 这样的字符
-         * @param {*} text
-         * @returns
-         */
-        const getBrandNameByRegex = (text) => {
-            let res = text
-            try {
-                res = /\(.+\)/g.exec(text)[0].replace(/\((.*?)\)/, '$1')
-            } catch (e) {
-
-            }
-            return res
-        }
-
-        /**
-         * 获取本地缓存
-         * @param {*} key
-         */
-        const getLocalData = (k) => {
-            return localStorage.getItem(k)
-        }
-
-        /**
-         * 设置本地缓存
-         * @param {*} key
-         */
-        const setLocalData = (k, v) => {
-            localStorage.setItem(k, v)
-        }
-
-
-        // 后续支持强排序按钮
-
-        // 商品清单集合暂存
-        const dataCartMp = new Map()
-            // 品牌对应颜色，用于快速查找位置。
-        const dataBrandColorMp = new Map()
-            // 优惠券页面，数据暂存。只保存16-15的优惠券
-        const all16_15CouponMp = new Map()
-            // 自动领券的定时器
-        let couponTimer = null
-
-        // 消息弹框全局参数配置
-        Qmsg.config({
-            showClose: true,
-            timeout: 2800,
-            maxNums: 50
+    /**
+     * 等待
+     * @param {*} timeout 
+     * @returns 
+     */
+    const setAwait = (timeout) => {
+        return new Promise((resolve, reject) => {
+            setTimeout(resolve, timeout);
         })
+    }
 
-        /**
-         * 根据value排序Map
-         * @param {*} map
-         * @returns
-         */
-        const sortMapByValue = (map) => {
-            var arrayObj = Array.from(map)
-                //按照value值降序排序
-            arrayObj.sort(function(a, b) { return a[1] - b[1] })
-            return arrayObj
-        }
+    /**
+     * 获取本地缓存
+     * @param {*} key
+     */
+    const getLocalData = (k) => {
+        return localStorage.getItem(k)
+    }
+
+    /**
+     * 设置本地缓存
+     * @param {*} key
+     */
+    const setLocalData = (k, v) => {
+        localStorage.setItem(k, v)
+    }
 
 
-        /**
-         * GET请求封装
-         * @param {} data
-         */
-        const getAjax = (url) => {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    url,
-                    method: 'GET',
-                    onload: (r) => {
-                        resolve(r.response)
-                    },
-                    onerror: (err) => {
-                        reject(err)
-                    }
-                })
+    // 后续支持强排序按钮
+
+    // 商品清单集合暂存
+    const dataCartMp = new Map()
+    // 品牌对应颜色，用于快速查找位置。
+    const dataBrandColorMp = new Map()
+    // 优惠券页面，数据暂存。只保存16-15的优惠券
+    const all16_15CouponMp = new Map()
+    // 自动领券的定时器
+    let couponTimer = null
+
+    // 消息弹框全局参数配置
+    Qmsg.config({
+        showClose: true,
+        timeout: 2800,
+        maxNums: 50
+    })
+
+    /**
+     * 根据value排序Map
+     * @param {*} map
+     * @returns
+     */
+    const sortMapByValue = (map) => {
+        var arrayObj = Array.from(map)
+        //按照value值降序排序
+        arrayObj.sort(function (a, b) { return a[1] - b[1] })
+        return arrayObj
+    }
+
+
+    /**
+     * GET请求封装
+     * @param {} data
+     */
+    const getAjax = (url) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                method: 'GET',
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => {
+                    reject(err)
+                }
             })
-        }
+        })
+    }
 
-        /**
-         * POST请求封装
-         * @param {} data
-         */
-        const postAjaxJSON = (url, data) => {
-            return new Promise((resolve, reject) => {
-                GM_xmlhttpRequest({
-                    url,
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    data,
-                    onload: (r) => {
-                        resolve(r.response)
-                    },
-                    onerror: (err) => {
-                        reject(err)
-                    }
-                })
+    /**
+     * POST请求封装
+     * @param {} data
+     */
+    const postAjaxJSON = (url, data) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                data,
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => {
+                    reject(err)
+                }
             })
-        }
+        })
+    }
 
-        function jsonToUrlParam(json, ignoreFields = '') {
-            return Object.keys(json)
-                .filter(key => ignoreFields.indexOf(key) === -1)
-                .map(key => key + '=' + json[key]).join('&');
-        }
+    function jsonToUrlParam(json, ignoreFields = '') {
+        return Object.keys(json)
+            .filter(key => ignoreFields.indexOf(key) === -1)
+            .map(key => key + '=' + json[key]).join('&');
+    }
+
+    /**
+     * POST请求封装
+     * @param {} data
+     */
+    const postFormAjax = (url, jsonData) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                url,
+                data: jsonToUrlParam(jsonData),
+                method: 'POST',
+                headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
+                onload: (r) => {
+                    resolve(r.response)
+                },
+                onerror: (err) => { reject(err) }
+            })
+        })
+    }
+
+    /**
+     * 订购数量发生变化的时候
+     */
+    const onChangeCountHandler = () => {
+        // 订购数量
+        $('.product-item .cart-li input.input').on('change', () => {
+            setTimeout(refresh, 1000);
+        })
+        // 加减数量
+        $('.decrease,.increase').on('click', () => {
+            setTimeout(refresh, 1000);
+        })
+    }
+
+    /**
+     * 换仓按钮事件
+     * 一键换仓专用
+     * 
+      换仓逻辑
+        https://cart.szlcsc.com/cart/warehouse/deliverynum/update
+
+         cartKey规则：
+        标签id product-item-186525218
+        商品的跳转地址（商品id）20430799
+
+        cartKey: 186525218~0~20430799~RMB~CN
+        gdDeliveryNum: 0
+        jsDeliveryNum: 1
+     */
+    const onClickChangeDepotBtnHandler = () => {
 
         /**
-         * POST请求封装
-         * @param {} data
+         * 
+         * @param {*} this 标签
+         * @param {*} warehouseType 仓库类型    GUANG_DONG：广东，JIANG_SU
+         * @returns 
          */
-        const postFormAjax = (url, jsonData) => {
+
+        // 换仓封装
+        const _changeDepot = (that, warehouseType) => {
+
             return new Promise((resolve, reject) => {
+
+                // 是否锁定样品
+                let isLocked = (that.find('.warehouse-wrap .warehouse:contains(广东仓)').length +
+                    that.find('.warehouse-wrap .warehouse:contains(江苏仓)').length) == 0
+
+                // 查找商品的属性
+                let infoElement = that.find('.cart-li:eq(1) a')
+
+                if (isLocked === true) {
+                    Qmsg.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
+                    console.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
+                    return
+                }
+
+                // 订购数量
+                let count = that.find('.cart-li:eq(-4) input').val()
+
+                // 物料ID1
+                let productId1 = /\d+/g.exec(that.attr('id'))[0]
+
+                // 物料ID2
+                let productId2 = /\d+/g.exec(infoElement.attr('href'))[0]
+
+                // 取最低起订量
+                let sinpleCount = /\d+/g.exec(that.find('.price-area:eq(0)').text())[0]
+
+                // 订购套数
+                let batchCount = count / sinpleCount
+
+                // 修改库存的参数体
+                let params = ''
+
+                // 当前是广东仓
+                if (warehouseType == 'GUANG_DONG') {
+                    params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${batchCount}&jsDeliveryNum=${0}`
+                }
+                // 其他情况当成是江苏仓
+                else if (warehouseType == 'JIANG_SU') {
+                    params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${0}&jsDeliveryNum=${batchCount}`
+                }
+
                 GM_xmlhttpRequest({
-                    url,
-                    data: jsonToUrlParam(jsonData),
+                    url: `${webSiteShareData.lcscCartUrl}/cart/warehouse/deliverynum/update`,
+                    data: params,
                     method: 'POST',
                     headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
                     onload: (r) => {
+                        console.log(r.response)
                         resolve(r.response)
                     },
                     onerror: (err) => { reject(err) }
@@ -191,467 +299,370 @@
             })
         }
 
+
         /**
-         * 订购数量发生变化的时候
+         * 动态刷新页面，不强制刷新
+         * ！！！暂时不能用，需要考虑订货商品还是现货
          */
-        const onChangeCountHandler = () => {
-            // 订购数量
-            $('.product-item .cart-li input.input').on('change', () => {
-                    setTimeout(refresh, 1000);
+        // const _reload = async () => {
+
+        //     // 购物车URL
+        //     const cartDataUrl = `${webSiteShareData.lcscCartUrl}/cart/display?isInit=false&isOrderBack=${window.isOrderBack}&${Date.now()}`
+        //     const res = await getAjax(cartDataUrl)
+        //     const resObj = JSON.parse(res)
+
+        //     // 合并订货和现货商品
+        //     const newArr = [...resObj.result.shoppingCartVO.rmbCnShoppingCart.currentlyProductList,
+        //     ...resObj.result.shoppingCartVO.rmbCnShoppingCart.isNeedProductList]
+
+        //     // 遍历物料编号
+        //     newArr.forEach(function (item) {
+
+        //         const {
+        //             jsDeliveryNum, // 江苏的订货量 
+        //             gdDeliveryNum, // 广东的订货量 
+        //             productCode,   // 物料编码
+        //             isChecked,     // 是否选中
+        //             jsValidStockNumber, // 江苏剩余库存
+        //             szValidStockNumber, // 广东剩余库存
+        //             jsDivideSplitDeliveryNum, // 江苏起订量的倍数
+        //             gdDivideSplitDeliveryNum,  // 广东起订量的倍数
+        //             shopCarMapKey              // 购物车主键
+        //         } = item
+
+        //         // 查找到这个物料编号所在的行
+        //         const ele = getAllLineInfoByBrandName(productCode)
+
+        //         // 计算出仓库名
+        //         const depotName = jsDeliveryNum > 0 ? '江苏仓' : (gdDeliveryNum > 0 ? '广东仓' : '')
+
+        //         const depotEle = ele.find('.warehouse-wrap .warehouse')
+
+        //         const newDepotName = (depotEle.html() || '').replace('江苏仓', depotName).replace('广东仓', depotName)
+
+        //         // 重新设置仓库名称
+        //         depotEle.html(newDepotName)
+
+        //     })
+        // }
+
+        // 换仓-江苏
+        $('.change-depot-btn-left').on('click', function () {
+
+            let count = 0;
+            const eles = getAllCheckedLineInfo()
+            eles.each(async function () {
+                count++
+                await _changeDepot($(this), 'JIANG_SU').then(res => {
+                    Qmsg.success('切换【江苏仓】成功！')
                 })
-                // 加减数量
-            $('.decrease,.increase').on('click', () => {
-                setTimeout(refresh, 1000);
+
+                if (eles.length === count) {
+                    //  setTimeout(_reload, 500);
+                    setTimeout(function () {
+                        location.reload()
+                        // 官方刷新购物车
+                        // cartModuleLoadCartList()
+                    }, 2500);
+                }
+            })
+        })
+
+        // 换仓-广东
+        $('.change-depot-btn-right').on('click', function () {
+
+            let count = 0;
+            const eles = getAllCheckedLineInfo()
+            eles.each(async function () {
+                count++
+                await _changeDepot($(this), 'GUANG_DONG').then(res => {
+                    Qmsg.success('切换【广东仓】成功！')
+                })
+
+                if (eles.length === count) {
+                    //  setTimeout(_reload, 500);
+                    setTimeout(function () {
+                        location.reload()
+                        // 官方刷新购物车
+                        // cartModuleLoadCartList()
+                    }, 2500);
+                }
+            })
+        })
+    }
+
+    /**
+     * 选中仓库事件
+     * 一键选仓专用
+     * 废弃：由于模拟点击，会导致小窗口频繁刷新，影响性能。下面重新换接口
+     */
+    const _checkDepotBtnHandler = () => {
+
+        const _clickFunc = (depotName, fn) => {
+            const eles = fn()
+
+            // 先看看有没有指定仓
+            const jsIsEmpty = getJsLineInfo().length === 0
+            const gdIsEmpty = getGdLineInfo().length === 0
+
+            if (depotName === 'JIANG_SU' && jsIsEmpty) {
+                Qmsg.error('购物车中并没有【江苏仓】的商品！')
+                return
+
+            } else if (depotName === 'GUANG_DONG' && gdIsEmpty) {
+                Qmsg.error('购物车中并没有【广东仓】的商品！')
+                return
+            }
+
+            // 是否有至少一个选中的
+            const isHave = eles.parents('.product-item').find('input.check-box:checked').length > 0
+
+            if (isHave) {
+                eles.each(function () {
+                    $(this).parents('.product-item').find('input.check-box:checked').click()
+                })
+            }
+            // 都未选中，则执行仓库全选操作
+            else {
+                eles.each(function () {
+                    $(this).parents('.product-item').find('input.check-box').click()
+                })
+            }
+        }
+
+        // 江苏仓
+        $(".check-js-btn-left").on('click', function () {
+            _clickFunc('JIANG_SU', getJsLineInfo)
+        })
+
+        // 广东仓
+        $(".check-gd-btn-right").on('click', function () {
+            _clickFunc('GUANG_DONG', getGdLineInfo)
+        })
+    }
+
+
+    /**
+     * 选中仓库事件
+     * 一键选仓专用
+     */
+    const checkDepotBtnHandlerNew = () => {
+
+        const _clickFunc = (depotName) => {
+            // 广东仓选中
+            const gdCheckedEles = getGdLineInfo()
+            // 江苏仓选中
+            const jsCheckedEles = getJsLineInfo()
+
+            // 先看看有没有指定仓
+            const jsIsEmpty = jsCheckedEles.length === 0
+            const gdIsEmpty = gdCheckedEles.length === 0
+
+            let isJs = depotName === 'JIANG_SU'
+            let isGd = depotName === 'GUANG_DONG'
+
+            if (isJs && jsIsEmpty) {
+                Qmsg.error('购物车中并没有【江苏仓】的商品！')
+                return
+
+            } else if (isGd && gdIsEmpty) {
+                Qmsg.error('购物车中并没有【广东仓】的商品！')
+                return
+            }
+
+            // 这里只需要操作多选框的选中状态就行
+            if (isJs) {
+                const jsInputCheckBox = jsCheckedEles.parents('.product-item').find('input.check-box')
+                const jsInputCheckBoxCK = jsInputCheckBox.parents('.product-item').find('input.check-box:checked')
+                const isHave = jsInputCheckBoxCK.length > 0
+                jsInputCheckBox.prop('checked', !isHave)
+
+            } else if (isGd) {
+                const gdInputCheckBox = gdCheckedEles.parents('.product-item').find('input.check-box')
+                const gdInputCheckBoxCK = gdInputCheckBox.parents('.product-item').find('input.check-box:checked')
+                const isHave = gdInputCheckBoxCK.length > 0
+                gdInputCheckBox.prop('checked', !isHave)
+            }
+
+            cartUpdateChecked().then(res => {
+                if (res === 'true') {
+                    cartModuleLoadCartList()
+                    setTimeout(refresh(), 1000);
+                }
             })
         }
 
-        /**
-         * 换仓按钮事件
-         * 一键换仓专用
-         * 
-          换仓逻辑
-            https://cart.szlcsc.com/cart/warehouse/deliverynum/update
+        // 江苏仓
+        $(".check-js-btn-left").on('click', function () {
+            _clickFunc('JIANG_SU')
+        })
 
-             cartKey规则：
-            标签id product-item-186525218
-            商品的跳转地址（商品id）20430799
+        // 广东仓
+        $(".check-gd-btn-right").on('click', function () {
+            _clickFunc('GUANG_DONG')
+        })
+    }
 
-            cartKey: 186525218~0~20430799~RMB~CN
-            gdDeliveryNum: 0
-            jsDeliveryNum: 1
-         */
-        const onClickChangeDepotBtnHandler = () => {
 
-            /**
-             * 
-             * @param {*} this 标签
-             * @param {*} warehouseType 仓库类型    GUANG_DONG：广东，JIANG_SU
-             * @returns 
-             */
+    /**
+     * 自动领取优惠券的定时器
+     */
+    const autoGetCouponTimerHandler = () => {
 
-            // 换仓封装
-            const _changeDepot = (that, warehouseType) => {
+        $('.auto-get-coupon').off('change')
 
-                return new Promise((resolve, reject) => {
+        couponTimer = null
 
-                    // 是否锁定样品
-                    let isLocked = (that.find('.warehouse-wrap .warehouse:contains(广东仓)').length +
-                        that.find('.warehouse-wrap .warehouse:contains(江苏仓)').length) == 0
+        // 自动领取优惠券开关
+        $('.auto-get-coupon').on('change', function () {
+            const isChecked = $(this).is(':checked')
+            setLocalData('AUTO_GET_COUPON_BOOL', isChecked)
 
-                    // 查找商品的属性
-                    let infoElement = that.find('.cart-li:eq(1) a')
+            autoGetCouponTimerHandler()
+        })
 
-                    if (isLocked === true) {
-                        Qmsg.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
-                        console.error(`物料编号：${infoElement.text()}，处于锁定样品状态，无法换仓`)
+        couponTimer = setInterval(() => {
+            const isChecked = $('.auto-get-coupon').is(':checked')
+            if (isChecked) {
+                dataCartMp.keys().forEach(item => {
+
+                    // 查找优惠券
+                    const $couponEle = $(`.couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
+
+                    if ($couponEle.length === 0) {
                         return
                     }
 
-                    // 订购数量
-                    let count = that.find('.cart-li:eq(-4) input').val()
+                    //优惠券ID
+                    const couponId = $couponEle.data('id')
 
-                    // 物料ID1
-                    let productId1 = /\d+/g.exec(that.attr('id'))[0]
+                    // 优惠券名称
+                    const couponName = $couponEle.data('name')
 
-                    // 物料ID2
-                    let productId2 = /\d+/g.exec(infoElement.attr('href'))[0]
-
-                    // 取最低起订量
-                    let sinpleCount = /\d+/g.exec(that.find('.price-area:eq(0)').text())[0]
-
-                    // 订购套数
-                    let batchCount = count / sinpleCount
-
-                    // 修改库存的参数体
-                    let params = ''
-
-                    // 当前是广东仓
-                    if (warehouseType == 'GUANG_DONG') {
-                        params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${batchCount}&jsDeliveryNum=${0}`
-                    }
-                    // 其他情况当成是江苏仓
-                    else if (warehouseType == 'JIANG_SU') {
-                        params = `cartKey=${productId1}~0~${productId2}~RMB~CN&gdDeliveryNum=${0}&jsDeliveryNum=${batchCount}`
-                    }
-
-                    GM_xmlhttpRequest({
-                        url: `${webSiteShareData.lcscCartUrl}/cart/warehouse/deliverynum/update`,
-                        data: params,
-                        method: 'POST',
-                        headers: { 'Content-type': 'application/x-www-form-urlencoded; charset=UTF-8' },
-                        onload: (r) => {
-                            console.log(r.response)
-                            resolve(r.response)
-                        },
-                        onerror: (err) => { reject(err) }
-                    })
-                })
-            }
-
-
-            /**
-             * 动态刷新页面，不强制刷新
-             * ！！！暂时不能用，需要考虑订货商品还是现货
-             */
-            // const _reload = async () => {
-
-            //     // 购物车URL
-            //     const cartDataUrl = `${webSiteShareData.lcscCartUrl}/cart/display?isInit=false&isOrderBack=${window.isOrderBack}&${Date.now()}`
-            //     const res = await getAjax(cartDataUrl)
-            //     const resObj = JSON.parse(res)
-
-            //     // 合并订货和现货商品
-            //     const newArr = [...resObj.result.shoppingCartVO.rmbCnShoppingCart.currentlyProductList,
-            //     ...resObj.result.shoppingCartVO.rmbCnShoppingCart.isNeedProductList]
-
-            //     // 遍历物料编号
-            //     newArr.forEach(function (item) {
-
-            //         const {
-            //             jsDeliveryNum, // 江苏的订货量 
-            //             gdDeliveryNum, // 广东的订货量 
-            //             productCode,   // 物料编码
-            //             isChecked,     // 是否选中
-            //             jsValidStockNumber, // 江苏剩余库存
-            //             szValidStockNumber, // 广东剩余库存
-            //             jsDivideSplitDeliveryNum, // 江苏起订量的倍数
-            //             gdDivideSplitDeliveryNum,  // 广东起订量的倍数
-            //             shopCarMapKey              // 购物车主键
-            //         } = item
-
-            //         // 查找到这个物料编号所在的行
-            //         const ele = getAllLineInfoByBrandName(productCode)
-
-            //         // 计算出仓库名
-            //         const depotName = jsDeliveryNum > 0 ? '江苏仓' : (gdDeliveryNum > 0 ? '广东仓' : '')
-
-            //         const depotEle = ele.find('.warehouse-wrap .warehouse')
-
-            //         const newDepotName = (depotEle.html() || '').replace('江苏仓', depotName).replace('广东仓', depotName)
-
-            //         // 重新设置仓库名称
-            //         depotEle.html(newDepotName)
-
-            //     })
-            // }
-
-            // 换仓-江苏
-            $('.change-depot-btn-left').on('click', function() {
-
-                let count = 0;
-                const eles = getAllCheckedLineInfo()
-                eles.each(async function() {
-                    count++
-                    await _changeDepot($(this), 'JIANG_SU').then(res => {
-                        Qmsg.success('切换【江苏仓】成功！')
-                    })
-
-                    if (eles.length === count) {
-                        //  setTimeout(_reload, 500);
-                        setTimeout(function() {
-                            location.reload()
-                                // 官方刷新购物车
-                                // cartModuleLoadCartList()
-                        }, 2500);
-                    }
-                })
-            })
-
-            // 换仓-广东
-            $('.change-depot-btn-right').on('click', function() {
-
-                let count = 0;
-                const eles = getAllCheckedLineInfo()
-                eles.each(async function() {
-                    count++
-                    await _changeDepot($(this), 'GUANG_DONG').then(res => {
-                        Qmsg.success('切换【广东仓】成功！')
-                    })
-
-                    if (eles.length === count) {
-                        //  setTimeout(_reload, 500);
-                        setTimeout(function() {
-                            location.reload()
-                                // 官方刷新购物车
-                                // cartModuleLoadCartList()
-                        }, 2500);
-                    }
-                })
-            })
-        }
-
-        /**
-         * 选中仓库事件
-         * 一键选仓专用
-         * 废弃：由于模拟点击，会导致小窗口频繁刷新，影响性能。下面重新换接口
-         */
-        const _checkDepotBtnHandler = () => {
-
-            const _clickFunc = (depotName, fn) => {
-                const eles = fn()
-
-                // 先看看有没有指定仓
-                const jsIsEmpty = getJsLineInfo().length === 0
-                const gdIsEmpty = getGdLineInfo().length === 0
-
-                if (depotName === 'JIANG_SU' && jsIsEmpty) {
-                    Qmsg.error('购物车中并没有【江苏仓】的商品！')
-                    return
-
-                } else if (depotName === 'GUANG_DONG' && gdIsEmpty) {
-                    Qmsg.error('购物车中并没有【广东仓】的商品！')
-                    return
-                }
-
-                // 是否有至少一个选中的
-                const isHave = eles.parents('.product-item').find('input.check-box:checked').length > 0
-
-                if (isHave) {
-                    eles.each(function() {
-                        $(this).parents('.product-item').find('input.check-box:checked').click()
-                    })
-                }
-                // 都未选中，则执行仓库全选操作
-                else {
-                    eles.each(function() {
-                        $(this).parents('.product-item').find('input.check-box').click()
-                    })
-                }
-            }
-
-            // 江苏仓
-            $(".check-js-btn-left").on('click', function() {
-                _clickFunc('JIANG_SU', getJsLineInfo)
-            })
-
-            // 广东仓
-            $(".check-gd-btn-right").on('click', function() {
-                _clickFunc('GUANG_DONG', getGdLineInfo)
-            })
-        }
-
-
-        /**
-         * 选中仓库事件
-         * 一键选仓专用
-         */
-        const checkDepotBtnHandlerNew = () => {
-
-            const _clickFunc = (depotName) => {
-                // 广东仓选中
-                const gdCheckedEles = getGdLineInfo()
-                    // 江苏仓选中
-                const jsCheckedEles = getJsLineInfo()
-
-                // 先看看有没有指定仓
-                const jsIsEmpty = jsCheckedEles.length === 0
-                const gdIsEmpty = gdCheckedEles.length === 0
-
-                let isJs = depotName === 'JIANG_SU'
-                let isGd = depotName === 'GUANG_DONG'
-
-                if (isJs && jsIsEmpty) {
-                    Qmsg.error('购物车中并没有【江苏仓】的商品！')
-                    return
-
-                } else if (isGd && gdIsEmpty) {
-                    Qmsg.error('购物车中并没有【广东仓】的商品！')
-                    return
-                }
-
-                // 这里只需要操作多选框的选中状态就行
-                if (isJs) {
-                    const jsInputCheckBox = jsCheckedEles.parents('.product-item').find('input.check-box')
-                    const jsInputCheckBoxCK = jsInputCheckBox.parents('.product-item').find('input.check-box:checked')
-                    const isHave = jsInputCheckBoxCK.length > 0
-                    jsInputCheckBox.prop('checked', !isHave)
-
-                } else if (isGd) {
-                    const gdInputCheckBox = gdCheckedEles.parents('.product-item').find('input.check-box')
-                    const gdInputCheckBoxCK = gdInputCheckBox.parents('.product-item').find('input.check-box:checked')
-                    const isHave = gdInputCheckBoxCK.length > 0
-                    gdInputCheckBox.prop('checked', !isHave)
-                }
-
-                cartUpdateChecked().then(res => {
-                    if (res === 'true') {
-                        cartModuleLoadCartList()
-                        setTimeout(refresh(), 1000);
-                    }
-                })
-            }
-
-            // 江苏仓
-            $(".check-js-btn-left").on('click', function() {
-                _clickFunc('JIANG_SU')
-            })
-
-            // 广东仓
-            $(".check-gd-btn-right").on('click', function() {
-                _clickFunc('GUANG_DONG')
-            })
-        }
-
-
-        /**
-         * 自动领取优惠券的定时器
-         */
-        const autoGetCouponTimerHandler = () => {
-
-            $('.auto-get-coupon').off('change')
-
-            couponTimer = null
-
-            // 自动领取优惠券开关
-            $('.auto-get-coupon').on('change', function() {
-                const isChecked = $(this).is(':checked')
-                setLocalData('AUTO_GET_COUPON_BOOL', isChecked)
-
-                autoGetCouponTimerHandler()
-            })
-
-            couponTimer = setInterval(() => {
-                const isChecked = $('.auto-get-coupon').is(':checked')
-                if (isChecked) {
-                    dataCartMp.keys().forEach(item => {
-
-                        // 查找优惠券
-                        const $couponEle = $(`.couponModal .coupon-item:contains(${item}):contains(立即抢券) div[data-id]`)
-
-                        if ($couponEle.length === 0) {
-                            return
-                        }
-
-                        //优惠券ID
-                        const couponId = $couponEle.data('id')
-
-                        // 优惠券名称
-                        const couponName = $couponEle.data('name')
-
-                        getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
-                            res = JSON.parse(res)
-                            if (res.code === 200 && res.msg === '') {
-                                Qmsg.success({
-                                    msg: `${couponName} 优惠券领取成功`,
-                                    timeout: 8000
-                                })
-                            }
-                        })
-                    })
-                } else {
-                    clearInterval(couponTimer)
-                    couponTimer = null
-                }
-            }, 5000);
-        }
-
-        /**
-         * 一键分享 已经勾选的列表
-         */
-        const shareHandler = () => {
-            // 产出数据并放在剪贴板中
-            const _makeDataAndSetClipboard = () => {
-                const $checkedEles = getAllCheckedLineInfo()
-
-                if ($checkedEles.length === 0) {
-                    Qmsg.error('购物车未勾选任何商品！')
-                    return
-                }
-
-                // 获取所有已经勾选的商品，也包含订货商品
-                const shareText = [...$checkedEles].map(function(item) {
-                    const $this = $(item)
-                        // 是否是江苏仓，如果是多个仓的话，只取一个
-                    const isJsDepot = $this.find('.warehouse-wrap .warehouse').text().includes('江苏仓')
-                        // 该商品订购的总量
-                    const count = $this.find('.cart-li:eq(4) input').val()
-
-                    return $this.find('.cart-li:eq(1) a').text().trim() + '_' + (isJsDepot ? 'JS_' : 'GD_') + count
-                }).join('~')
-
-                // navigator.clipboard.writeText(shareText)
-                GM_setClipboard(shareText, "text", () => Qmsg.success('购物车一键分享的内容，已设置到剪贴板中！'))
-            }
-
-            $('.share_').click(_makeDataAndSetClipboard)
-        }
-
-
-        /**
-         * 一键解析
-         */
-        const shareParseHandler = () => {
-            let _loading = null
-                // 定义匿名函数
-            const _shareParse = async() => {
-                // 富文本框内容
-                const text = $('.textarea').val().trim()
-
-                if (text.length === 0) {
-                    Qmsg.error('解析失败，富文本内容为空！')
-                    return
-                }
-
-                _loading = Qmsg.loading("正在解析中...请耐心等待！")
-
-                // 成功条数计数
-                let parseTaskSuccessCount = 0
-                    // 失败条数计数
-                let parseTaskErrorCount = 0
-                    // 总条数
-                let parseTaskTotalCount = 0
-                    // 首次处理出来的数组
-                const firstparseArr = text.split('~')
-
-                parseTaskTotalCount = firstparseArr.length || 0
-
-                for (let item of firstparseArr) {
-                    // 二次处理出来的数组
-                    const secondParseArr = item.split('_')
-
-                    // 物料编号
-                    const productNo = secondParseArr[0].trim().replace('\n', '')
-                        // 仓库编码
-                    const depotCode = secondParseArr[1].trim().replace('\n', '')
-                        // 数量
-                    const count = secondParseArr[2].trim().replace('\n', '')
-
-                    if (productNo === undefined || count === undefined) {
-                        Qmsg.error('解析失败，文本解析异常！')
-                        _loading.close()
-                        return
-                    }
-
-                    // 添加购物车
-                    await postFormAjax(`${webSiteShareData.lcscCartUrl}/cart/quick`, { productCode: productNo, productNumber: count }).then(res => {
-
+                    getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
                         res = JSON.parse(res)
-                        if (res.code === 200) {
-                            Qmsg.info(`正在疯狂解析中... 共：${parseTaskTotalCount}条，成功：${++parseTaskSuccessCount}条，失败：${parseTaskErrorCount}条。`);
-                        } else {
-                            Qmsg.error(`正在疯狂解析中... 共：${parseTaskTotalCount}条，成功：${parseTaskSuccessCount}条，失败：${++parseTaskErrorCount}条。`);
+                        if (res.code === 200 && res.msg === '') {
+                            Qmsg.success({
+                                msg: `${couponName} 优惠券领取成功`,
+                                timeout: 8000
+                            })
                         }
                     })
-                }
+                })
+            } else {
+                clearInterval(couponTimer)
+                couponTimer = null
+            }
+        }, 5000);
+    }
 
-                Qmsg.success(`解析完成！共：${parseTaskTotalCount}条，成功：${parseTaskSuccessCount}条，失败：${parseTaskErrorCount}条。已自动加入购物车`)
+    /**
+     * 一键分享 已经勾选的列表
+     */
+    const shareHandler = () => {
+        // 产出数据并放在剪贴板中
+        const _makeDataAndSetClipboard = () => {
+            const $checkedEles = getAllCheckedLineInfo()
 
-                _loading.close()
-
-                // 刷新购物车页面
-                cartModuleLoadCartList()
-                setTimeout(allRefresh, 100);
+            if ($checkedEles.length === 0) {
+                Qmsg.error('购物车未勾选任何商品！')
+                return
             }
 
-            $('.share-parse').click(_shareParse)
+            // 获取所有已经勾选的商品，也包含订货商品
+            const shareText = [...$checkedEles].map(function (item) {
+                const $this = $(item)
+                // 是否是江苏仓，如果是多个仓的话，只取一个
+                const isJsDepot = $this.find('.warehouse-wrap .warehouse').text().includes('江苏仓')
+                // 该商品订购的总量
+                const count = $this.find('.cart-li:eq(4) input').val()
+
+                return $this.find('.cart-li:eq(1) a').text().trim() + '_' + (isJsDepot ? 'JS_' : 'GD_') + count
+            }).join('~')
+
+            // navigator.clipboard.writeText(shareText)
+            GM_setClipboard(shareText, "text", () => Qmsg.success('购物车一键分享的内容，已设置到剪贴板中！'))
         }
 
-        // 控制按钮的生成
-        const buttonListFactory = () => {
+        $('.share_').click(_makeDataAndSetClipboard)
+    }
 
-            let isBool = getAllCheckedLineInfo().length > 0
 
-            return `
+    /**
+     * 一键解析
+     */
+    const shareParseHandler = () => {
+        let _loading = null
+        // 定义匿名函数
+        const _shareParse = async () => {
+            // 富文本框内容
+            const text = $('.textarea').val().trim()
+
+            if (text.length === 0) {
+                Qmsg.error('解析失败，富文本内容为空！')
+                return
+            }
+
+            _loading = Qmsg.loading("正在解析中...请耐心等待！")
+
+            // 成功条数计数
+            let parseTaskSuccessCount = 0
+            // 失败条数计数
+            let parseTaskErrorCount = 0
+            // 总条数
+            let parseTaskTotalCount = 0
+            // 首次处理出来的数组
+            const firstparseArr = text.split('~')
+
+            parseTaskTotalCount = firstparseArr.length || 0
+
+            for (let item of firstparseArr) {
+                // 二次处理出来的数组
+                const secondParseArr = item.split('_')
+
+                // 物料编号
+                const productNo = secondParseArr[0].trim().replace('\n', '')
+                // 仓库编码
+                const depotCode = secondParseArr[1].trim().replace('\n', '')
+                // 数量
+                const count = secondParseArr[2].trim().replace('\n', '')
+
+                if (productNo === undefined || count === undefined) {
+                    Qmsg.error('解析失败，文本解析异常！')
+                    _loading.close()
+                    return
+                }
+
+                // 添加购物车
+                await postFormAjax(`${webSiteShareData.lcscCartUrl}/cart/quick`, { productCode: productNo, productNumber: count }).then(res => {
+
+                    res = JSON.parse(res)
+                    if (res.code === 200) {
+                        Qmsg.info(`正在疯狂解析中... 共：${parseTaskTotalCount}条，成功：${++parseTaskSuccessCount}条，失败：${parseTaskErrorCount}条。`);
+                    } else {
+                        Qmsg.error(`正在疯狂解析中... 共：${parseTaskTotalCount}条，成功：${parseTaskSuccessCount}条，失败：${++parseTaskErrorCount}条。`);
+                    }
+                })
+            }
+
+            Qmsg.success(`解析完成！共：${parseTaskTotalCount}条，成功：${parseTaskSuccessCount}条，失败：${parseTaskErrorCount}条。已自动加入购物车`)
+
+            _loading.close()
+
+            // 刷新购物车页面
+            cartModuleLoadCartList()
+            setTimeout(allRefresh, 100);
+        }
+
+        $('.share-parse').click(_shareParse)
+    }
+
+    // 控制按钮的生成
+    const buttonListFactory = () => {
+
+        let isBool = getAllCheckedLineInfo().length > 0
+
+        return `
             <div style="border: unset; position: relative; padding: 8px;">
             <div class='mb10 flex flex-sx-center'>
                 <label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label>
@@ -688,17 +699,17 @@
              ${lookCouponListBtnFactory()}
         </div>
         `
-        }
+    }
 
 
-        /**
-         * 显示隐藏 小窗的的按钮展示
-         */
-        const showOrHideButtonFactory = () => {
+    /**
+     * 显示隐藏 小窗的的按钮展示
+     */
+    const showOrHideButtonFactory = () => {
 
-            $('.hideBtn,.showBtn').remove()
+        $('.hideBtn,.showBtn').remove()
 
-            return `
+        return `
         <div class="hideBtn">
             收起助手 >
         </div>
@@ -706,161 +717,161 @@
             < 展开助手
         </div>
         `
-        }
+    }
 
-        /**
-         * 查询购物车中的品牌数量总和（多选框选中）
-         */
-        const brandCountFactory = () => {
-            return `
+    /**
+     * 查询购物车中的品牌数量总和（多选框选中）
+     */
+    const brandCountFactory = () => {
+        return `
         <p class='small-sign'>
             ${dataCartMp.size}
         </p>
         `
+    }
+
+    /**
+     * 计算总的金额
+     */
+    const totalMoneyFactory = () => {
+
+        let t = 0
+
+        if (dataCartMp.size > 0) {
+            t = [...dataCartMp.values()].reduce((total, num) => total + num).toFixed(2)
         }
 
-        /**
-         * 计算总的金额
-         */
-        const totalMoneyFactory = () => {
-
-            let t = 0
-
-            if (dataCartMp.size > 0) {
-                t = [...dataCartMp.values()].reduce((total, num) => total + num).toFixed(2)
-            }
-
-            return `
+        return `
         <p class='total-money_'>
             ${t}
         </p>
         `
-        }
+    }
 
-        /**
-         * 查询16-15优惠券列表
-         */
-        const lookCouponListBtnFactory = () => {
-            return `
+    /**
+     * 查询16-15优惠券列表
+     */
+    const lookCouponListBtnFactory = () => {
+        return `
             <p class='look-coupon-btn'>
             优惠券专区
             </p>
             `
-        }
+    }
 
-        /**
-         * 查看优惠券页面的扩展按钮，绑定事件
-         */
-        const lookCouponListExtendsBtnHandler = () => {
+    /**
+     * 查看优惠券页面的扩展按钮，绑定事件
+     */
+    const lookCouponListExtendsBtnHandler = () => {
 
-            // 查看已领取的优惠券
-            $('.filter-haved').click(function() {
-                $('.coupon-item:visible:not(:contains(立即使用))').hide()
-            })
+        // 查看已领取的优惠券
+        $('.filter-haved').click(function () {
+            $('.coupon-item:visible:not(:contains(立即使用))').hide()
+        })
 
-            // 过滤16-15的优惠券
-            $('.filter-16-15').click(function() {
-                $('.coupon-item:visible:not(:contains(满16可用))').hide()
-            })
+        // 过滤16-15的优惠券
+        $('.filter-16-15').click(function () {
+            $('.coupon-item:visible:not(:contains(满16可用))').hide()
+        })
 
-            // 过滤新人优惠券
-            $('.filter-newone').click(function() {
-                $('.coupon-item:visible:not(:contains(新人专享))').hide()
-            })
+        // 过滤新人优惠券
+        $('.filter-newone').click(function () {
+            $('.coupon-item:visible:not(:contains(新人专享))').hide()
+        })
 
-            // 过滤非新人优惠券
-            $('.filter-not-newone').click(function() {
-                $('.coupon-item:visible:contains(新人专享)').hide()
-            })
-
-
-            // 手动刷新优惠券页面
-            $('.refresh-coupon-page').click(function() {
-                setTimeout(() => {
-                    Qmsg.info(`1秒后刷新优惠券页面...`)
-                    setTimeout(lookCouponListModal, 500);
-                }, 500);
-
-            })
+        // 过滤非新人优惠券
+        $('.filter-not-newone').click(function () {
+            $('.coupon-item:visible:contains(新人专享)').hide()
+        })
 
 
+        // 手动刷新优惠券页面
+        $('.refresh-coupon-page').click(function () {
+            setTimeout(() => {
+                Qmsg.info(`1秒后刷新优惠券页面...`)
+                setTimeout(lookCouponListModal, 500);
+            }, 500);
 
-            // 一键领取当前显示的所有优惠券
-            $('.get-all').click(function() {
-                const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
+        })
 
-                let totalCount = 0,
-                    successCount = 0
-                $couponEles.each(function() {
 
-                    //优惠券ID
-                    const couponId = $(this).data('id')
 
-                    // 优惠券名称
-                    const couponName = $(this).data('name')
+        // 一键领取当前显示的所有优惠券
+        $('.get-all').click(function () {
+            const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
 
-                    getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
-                        res = JSON.parse(res)
-                        if (res.code === 200 && res.msg === '') {
-                            successCount++
-                            // console.log(`${couponName} 优惠券领取成功`)
-                        } else {
-                            // console.error(`${couponName} 优惠券领取失败，或者 已经没有可以领取的优惠券了！`)
-                        }
-                    })
+            let totalCount = 0,
+                successCount = 0
+            $couponEles.each(function () {
 
-                    totalCount++
+                //优惠券ID
+                const couponId = $(this).data('id')
+
+                // 优惠券名称
+                const couponName = $(this).data('name')
+
+                getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
+                    res = JSON.parse(res)
+                    if (res.code === 200 && res.msg === '') {
+                        successCount++
+                        // console.log(`${couponName} 优惠券领取成功`)
+                    } else {
+                        // console.error(`${couponName} 优惠券领取失败，或者 已经没有可以领取的优惠券了！`)
+                    }
                 })
 
-                if (successCount === 0) {
-                    Qmsg.error(`优惠券领取失败，或者已经没有可以领取的优惠券了！`)
-                } else if ($couponEles.length === totalCount) {
-                    Qmsg.success(`优惠券领取成功！成功：${successCount}条，失败：${totalCount - successCount}条。`)
-                    setTimeout(() => {
-                        Qmsg.info(`2秒后刷新优惠券页面...`)
-
-                        // 由于调用接口领取，所以需要重新渲染优惠券页面
-                        setTimeout(lookCouponListModal, 2000);
-                    }, 2000);
-                }
+                totalCount++
             })
 
-            // 过滤新人优惠券
-            $('.filter-clear').click(function() {
-                $('.coupon-item:hidden').show()
-            })
-        }
+            if (successCount === 0) {
+                Qmsg.error(`优惠券领取失败，或者已经没有可以领取的优惠券了！`)
+            } else if ($couponEles.length === totalCount) {
+                Qmsg.success(`优惠券领取成功！成功：${successCount}条，失败：${totalCount - successCount}条。`)
+                setTimeout(() => {
+                    Qmsg.info(`2秒后刷新优惠券页面...`)
 
-        /**
-         * 查看优惠券列表的按钮
-         */
-        const lookCouponListHandler = () => {
-            const _lookCouponClick = () => {
-                if ($('#couponModal').is(':hidden')) {
-                    $('#couponModal').show()
-                } else if ($('#couponModal').is(':visible')) {
-                    $('#couponModal').hide()
-                }
+                    // 由于调用接口领取，所以需要重新渲染优惠券页面
+                    setTimeout(lookCouponListModal, 2000);
+                }, 2000);
             }
-            $('.look-coupon-btn,.look-coupon-closebtn').click(_lookCouponClick)
+        })
+
+        // 过滤新人优惠券
+        $('.filter-clear').click(function () {
+            $('.coupon-item:hidden').show()
+        })
+    }
+
+    /**
+     * 查看优惠券列表的按钮
+     */
+    const lookCouponListHandler = () => {
+        const _lookCouponClick = () => {
+            if ($('#couponModal').is(':hidden')) {
+                $('#couponModal').show()
+            } else if ($('#couponModal').is(':visible')) {
+                $('#couponModal').hide()
+            }
         }
+        $('.look-coupon-btn,.look-coupon-closebtn').click(_lookCouponClick)
+    }
 
-        /**
-         * 优惠券模态框
-         */
-        const lookCouponListModal = async() => {
+    /**
+     * 优惠券模态框
+     */
+    const lookCouponListModal = async () => {
 
-            let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
+        let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
 
-            const $couponHTML = $(couponHTML)
+        const $couponHTML = $(couponHTML)
 
-            let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML
-            let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML
+        let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML
+        let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML
 
-            let $main_wraper = $couponHTML.find('.main_wraper')
-            let $navigation = $couponHTML.find('.navigation')
+        let $main_wraper = $couponHTML.find('.main_wraper')
+        let $navigation = $couponHTML.find('.navigation')
 
-            let ht = `
+        let ht = `
             <div class="all-coupon-page"></div>
                 <div class="common-alert-success-tip-tmpl common-confirm-del">
                 <div class="common-confirm-del-title">
@@ -878,54 +889,54 @@
                 <div class="mask">
             </div>`
 
-            const $couponEle = $('.couponModal')
-            $couponEle.empty()
-            $couponEle.append(ht).append($cssLink).append($jsLink)
+        const $couponEle = $('.couponModal')
+        $couponEle.empty()
+        $couponEle.append(ht).append($cssLink).append($jsLink)
 
-            $('.couponModal .all-coupon-page').append($main_wraper).append($navigation)
+        $('.couponModal .all-coupon-page').append($main_wraper).append($navigation)
 
-            couponGotoHandler()
-        }
-
-
-        /**
-         * 获取勾选框选中的物料编号集合，波浪线分割
-         */
-        const myGetCK = () => {
-            return [...getAllCheckedLineInfo().map(function() {
-                return $(this).attr('id').split('-')[2]
-            })].join('~')
-        }
+        couponGotoHandler()
+    }
 
 
-        /**
-         * 更新购物车勾选
-         */
-        const cartUpdateChecked = () => {
-            return new Promise((resolve, reject) => {
-                try {
-                    postFormAjax(`${webSiteShareData.lcscCartUrl}/page/home/cart/update/checked`, { ck: (myGetCK() || 'false') }).then(res => {
-                        res = JSON.parse(res)
-                        if (res.code === 200 && res.msg === null) {
-                            resolve('true')
-                        } else {
-                            resolve('true')
-                        }
-                    })
-                } catch (error) {
-                    console.error(error);
-                    reject('false')
-                }
-            })
-        }
+    /**
+     * 获取勾选框选中的物料编号集合，波浪线分割
+     */
+    const myGetCK = () => {
+        return [...getAllCheckedLineInfo().map(function () {
+            return $(this).attr('id').split('-')[2]
+        })].join('~')
+    }
 
-        /**
-         * 追加的html
-         * @returns
-         */
-        const htmlFactory = () => {
 
-                let tempHtml = `
+    /**
+     * 更新购物车勾选
+     */
+    const cartUpdateChecked = () => {
+        return new Promise((resolve, reject) => {
+            try {
+                postFormAjax(`${webSiteShareData.lcscCartUrl}/page/home/cart/update/checked`, { ck: (myGetCK() || 'false') }).then(res => {
+                    res = JSON.parse(res)
+                    if (res.code === 200 && res.msg === null) {
+                        resolve('true')
+                    } else {
+                        resolve('true')
+                    }
+                })
+            } catch (error) {
+                console.error(error);
+                reject('false')
+            }
+        })
+    }
+
+    /**
+     * 追加的html
+     * @returns
+     */
+    const htmlFactory = () => {
+
+        let tempHtml = `
         ${$('.couponModal').length === 0 ? `
         <div id="couponModal" style="display: none;">
             <div class="extend-btn-group_">
@@ -1890,77 +1901,115 @@
 
     /**
      * 搜索页
+     * @param {*} isNew 是否新人 true/false
+     * @param {*} type 单选多选 ONE/MORE
      */
     const searchStart = async () => {
 
         // 更新优惠券列表到集合中
         await getCouponHTML()
 
-        const eles = $(`#brandList div`)
         /**
-         * 设置背景颜色
+         * 设置单选的背景颜色
          */
-        const _setCssByBrandName = (brandName, bgColor = 'aquamarine') => {
+        const _setOneCssByBrandName = (brandName, bgColor = 'aquamarine') => {
             // 查找某个品牌
-            const searchBrandItemList = eles.find(`span:eq(0):contains(${brandName})`)
+            const searchBrandItemList = $(`#brandList div`).find(`span:eq(0):contains(${brandName})`)
             searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
         }
 
-        eles.find(`span:eq(0)`).each(function () {
-
-            const text = $(this).text().trim()
-
-            let findBrandName = text
-            if (text.includes('(')) {
-                findBrandName = getBrandNameByRegex(text)
-            }
-
-            if (all16_15CouponMp.has(findBrandName)) {
-                if (all16_15CouponMp.get(findBrandName).isNew) {
-                    _setCssByBrandName(findBrandName)
-                } else {
-                    _setCssByBrandName(findBrandName, 'deepskyblue')
-                }
-            }
-        })
-
-        /**
-         * 多选新人券
+           /**
+         * 设置多选的背景颜色
          */
-        const getNewCoupon = () => {
-            const gp = [...$('.more-select:contains(品牌：) label.fuxuanku-lable')].map(function () {
-                
-                const brandName = getBrandNameByRegex($(this).attr('title'))
-                if (!all16_15CouponMp.has(brandName)) {
-                    // 优惠券实体
-                    return all16_15CouponMp.get(brandName).couponId
-                }
-            }).join('$')
-
-            $('#queryProductGradePlateId').val(gp)
-            // 多选品牌提交表单进行查询
-            $('#allProjectFrom').submit()
-        }
-        /**
-         * 多选非新人券
-         */
-        const getNotNewCoupon = () => {
-            const gp = [...$('.more-select:contains(品牌：) label.fuxuanku-lable')].map(function () {
-                
-                const brandName = getBrandNameByRegex($(this).attr('title'))
-                if (all16_15CouponMp.has(brandName)) {
-                    // 优惠券实体
-                    return all16_15CouponMp.get(brandName).couponId
-                }
-            }).join('$')
-
-            $('#queryProductGradePlateId').val(gp)
-            // 多选品牌提交表单进行查询
-            $('#allProjectFrom').submit()
+           const _setMultiCssByBrandName = (brandName, bgColor = 'aquamarine') => {
+            // 查找某个品牌
+            const searchBrandItemList =  $(`.pick-txt.det-screen1 div`).find(`label:contains(${brandName})`)
+            searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
         }
 
-        // 省略号去掉，方便查看
-        $('.det-screen1 span').css({ 'display': 'unset' })
+        /**
+         * 筛选条件：单选品牌-颜色
+         */
+        const _renderFilterBrandColor = async () => {
+
+            await setAwait(1200)
+
+            $(`#brandList div`).find(`span:eq(0)`).each(function () {
+                const text = $(this).text().trim()
+
+                let findBrandName = text
+                if (text.includes('(')) {
+                    findBrandName = getBrandNameByRegex(text)
+                }
+
+                if (all16_15CouponMp.has(findBrandName)) {
+                    if (all16_15CouponMp.get(findBrandName).isNew) {
+                        _setOneCssByBrandName(findBrandName)
+                    } else {
+                        _setOneCssByBrandName(findBrandName, 'deepskyblue')
+                    }
+                }
+            })
+            // 省略号去掉，方便查看
+            $('.det-screen1 span').css({ 'display': 'unset' })
+        }
+
+         /**
+         * 筛选条件：单选品牌-颜色
+         */
+         const _renderMulitFilterBrandColor = async () => {
+
+            await setAwait(1200)
+
+            $(`.pick-txt.det-screen1 div`).each(function () {
+                const text = $(this).find('label').attr('title').trim()
+
+                let findBrandName = text
+                if (text.includes('(')) {
+                    findBrandName = getBrandNameByRegex(text)
+                }
+
+                if (all16_15CouponMp.has(findBrandName)) {
+                    if (all16_15CouponMp.get(findBrandName).isNew) {
+                        _setMultiCssByBrandName(findBrandName)
+                    } else {
+                        _setMultiCssByBrandName(findBrandName, 'deepskyblue')
+                    }
+                }
+            })
+            // 省略号去掉，方便查看
+            $('.det-screen1 span').css({ 'display': 'unset' })
+        }
+
+        _renderFilterBrandColor()
+
+        /**
+         * 筛选条件：多选品牌
+         * @param {*} isNew 是否新人券 true/false
+         */
+        const multiFilterBrand = async (isNew) => {
+            $('#more-brand').click()
+            // $('.pick-txt.det-screen1 label.active').removeClass('active');
+            $('.pick-txt.det-screen1 div').each(function () {
+                const $labelEle = $(this).find('label.fuxuanku-lable')
+                // 品牌名称
+                const text = $labelEle.attr('title').trim()
+
+                let findBrandName = text
+                if (text.includes('(')) {
+                    findBrandName = getBrandNameByRegex(text)
+                }
+
+                if (all16_15CouponMp.has(findBrandName)) {
+                    if (all16_15CouponMp.get(findBrandName).isNew === isNew) {
+                        // 多选框选中
+                        $labelEle.click()
+                    }
+                }
+            })
+
+            $('.hoice-ys .more-input02').click()
+        }
 
         if ($('#_remind').length === 0) {
             $('.det-screen:contains("品牌：")').append(`
@@ -2005,13 +2054,14 @@
             </style>
             `)
         }
-
-        $('.screen-more .more-brand').on('click', searchStart)
-
+        // 多选展开按钮
+        $('#more-brand').click(_renderMulitFilterBrandColor)
+        // 品牌单选
+        $('.screen-more .more-brand').click(_renderFilterBrandColor)
         // 多选新人券
-        $('.get_new_coupon').on('click', getNewCoupon)
+        $('.get_new_coupon').click(() => multiFilterBrand(true))
         // 多选非新人券
-        $('.get_notnew_coupon').on('click', getNotNewCoupon)
+        $('.get_notnew_coupon').click(() => multiFilterBrand(false))
     }
 
     // 搜索页
