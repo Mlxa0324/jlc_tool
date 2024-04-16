@@ -91,14 +91,12 @@
         $tdEles.each(function () {
             const t = $(this).text().trim()
 
-
             const forHtml = getConfig().storeNameList.map(storeName => {
                 return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}" 
                 style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
                 搜索${storeName}
                 </p>`
             }).join('')
-
             
             $(this).append(`
             <div style="display: inline-flex;">
@@ -106,7 +104,6 @@
                 style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
                 搜索淘宝
                 </p>
-
                 ${forHtml}
             <div>
             `)
