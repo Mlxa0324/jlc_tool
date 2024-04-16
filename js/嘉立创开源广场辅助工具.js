@@ -88,7 +88,7 @@
         })
 
         $tdEles.each(function () {
-            const t = $(this).text().trim()
+            const t = $(this).text().trim().replace('Ω', '')
 
             const forHtml = getConfig().storeNameList.map(storeName => {
                 return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}" 
@@ -109,13 +109,13 @@
         })
 
         $(`.search-tb`).click(function () {
-            const t = $(this).parent().parents('td').text().trim().split('\n')[0]
+            const t = $(this).parent().parents('td').text().trim().split('\n')[0].replace('Ω', '')
             GM_openInTab(`https://s.taobao.com/search?q=${t}`, {})
         })
 
         getConfig().storeNameList.forEach(storeName => {
             $(`.search-tb-${storeName}`).click(function () {
-                const t = $(this).parent().parents('td').text().trim().split('\n')[0]
+                const t = $(this).parent().parents('td').text().trim().split('\n')[0].replace('Ω', '')
                 GM_openInTab(`https://s.taobao.com/search?q=${storeName}/${t}`, {})
             })
         })
