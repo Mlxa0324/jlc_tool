@@ -2,7 +2,7 @@
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
 // @version      1.0.1
-// @description  嘉立创开源广场辅助工具
+// @description  嘉立创开源广场辅助增强工具
 // @author       Lx
 // @match        https://oshwhub.com/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
@@ -16,6 +16,30 @@
     'use strict';
 
     /**
+     * 用户自定义配置项
+     * @returns 
+     */
+    const getConfig = () => {
+        return {
+            // 指定表头中哪个字段可以跳转淘宝
+            columnNameList: [
+                'Device',
+                'Name',
+            ],
+            // 指定店铺简称（支持配置其他店铺）
+            //  例如：
+            //  storeNameList: [
+            //     '优信',
+            //     'xxxx', 新增加一行这个，把店铺名简称填在这里。末尾的逗号不能省略
+            // ]
+            storeNameList: [
+                '优信',
+            ]
+           
+        }
+    }
+    
+    /**
      * 等待
      * @param {*} timeout
      * @returns
@@ -25,12 +49,6 @@
             setTimeout(resolve, timeout);
         })
     }
-
-    // 指定表头中哪个字段可以跳转淘宝
-    let columnNameList = [
-        'Device',
-        'Name',
-    ]
 
     /**
      * 获取索引
@@ -51,7 +69,7 @@
 
     const start = () => {
         // 查询用于跳转淘宝的列索引
-        const searchTbIndex = getColumnIndex(columnNameList)
+        const searchTbIndex = getColumnIndex(getConfig().columnNameList)
 
         // 没找到的话，等待查找索引成功
         if (searchTbIndex === -1) {
@@ -60,7 +78,9 @@
 
         $(`div.table-box .table > tr`).find(`th:eq(${searchTbIndex})`).append(`
             <p class="oneKey-search-tb" style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 20px;'> 
-            淘宝一键搜索BOM</br>（一次性会打开很多页面，慎用）
+            淘宝一键搜索BOM
+            </br>一次性会打开很多页面，慎用！
+            </br>同时会被淘宝限流
             </p>
         `)
 
@@ -70,21 +90,43 @@
         })
 
         $tdEles.each(function () {
+            const t = $(this).text().trim()
+
+
+            const forHtml = getConfig().storeNameList.map(storeName => {
+                return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}" 
+                style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
+                搜索${storeName}
+                </p>`
+            }).join('')
+
+            
             $(this).append(`
-            <p class="search-tb" data-query="https://s.taobao.com/search?q=${$(this).text().trim()}" 
-            style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 20px;'> 
-            搜索淘宝
-            </p>
+            <div style="display: inline-flex;">
+                <p class="search-tb" data-query="https://s.taobao.com/search?q=${t}" 
+                style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
+                搜索淘宝
+                </p>
+
+                ${forHtml}
+            <div>
             `)
         })
 
         $(`.search-tb`).click(function () {
-            const t = $(this).parent().text().replace(/(搜索淘宝)+/g, '').trim()
+            const t = $(this).parent().parents('td').text().trim().split('\n')[0]
             GM_openInTab(`https://s.taobao.com/search?q=${t}`, {})
         })
 
+        getConfig().storeNameList.forEach(storeName => {
+            $(`.search-tb-${storeName}`).click(function () {
+                const t = $(this).parent().parents('td').text().trim().split('\n')[0]
+                GM_openInTab(`https://s.taobao.com/search?q=${storeName}/${t}`, {})
+            })
+        })
+
         $(`.oneKey-search-tb`).click(function () {
-            $(`.search-tb`).each(function() {
+            $(`.search-tb`).each(function () {
                 GM_openInTab($(this).data('query'), {})
             })
         })
