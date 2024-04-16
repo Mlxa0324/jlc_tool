@@ -11,7 +11,6 @@
 // @license      MIT
 // ==/UserScript==
 
-
 (async function () {
     'use strict';
 
