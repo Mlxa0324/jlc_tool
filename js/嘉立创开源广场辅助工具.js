@@ -35,7 +35,6 @@
             storeNameList: [
                 '优信',
             ]
-           
         }
     }
     
