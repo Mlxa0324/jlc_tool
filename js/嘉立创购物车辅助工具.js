@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.5
+// @version      1.7.6
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -664,15 +664,21 @@
      */
     const lockProductHandler = () => {
         $(`.lock-product`).click(async function () {
+            const $eles = getHavedCheckedLineInfo()
 
-            for (const that of getHavedCheckedLineInfo()) {
+            if ($eles.length === 0) {
+                Qmsg.error('没有要锁定的商品！')
+                return;
+            }
+
+            for (const that of $eles) {
                 // 购物车商品的ID
                 if (!$(that).has(':contains("锁定样品")').length) {
-                    return
+                    continue;
                 }
                 const shoppingCartId = $(that).has(':contains("锁定样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                await setAwait(1500)
+                await setAwait(1000)
                 postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
@@ -685,19 +691,30 @@
             }
 
             // 刷新购物车页面
-            cartModuleLoadCartList();
-            setTimeout(allRefresh, 300);
+            setTimeout(() => {
+                cartModuleLoadCartList();
+                setTimeout(allRefresh, 800);
+                basicSettings()
+            }, 1000);
+
         })
 
         $(`.unlock-product`).click(async function () {
-            for (const that of getHavedCheckedLineInfo()) {
+
+            const $eles = getHavedCheckedLineInfo()
+
+            if ($eles.length === 0) {
+                Qmsg.error('没有要锁定的商品！')
+                return;
+            }
+            for (const that of $eles) {
                 // 购物车商品的ID
                 if (!$(that).has(':contains("释放样品")').length) {
-                    return
+                    continue;
                 }
                 const shoppingCartId = $(that).has(':contains("释放样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                await setAwait(1500)
+                await setAwait(1000)
                 postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
@@ -710,8 +727,11 @@
             }
 
             // 刷新购物车页面
-            cartModuleLoadCartList();
-            setTimeout(allRefresh, 300);
+            setTimeout(() => {
+                cartModuleLoadCartList();
+                setTimeout(allRefresh, 800);
+                basicSettings()
+            }, 1000);
         })
     }
 
