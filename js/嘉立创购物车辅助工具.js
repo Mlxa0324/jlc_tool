@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.3
+// @version      1.7.5
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -85,7 +85,9 @@
      */
     const setAwait = (timeout) => {
         return new Promise((resolve, reject) => {
-            setTimeout(resolve, timeout);
+            setTimeout(() => {
+                resolve(true)
+            }, timeout);
         })
     }
 
@@ -657,6 +659,62 @@
         $('.share-parse').click(_shareParse)
     }
 
+    /**
+     * 一键锁定、释放商品
+     */
+    const lockProductHandler = () => {
+        $(`.lock-product`).click(async function () {
+
+            for (const that of getHavedCheckedLineInfo()) {
+                // 购物车商品的ID
+                if (!$(that).has(':contains("锁定样品")').length) {
+                    return
+                }
+                const shoppingCartId = $(that).has(':contains("锁定样品")').attr('id').split('-')[2]
+                // 接口限流延迟操作
+                await setAwait(1500)
+                postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
+                    res = JSON.parse(res)
+                    if (res.code === 200) {
+                        Qmsg.success(res.msg || res.result || '商品锁定成功！')
+                    }
+                    else {
+                        Qmsg.error(res.msg || res.result || '商品锁定失败！请稍后再试')
+                    }
+                })
+            }
+
+            // 刷新购物车页面
+            cartModuleLoadCartList();
+            setTimeout(allRefresh, 300);
+        })
+
+        $(`.unlock-product`).click(async function () {
+            for (const that of getHavedCheckedLineInfo()) {
+                // 购物车商品的ID
+                if (!$(that).has(':contains("释放样品")').length) {
+                    return
+                }
+                const shoppingCartId = $(that).has(':contains("释放样品")').attr('id').split('-')[2]
+                // 接口限流延迟操作
+                await setAwait(1500)
+                postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
+                    res = JSON.parse(res)
+                    if (res.code === 200) {
+                        Qmsg.success(res.msg || res.result || '商品释放成功！')
+                    }
+                    else {
+                        Qmsg.error(res.msg || res.result || '商品释放失败！请稍后再试')
+                    }
+                })
+            }
+
+            // 刷新购物车页面
+            cartModuleLoadCartList();
+            setTimeout(allRefresh, 300);
+        })
+    }
+
     // 控制按钮的生成
     const buttonListFactory = () => {
 
@@ -666,7 +724,7 @@
             <div style="border: unset; position: relative; padding: 8px;">
             <div class='mb10 flex flex-sx-center'>
                 <label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label>
-                <input style="zoom: 80%; margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon"/>
+                <input style="margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon"/>
             </div>
              
             <div class='mb10 flex flex-sx-center'>
@@ -684,6 +742,15 @@
                     <button class='change-depot-btn-left btn-left' type='button'  ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>江苏</button>
                     <button class='change-depot-btn-right btn-right' type='button' ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>广东</button>
              </div>
+
+             <div class='mb10 flex flex-sx-center'>
+             <label style="font-size: 14px; width: 105px; z-index: 2;" class='ftw1000 box_'>一键锁仓
+                 <div class="circle_ tooltip_" data-msg='多选框选中的现货，会有限流，' style="margin-left: 5px;">?</div>
+             </label>
+                 <button class='lock-product btn-left' type='button'>锁定</button>
+                 <button class='unlock-product btn-right' type='button'>释放</button>
+          </div>
+          
 
              <div class='flex flex-sx-center space-between'>
                 <div class="flex flex-d-col">
@@ -1505,6 +1572,7 @@
         lookCouponListHandler()
         shareHandler()
         shareParseHandler()
+        lockProductHandler()
         // =============================
         resizeHeight()
 
@@ -1516,7 +1584,7 @@
      */
     const basicSettings = () => {
         // 多选框放大
-        $('input[type*=checkbox]').css('zoom', '150%')
+        $('input.check-box').css('zoom', '150%')
 
         // 点击物料图片，操作多选框
         $('.product-img').each(function () {
@@ -1771,7 +1839,6 @@
             }
 
             $bd.fadeToggle()
-            f
         })
     }
 
@@ -1912,12 +1979,12 @@
             searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
         }
 
-           /**
-         * 设置多选的背景颜色
-         */
-           const _setMultiCssByBrandName = (brandName, bgColor = 'aquamarine') => {
+        /**
+      * 设置多选的背景颜色
+      */
+        const _setMultiCssByBrandName = (brandName, bgColor = 'aquamarine') => {
             // 查找某个品牌
-            const searchBrandItemList =  $(`.pick-txt.det-screen1 div`).find(`label:contains(${brandName})`)
+            const searchBrandItemList = $(`.pick-txt.det-screen1 div`).find(`label:contains(${brandName})`)
             searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
         }
 
@@ -1948,10 +2015,10 @@
             $('.det-screen1 span').css({ 'display': 'unset' })
         }
 
-         /**
-         * 筛选条件：单选品牌-颜色
-         */
-         const _renderMulitFilterBrandColor = async () => {
+        /**
+        * 筛选条件：单选品牌-颜色
+        */
+        const _renderMulitFilterBrandColor = async () => {
 
             await setAwait(1200)
 
