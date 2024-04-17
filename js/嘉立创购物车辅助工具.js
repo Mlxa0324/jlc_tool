@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.6
+// @version      1.7.7
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1347,13 +1347,13 @@
     .look-coupon-btn {
         font-weight: bold;
         width: 110px !important;
-        height: 110px;
+        height: 135px;
         text-align: center;
-        line-height: 100px;
+        line-height: 130px;
         display: block !important;
         background-color: #3498db;
         position: absolute;
-        top: 3px;
+        top: 20px;
         right: 4px;
         color: white;
         font-size: 18px;
@@ -1734,6 +1734,26 @@
     }
 
     /**
+     * 购物车中所在行的元素(只获取现货商品)
+     */
+    const getHavedLineInfo = (brandName) => {
+        return $('.product-list .product-list-dl:eq(0) .product-item')
+    }
+
+    /**
+     * 通过品牌列表名称，购物车中所在行的元素(只获取现货商品)
+     */
+    const getHavedLineInfoByBrandNameList = (brandNameList) => {
+        return $(
+            [...getHavedLineInfo()].filter(item => {
+                debugger
+                const brandName = getBrandNameByRegex($(item).find(`.cart-li:eq(2) div:eq(2)`).text().trim())
+                return brandNameList.includes(brandName)
+            })
+        )
+    }
+
+    /**
      * 查找购物车中所在行的元素(只获取现货商品、选中的)
      * product-list-dl eq 0 是现货
      * product-list-dl eq 1 是订货
@@ -1762,6 +1782,28 @@
                 $('.product-list .product-list-dl:eq(0) .product-item').insertAfter(item)
             })
         })
+
+        /**
+         * 小窗口品牌列表的双击事件
+         * 双击全选品牌
+         */
+        // $('.click-hv .sort_').on('dblclick', function () {
+        //     let brandName = $(this).text().trim()
+
+        //     // 通过品牌名称查找元素标签
+        //     const $eles = getHavedLineInfoByBrandNameList([brandName]);
+
+        //     // 获取选中的多选框
+        //     const $checkedEles = $eles.find('input.check-box:checked')
+
+        //     if ($checkedEles.length > 0) {
+        //         $checkedEles.click()
+        //         return;
+        //     }
+        //     else {
+        //         $eles.find('input.check-box').click()
+        //     }
+        // })
     }
 
     /**
