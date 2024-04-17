@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  嘉立创开源广场辅助增强工具
 // @author       Lx
 // @match        https://oshwhub.com/**
@@ -9,6 +9,8 @@
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @grant        GM_openInTab
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/492654/%E5%98%89%E7%AB%8B%E5%88%9B%E5%BC%80%E6%BA%90%E5%B9%BF%E5%9C%BA%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.user.js
+// @updateURL https://update.greasyfork.org/scripts/492654/%E5%98%89%E7%AB%8B%E5%88%9B%E5%BC%80%E6%BA%90%E5%B9%BF%E5%9C%BA%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.meta.js
 // ==/UserScript==
 
 (async function () {
@@ -16,7 +18,7 @@
 
     /**
      * 用户自定义配置项
-     * @returns 
+     * @returns
      */
     const getConfig = () => {
         return {
@@ -36,7 +38,7 @@
             ]
         }
     }
-    
+
     /**
      * 等待
      * @param {*} timeout
@@ -74,33 +76,33 @@
             return;
         }
 
-        $(`div.table-box .table > tr`).find(`th:eq(${searchTbIndex})`).append(`
-            <p class="oneKey-search-tb" style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 20px;'> 
+        $(`div.table-box .table tr`).find(`th:eq(${searchTbIndex})`).append(`
+            <p class="oneKey-search-tb" style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 20px;'>
             淘宝一键搜索BOM
             </br>一次性会打开很多页面，慎用！
             </br>同时会被淘宝限流
             </p>
         `)
 
-        const $tdEles = $(`div.table-box .table > tr`).find(`td:eq(${searchTbIndex})`).css({
+        const $tdEles = $(`div.table-box .table tr`).find(`td:eq(${searchTbIndex})`).css({
             "display": "flex",
             "justify-content": "space-between"
         })
 
         $tdEles.each(function () {
-            const t = $(this).text().trim().replace('Ω', '')
+            const t = $(this).text().trim()
 
             const forHtml = getConfig().storeNameList.map(storeName => {
-                return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}" 
-                style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
+                return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}"
+                style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
                 搜索${storeName}
                 </p>`
             }).join('')
-            
+
             $(this).append(`
             <div style="display: inline-flex;">
-                <p class="search-tb" data-query="https://s.taobao.com/search?q=${t}" 
-                style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'> 
+                <p class="search-tb" data-query="https://s.taobao.com/search?q=${t}"
+                style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
                 搜索淘宝
                 </p>
                 ${forHtml}
@@ -109,13 +111,13 @@
         })
 
         $(`.search-tb`).click(function () {
-            const t = $(this).parent().parents('td').text().trim().split('\n')[0].replace('Ω', '')
+            const t = $(this).parent().parents('td').text().trim().split('\n')[0]
             GM_openInTab(`https://s.taobao.com/search?q=${t}`, {})
         })
 
         getConfig().storeNameList.forEach(storeName => {
             $(`.search-tb-${storeName}`).click(function () {
-                const t = $(this).parent().parents('td').text().trim().split('\n')[0].replace('Ω', '')
+                const t = $(this).parent().parents('td').text().trim().split('\n')[0]
                 GM_openInTab(`https://s.taobao.com/search?q=${storeName}/${t}`, {})
             })
         })
@@ -134,6 +136,7 @@
 
             console.log(`等待BOM列表加载...`);
 
+            debugger
             if (!notEmpty && tableNotEmpty) {
                 start()
             }
