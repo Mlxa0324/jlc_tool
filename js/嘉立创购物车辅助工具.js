@@ -678,8 +678,7 @@
                 }
                 const shoppingCartId = $(that).has(':contains("锁定样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                await setAwait(1000)
-                postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
+                 await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
                         Qmsg.success(res.msg || res.result || '商品锁定成功！')
@@ -714,8 +713,7 @@
                 }
                 const shoppingCartId = $(that).has(':contains("释放样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                await setAwait(1000)
-                postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
+                 await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
                         Qmsg.success(res.msg || res.result || '商品释放成功！')
