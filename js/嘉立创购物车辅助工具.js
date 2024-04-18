@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.7
+// @version      1.7.9
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -666,7 +666,7 @@
         $(`.lock-product`).click(async function () {
             const $eles = getHavedCheckedLineInfo()
 
-            if ($eles.length === 0) {
+            if ($eles.has(':contains("锁定样品")').length === 0) {
                 Qmsg.error('没有要锁定的商品！')
                 return;
             }
@@ -702,7 +702,7 @@
 
             const $eles = getHavedCheckedLineInfo()
 
-            if ($eles.length === 0) {
+            if ($eles.has(':contains("释放样品")').length === 0) {
                 Qmsg.error('没有要锁定的商品！')
                 return;
             }
@@ -857,6 +857,11 @@
         // 过滤16-15的优惠券
         $('.filter-16-15').click(function () {
             $('.coupon-item:visible:not(:contains(满16可用))').hide()
+        })
+
+         // 过滤20-15的优惠券
+         $('.filter-20-15').click(function () {
+            $('.coupon-item:visible:not(:contains(满20可用))').hide()
         })
 
         // 过滤新人优惠券
@@ -1029,6 +1034,7 @@
                 <p class="coupon-item-btn-text_ filter-clear">清空筛选</p>
                 <p class="coupon-item-btn-text_ filter-haved">查看已领取</p>
                 <p class="coupon-item-btn-text_ filter-16-15">筛选16-15</p>
+                <p class="coupon-item-btn-text_ filter-20-15">筛选20-15</p>
                 <p class="coupon-item-btn-text_ filter-newone">筛选新人券</p>
                 <p class="coupon-item-btn-text_ filter-not-newone">筛选非新人券</p>
 
@@ -1483,7 +1489,7 @@
     .extend-btn-group_  {
         position: fixed;
         right: 480px;
-        top: 140px;
+        top: 100px;
         z-index: 888;
         margin-left: -720px;
     }
