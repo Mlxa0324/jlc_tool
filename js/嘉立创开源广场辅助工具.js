@@ -136,7 +136,6 @@
 
             console.log(`等待BOM列表加载...`);
 
-            debugger
             if (!notEmpty && tableNotEmpty) {
                 start()
             }
