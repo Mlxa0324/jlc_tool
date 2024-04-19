@@ -17,7 +17,9 @@
 
 # 截图
 
-![1713492870258](/assets/1713492870258.jpg)
+![购物车页](/assets/cart_page.png)
+![优惠券页](/assets/coupon_page.png)
+![搜索页](/assets/search_page.png)
 
 # 关于
 
