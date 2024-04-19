@@ -26,7 +26,7 @@
 
 - 优惠券按钮
 
-![[优惠券页](https://www.szlcsc.com/huodong.html)](/assets/coupon_page.png)  
+![[优惠券页](https://www.szlcsc.com/huodong.html)](/assets/coupon_page_.png)  
 
 - 搜索页
 
