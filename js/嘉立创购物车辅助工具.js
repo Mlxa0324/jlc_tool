@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.8
+// @version      1.7.9
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -678,7 +678,7 @@
                 }
                 const shoppingCartId = $(that).has(':contains("锁定样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                 await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
+                await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
                         Qmsg.success(res.msg || res.result || '商品锁定成功！')
@@ -713,7 +713,7 @@
                 }
                 const shoppingCartId = $(that).has(':contains("释放样品")').attr('id').split('-')[2]
                 // 接口限流延迟操作
-                 await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
+                await postFormAjax(`${webSiteShareData.lcscCartUrl}/async/samplelock/release/locking`, { shoppingCartId }).then(res => {
                     res = JSON.parse(res)
                     if (res.code === 200) {
                         Qmsg.success(res.msg || res.result || '商品释放成功！')
@@ -859,8 +859,8 @@
             $('.coupon-item:visible:not(:contains(满16可用))').hide()
         })
 
-         // 过滤20-15的优惠券
-         $('.filter-20-15').click(function () {
+        // 过滤20-15的优惠券
+        $('.filter-20-15').click(function () {
             $('.coupon-item:visible:not(:contains(满20可用))').hide()
         })
 
@@ -1243,6 +1243,7 @@
         margin: 5px;
         font-size: 14px;
         box-sizing: border-box;
+        user-select:none;
     }
     
     .box_ {
@@ -1363,6 +1364,7 @@
         font-size: 18px;
         border-radius: 5px;
         border: 2px solid #3498db;
+        user-select:none;
     }
     
     .btn-group_ {
@@ -1731,21 +1733,21 @@
     }
 
     /**
-     * 通过品牌名称，查找购物车中所在行的元素(只获取现货商品)
+     * 通过品牌名称，查找购物车中的行元素(只获取现货商品)
      */
     const getHavedLineInfoByBrandName = (brandName) => {
         return $('.product-list .product-list-dl:eq(0) .product-item:contains(' + brandName + ')')
     }
 
     /**
-     * 购物车中所在行的元素(只获取现货商品)
+     * 购物车中的行元素(只获取现货商品)
      */
-    const getHavedLineInfo = (brandName) => {
+    const getHavedLineInfo = () => {
         return $('.product-list .product-list-dl:eq(0) .product-item')
     }
 
     /**
-     * 通过品牌列表名称，购物车中所在行的元素(只获取现货商品)
+     * 通过品牌列表名称，购物车中的行的元素(只获取现货商品)
      */
     const getHavedLineInfoByBrandNameList = (brandNameList) => {
         return $(
@@ -1757,13 +1759,23 @@
     }
 
     /**
-     * 查找购物车中所在行的元素(只获取现货商品、选中的)
+     * 查找购物车中选中的行元素(只获取现货商品、选中的)
      * product-list-dl eq 0 是现货
      * product-list-dl eq 1 是订货
      *
      */
     const getHavedCheckedLineInfo = () => {
         return $('.product-list .product-list-dl:eq(0) .product-item input:checked').parents('.product-item')
+    }
+
+    /**
+     * 查找购物车中没有选中的行元素(只获取现货商品、选中的)
+     * product-list-dl eq 0 是现货
+     * product-list-dl eq 1 是订货
+     *
+     */
+    const getHavedNotCheckedLineInfo = () => {
+        return $('.product-list .product-list-dl:eq(0) .product-item input:not(:checked)').parents('.product-item')
     }
 
     /**
@@ -1790,23 +1802,36 @@
          * 小窗口品牌列表的双击事件
          * 双击全选品牌
          */
-        // $('.click-hv .sort_').on('dblclick', function () {
-        //     let brandName = $(this).text().trim()
+        $('.click-hv .sort_').on('dblclick', function () {
 
-        //     // 通过品牌名称查找元素标签
-        //     const $eles = getHavedLineInfoByBrandNameList([brandName]);
+            let brandName = $(this).text().trim()
 
-        //     // 获取选中的多选框
-        //     const $checkedEles = $eles.find('input.check-box:checked')
+            /**
+             * 过滤封装
+             * @param {*} eles 
+             * @returns 
+             */
+            const _filterNotSelf = (eles, brandName_, finder) => {
+                return $([...eles].filter(item => {
+                    return $(item).find(`li.cart-li:eq(2):not(:contains(${brandName_}))`).length > 0
+                })).find(finder)
+            }
+            
+            // 获取选中的现货
+            const $havedEles = getHavedCheckedLineInfo()
 
-        //     if ($checkedEles.length > 0) {
-        //         $checkedEles.click()
-        //         return;
-        //     }
-        //     else {
-        //         $eles.find('input.check-box').click()
-        //     }
-        // })
+           // 看看有没有选中除自己之外，其他品牌的商品
+           const isNckOtherPdtsBool = _filterNotSelf($havedEles, brandName, `li.cart-li:eq(2):not(:contains(${brandName}))`).length > 0
+
+            if (isNckOtherPdtsBool) {
+                 // 获取现货
+                _filterNotSelf($havedEles, brandName, `li.cart-li .check-box:checked`).click()
+            }
+            else {
+                // 全选
+                _filterNotSelf(getHavedNotCheckedLineInfo(), brandName, `li.cart-li .check-box:not(:checked)`).click()
+            }
+        })
     }
 
     /**
