@@ -2,7 +2,7 @@
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
 // @version      1.0.2
-// @description  嘉立创开源广场辅助增强工具
+// @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
