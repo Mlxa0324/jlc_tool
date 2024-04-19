@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.9
+// @version      1.7.8
 // @description  嘉立创辅助工具，购物车辅助增强工具
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1750,7 +1750,6 @@
     const getHavedLineInfoByBrandNameList = (brandNameList) => {
         return $(
             [...getHavedLineInfo()].filter(item => {
-                debugger
                 const brandName = getBrandNameByRegex($(item).find(`.cart-li:eq(2) div:eq(2)`).text().trim())
                 return brandNameList.includes(brandName)
             })

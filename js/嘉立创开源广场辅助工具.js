@@ -95,7 +95,7 @@
             const forHtml = getConfig().storeNameList.map(storeName => {
                 return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}"
                 style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
-                搜索${storeName}
+                搜${storeName}
                 </p>`
             }).join('')
 
@@ -103,7 +103,7 @@
             <div style="display: inline-flex;">
                 <p class="search-tb" data-query="https://s.taobao.com/search?q=${t}"
                 style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
-                搜索淘宝
+                搜淘宝
                 </p>
                 ${forHtml}
             <div>
