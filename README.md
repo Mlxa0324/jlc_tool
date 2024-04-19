@@ -1,3 +1,5 @@
+<p align="center" style="font-size: 40px; font-weight: 1000;">嘉立创辅助插件</p>
+
 
 # 购物车页
 
@@ -15,7 +17,7 @@
 > - 对16-15的优惠券进行 __高亮显示__ ，颜色区分新老用户
 > - 支持 __一键搜索新老用户__ 优惠券
 
-# 截图
+# 插件截图
 
 ![购物车页](/assets/cart_page.png)
 ![优惠券页](/assets/coupon_page.png)
