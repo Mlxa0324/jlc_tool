@@ -1,5 +1,5 @@
 # 嘉立创油猴辅助插件
-> 插件地址：https://greasyfork.org/zh-CN/scripts/491619-%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7
+> 插件地址：<https://greasyfork.org/zh-CN/scripts/491619-%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7>
 
 ## 购物车页
 
