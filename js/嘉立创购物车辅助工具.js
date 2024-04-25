@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.11
+// @version      1.7.12
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -2064,7 +2064,7 @@
         /**
         * 设置单选的背景颜色
         */
-        const _setOneCssByBrandName = (brandName, bgColor = 'aquamarine') => {
+        const _setOneCssByBrandName = (brandName, bgColor = '#00bfffb8') => {
             // 查找某个品牌
             const searchBrandItemList = $(`#brandList div`).find(`span:eq(0):contains(${brandName})`)
             searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
@@ -2073,10 +2073,25 @@
         /**
       * 设置多选的背景颜色
       */
-        const _setMultiCssByBrandName = (brandName, bgColor = 'aquamarine') => {
+        const _setMultiCssByBrandName = (brandName, bgColor = '#00bfffb8') => {
             // 查找某个品牌
             const searchBrandItemList = $(`.pick-txt.det-screen1 div`).find(`label:contains(${brandName})`)
             searchBrandItemList.css({ 'background-color': bgColor, 'border-radius': '30px' })
+        }
+
+        /**
+         * 搜索列表中，对品牌颜色进行上色
+         */
+        const listRenderBrandColor = () => {
+            for (let [brandName, brandDetail] of all16_15CouponMp) {
+                // 获取页面元素
+                const $brandEle = $(`a.brand-name[title*="${brandName}"]`)
+                if ($brandEle.length > 0 && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)") {
+                    $brandEle.css({
+                        "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
+                    })
+                }
+            }
         }
 
         /**
@@ -2084,7 +2099,7 @@
          */
         const _renderFilterBrandColor = async () => {
 
-            await setAwait(1200)
+            await setAwait(200)
 
             $(`#brandList div`).find(`span:eq(0)`).each(function () {
                 const text = $(this).text().trim()
@@ -2098,7 +2113,7 @@
                     if (all16_15CouponMp.get(findBrandName).isNew) {
                         _setOneCssByBrandName(findBrandName)
                     } else {
-                        _setOneCssByBrandName(findBrandName, 'deepskyblue')
+                        _setOneCssByBrandName(findBrandName, '#7fffd4b8')
                     }
                 }
             })
@@ -2111,7 +2126,7 @@
         */
         const _renderMulitFilterBrandColor = async () => {
 
-            await setAwait(1200)
+            await setAwait(200)
 
             $(`.pick-txt.det-screen1 div`).each(function () {
                 const text = $(this).find('label').attr('title').trim()
@@ -2125,7 +2140,7 @@
                     if (all16_15CouponMp.get(findBrandName).isNew) {
                         _setMultiCssByBrandName(findBrandName)
                     } else {
-                        _setMultiCssByBrandName(findBrandName, 'deepskyblue')
+                        _setMultiCssByBrandName(findBrandName, '#7fffd4b8')
                     }
                 }
             })
@@ -2165,6 +2180,8 @@
 
         _renderFilterBrandColor()
 
+        listRenderBrandColor()
+
         if ($('#_remind').length === 0) {
             $('.det-screen:contains("品牌：")').append(`
             <div id='_remind'>
@@ -2185,13 +2202,13 @@
                 align-items: center;
             }
             .new_ {
-                background-color: aquamarine;
+                background-color: #00bfffb8;
                 margin-right: 10px;
                 width: 20px;
                 height: 10px;
             }
             .not_new_ {
-                background-color: deepskyblue;
+                background-color: #7fffd4b8;
                 margin-right: 10px;
                 width: 20px;
                 height: 10px;
