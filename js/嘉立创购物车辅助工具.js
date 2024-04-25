@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.12
+// @version      1.7.13
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -49,6 +49,27 @@
         var b = Math.floor(Math.random() * 256)
         var rgb = 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
         return rgb;
+    }
+
+    /**
+     * 深色 随机色
+     * @returns 
+     */
+    const srdmRgbColor = () => {
+        //随机生成RGB颜色
+        let arr = [];
+        for (var i = 0; i < 200; i++) {
+            // 暖色
+            arr.push(Math.floor(Math.random() * 128 + 64));
+            // 亮色
+            // arr.push(Math.floor(Math.random() * 128 + 128));
+        }
+        let [r, g, b] = arr;
+        // rgb颜色
+        // var color=`rgb(${r},${g},${b})`;
+        // 16进制颜色
+        var color = `#${r.toString(16).length > 1 ? r.toString(16) : '0' + r.toString(16)}${g.toString(16).length > 1 ? g.toString(16) : '0' + g.toString(16)}${b.toString(16).length > 1 ? b.toString(16) : '0' + b.toString(16)}`;
+        return color;
     }
 
     /**
@@ -224,11 +245,11 @@
      * 
       换仓逻辑
         https://cart.szlcsc.com/cart/warehouse/deliverynum/update
-
+    
          cartKey规则：
         标签id product-item-186525218
         商品的跳转地址（商品id）20430799
-
+    
         cartKey: 186525218~0~20430799~RMB~CN
         gdDeliveryNum: 0
         jsDeliveryNum: 1
@@ -758,7 +779,7 @@
 
              <div class='mb10 flex flex-sx-center'>
              <label style="font-size: 14px; width: 105px; z-index: 2;" class='ftw1000 box_'>一键锁仓
-                 <div class="circle_ tooltip_" data-msg='多选框选中的现货，会有限流，' style="margin-left: 5px;">?</div>
+                 <div class="circle_ tooltip_" data-msg='只操作多选框选中的现货' style="margin-left: 5px;">?</div>
              </label>
                  <button class='lock-product btn-left' type='button'>锁定</button>
                  <button class='unlock-product btn-right' type='button'>释放</button>
@@ -1284,6 +1305,7 @@
         border-radius: 16px;
         cursor: pointer;
         background-color: #777;
+        zoom: 90%;
     }
     
     .checkbox:before {
@@ -1660,7 +1682,7 @@
 
             if ($.isEmptyObject(dataBrandColorMp.get(brandName))) {
                 // 对品牌进行随机色设置
-                dataBrandColorMp.set(brandName, rgba('0.9'))
+                dataBrandColorMp.set(brandName, srdmRgbColor())
             }
         })
     }
@@ -1675,11 +1697,12 @@
             $(this).css('background', dataBrandColorMp.get($(this).find('span:eq(0)').text().trim()))
         })
 
-        // 购物车列表颜色设置
+        // 购物车列表 品牌颜色设置
         dataBrandColorMp.forEach((v, k) => {
-            let brandElement = getHavedLineInfoByBrandName(k).find('ul li.cart-li-pro-info')
+            let brandElement = getHavedLineInfoByBrandName(k).find('ul li.cart-li-pro-info div:eq(2)')
             brandElement.css({
                 'background-color': v,
+                'width': 'min-content',
                 'color': 'white'
             })
 
