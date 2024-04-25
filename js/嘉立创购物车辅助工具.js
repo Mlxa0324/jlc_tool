@@ -58,7 +58,7 @@
     const srdmRgbColor = () => {
         //随机生成RGB颜色
         let arr = [];
-        for (var i = 0; i < 200; i++) {
+        for (var i = 0; i < 3; i++) {
             // 暖色
             arr.push(Math.floor(Math.random() * 128 + 64));
             // 亮色
