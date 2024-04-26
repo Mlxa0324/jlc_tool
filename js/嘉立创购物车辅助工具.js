@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.13
+// @version      1.7.14
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -825,7 +825,7 @@
      */
     const brandCountFactory = () => {
         return `
-        <p class='small-sign'>
+        <p class='small-sign small-sign-pos'>
             ${dataCartMp.size}
         </p>
         `
@@ -1037,6 +1037,15 @@
     }
 
     /**
+     * 根据品牌名称 查询是否多仓
+     * @returns true多仓，false 非多仓
+     */
+    const juageMultiDepotByBrandName = (brandName) => {
+        //这样是多仓 ['江苏', '广东', '']
+        return new Set($(`.product-item:contains("${brandName}")`).find('.warehouse:contains("仓")').text().replace(/[^广东江苏仓]+/g, '').split('仓')).size === 3
+    }
+
+    /**
      * 追加的html
      * @returns
      */
@@ -1093,7 +1102,8 @@
             tempHtml += `
             <li class='li-cs click-hv ftw500'>
                 <div>
-                    <span class='key sort_' style="width: 165px;">${key}</span>
+                    <p class="small-sign ${juageMultiDepotByBrandName(key) ? 'multi_': 'multi_default'} multi_pos_">多</p>
+                    <span class='key sort_' style="width: 155px; text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">${key}</span>
                     <span class='val sort_' style="width: 90px;">${val}</span>
                     <span class='val sort_' style="width: 80px;">${(16 - val).toFixed(2)}</span>
                     ${couponHTMLFactory(key)}
@@ -1260,6 +1270,7 @@
         font-size: 14px;
         box-sizing: border-box;
         user-select:none;
+        position: relative;
     }
     
     .box_ {
@@ -1348,12 +1359,44 @@
     }
     
     .small-sign {
-        position: absolute;
-        top: 35px;
-        left: 70px;
         padding: 2px 3px;
         width: min-content !important;
         font-weight: bold;
+    }
+
+    .small-sign-pos {
+        position: absolute;
+        top: 35px;
+        left: 70px;
+    }
+
+    .multi_ {
+        background: white;
+        color: #013d72 !important;
+        width: min-content !important;
+        font-weight: 200 !important;
+        border-radius: 2px !important;
+        padding: unset !important;
+        height: fit-content;
+        border: none !important;
+        font-size: 11px;
+    }
+
+    .multi_default {
+        width: min-content !important;
+        font-weight: 200 !important;
+        border-radius: 2px !important;
+        padding: unset !important;
+        height: fit-content;
+        border: none !important;
+        font-size: 11px;
+        color: #00000000;
+    }
+
+    .multi_pos {
+        position: absolute;
+        top: -3px;
+        left: 83px;
     }
 
     .total-money_ {
