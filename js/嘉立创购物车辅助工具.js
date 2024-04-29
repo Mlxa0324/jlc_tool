@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.14
+// @version      1.7.15
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -370,7 +370,7 @@
         // }
 
         // 换仓-江苏
-        $('.change-depot-btn-left').on('click', function () {
+        $('.change-depot-btn-left_').on('click', function () {
 
             let count = 0;
             const eles = getAllCheckedLineInfo()
@@ -392,7 +392,7 @@
         })
 
         // 换仓-广东
-        $('.change-depot-btn-right').on('click', function () {
+        $('.change-depot-btn-right_').on('click', function () {
 
             let count = 0;
             const eles = getAllCheckedLineInfo()
@@ -454,12 +454,12 @@
         }
 
         // 江苏仓
-        $(".check-js-btn-left").on('click', function () {
+        $(".check-js-btn-left_").on('click', function () {
             _clickFunc('JIANG_SU', getJsLineInfo)
         })
 
         // 广东仓
-        $(".check-gd-btn-right").on('click', function () {
+        $(".check-gd-btn-right_").on('click', function () {
             _clickFunc('GUANG_DONG', getGdLineInfo)
         })
     }
@@ -516,12 +516,12 @@
         }
 
         // 江苏仓
-        $(".check-js-btn-left").on('click', function () {
+        $(".check-js-btn-left_").on('click', function () {
             _clickFunc('JIANG_SU')
         })
 
         // 广东仓
-        $(".check-gd-btn-right").on('click', function () {
+        $(".check-gd-btn-right_").on('click', function () {
             _clickFunc('GUANG_DONG')
         })
     }
@@ -765,24 +765,24 @@
                 <label style="font-size: 14px; width: 105px; z-index: 2;" class='ftw1000 box_'>一键选仓
                     <div class="circle_ tooltip_" data-msg='第一次点是选中，第二次点是取消选中' style="margin-left: 5px;">?</div>
                 </label>
-                    <button class='check-js-btn-left btn-left' type='button'>江苏</button>
-                    <button class='check-gd-btn-right btn-right' type='button'>广东</button>
+                    <button class='check-js-btn-left_ btn-left_' type='button'>江苏</button>
+                    <button class='check-gd-btn-right_ btn-right_' type='button'>广东</button>
              </div>
 
              <div class='mb10 flex flex-sx-center'>
                 <label style="font-size: 14px; width: 105px;  z-index: 2;" class='ftw1000 box_'>一键换仓
                     <div class="circle_ tooltip_" data-msg='只操作多选框选中的商品，包含订货商品' style="margin-left: 5px;">?</div>
                 </label>
-                    <button class='change-depot-btn-left btn-left' type='button'  ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>江苏</button>
-                    <button class='change-depot-btn-right btn-right' type='button' ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>广东</button>
+                    <button class='change-depot-btn-left_ btn-left_' type='button'  ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>江苏</button>
+                    <button class='change-depot-btn-right_ btn-right_' type='button' ${!isBool ? "style='cursor: not-allowed; background-color: #b9b9b95e;color: unset;' disabled" : ""}>广东</button>
              </div>
 
              <div class='mb10 flex flex-sx-center'>
              <label style="font-size: 14px; width: 105px; z-index: 2;" class='ftw1000 box_'>一键锁仓
                  <div class="circle_ tooltip_" data-msg='只操作多选框选中的现货' style="margin-left: 5px;">?</div>
              </label>
-                 <button class='lock-product btn-left' type='button'>锁定</button>
-                 <button class='unlock-product btn-right' type='button'>释放</button>
+                 <button class='lock-product btn-left_' type='button'>锁定</button>
+                 <button class='unlock-product btn-right_' type='button'>释放</button>
           </div>
           
 
@@ -1431,8 +1431,8 @@
         border: 2px solid #3498db;
     }
     
-    .btn-left,
-    .btn-right {
+    button.btn-left_,
+    button.btn-right_ {
         width: 60px;
         height: 30px;
         border: unset;
@@ -1444,8 +1444,8 @@
         cursor: pointer;
     }
 
-    .btn-right:hover,
-    .btn-left:hover,
+    button.btn-right_:hover,
+    button.btn-left_:hover,
     .to_cou:hover,
     .showBtn:hover,
     .look-coupon-closebtn:hover,
@@ -1459,14 +1459,14 @@
         cursor: pointer;
     }
 
-    .btn-left {
+    button.btn-left_ {
         border-left: 2px solid #3498db;
         border-block: 2px solid #3498db;
         border-radius: 5px 0 0 5px;
         border-right: 2px solid #3498db;
     }
     
-    .btn-right {
+    button.btn-right_ {
         border-right: 2px solid #3498db;
         border-block: 2px solid #3498db;
         border-radius: 0 5px 5px 0;
