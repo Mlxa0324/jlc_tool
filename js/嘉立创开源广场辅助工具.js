@@ -26,11 +26,14 @@
             columnNameList: [
                 'Device',
                 'Name',
-                'Value',
             ],
             // 封装列
             columnNameList2: [
                 'Footprint',
+            ],
+            // 具体的值
+            columnNameList3: [
+                'Value',
             ],
             // 指定店铺简称（支持配置其他店铺）
             //  例如：
@@ -76,6 +79,7 @@
         // 查询用于跳转淘宝的列索引
         const searchTbIndex = getColumnIndex(getConfig().columnNameList)
         const footprintIndex = getColumnIndex(getConfig().columnNameList2)
+        const valueIndex = getColumnIndex(getConfig().columnNameList3)
 
         // 没找到的话，等待查找索引成功
         if (searchTbIndex === -1) {
@@ -95,13 +99,14 @@
             "justify-content": "space-between"
         })
 
-        const $footprintIndexEles = $(`div.table-box .table tr`).find(`td:eq(${footprintIndex})`)
-
+        // 页面渲染按钮组
         $tdEles.each(function () {
             const t = $(this).text().trim()
+            const footprintText = $(this).parents('tr').find(`td:eq(${footprintIndex})`).text().trim()
+            const valueText = $(this).parents('tr').find(`td:eq(${valueIndex})`).text().trim()
 
             const forHtml = getConfig().storeNameList.map(storeName => {
-                return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${t}"
+                return `<p class="search-tb-${storeName}" data-query="https://s.taobao.com/search?q=${storeName}/${t}/${footprintText}/${valueText}"
                 style='padding: 0px 8px; background-color: sandybrown;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
                 搜${storeName}
                 </p>`
@@ -109,7 +114,7 @@
 
             $(this).append(`
             <div style="display: inline-flex;">
-                <p class="search-tb" data-query="https://s.taobao.com/search?q=${t} ${}"
+                <p class="search-tb" data-query="https://s.taobao.com/search?q=${t}/${footprintText}/${valueText}"
                 style='padding: 0px 8px; background-color: deepskyblue;cursor: pointer;border-radius: 4px; margin-left: 10px;'>
                 搜淘宝
                 </p>
@@ -118,15 +123,10 @@
             `)
         })
 
-        $(`.search-tb`).click(function () {
-            const t = $(this).parent().parents('td').text().trim().split('\n')[0]
-            GM_openInTab(`https://s.taobao.com/search?q=${t}`, {})
-        })
-
+        // 搜索按钮的击事件
         getConfig().storeNameList.forEach(storeName => {
-            $(`.search-tb-${storeName}`).click(function () {
-                const t = $(this).parent().parents('td').text().trim().split('\n')[0]
-                GM_openInTab(`https://s.taobao.com/search?q=${storeName}/${t}`, {})
+            $(`.search-tb-${storeName},.search-tb`).click(function () {
+                GM_openInTab($(this).data('query'), {})
             })
         })
 
