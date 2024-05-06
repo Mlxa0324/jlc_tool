@@ -1,11 +1,12 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.15
+// @version      1.7.16
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
 // @match        https://so.szlcsc.com/global.html**
+// @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
@@ -245,11 +246,11 @@
      * 
       换仓逻辑
         https://cart.szlcsc.com/cart/warehouse/deliverynum/update
-    
+
          cartKey规则：
         标签id product-item-186525218
         商品的跳转地址（商品id）20430799
-    
+
         cartKey: 186525218~0~20430799~RMB~CN
         gdDeliveryNum: 0
         jsDeliveryNum: 1
@@ -1102,7 +1103,7 @@
             tempHtml += `
             <li class='li-cs click-hv ftw500'>
                 <div>
-                    <p class="small-sign ${juageMultiDepotByBrandName(key) ? 'multi_': 'multi_default'} multi_pos_">多</p>
+                    <p class="small-sign ${juageMultiDepotByBrandName(key) ? 'multi_' : 'multi_default'} multi_pos_">多</p>
                     <span class='key sort_' style="width: 155px; text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">${key}</span>
                     <span class='val sort_' style="width: 90px;">${val}</span>
                     <span class='val sort_' style="width: 80px;">${(16 - val).toFixed(2)}</span>
@@ -2301,10 +2302,71 @@
         $('.get_notnew_coupon').click(() => multiFilterBrand(false))
     }
 
+    // 排序记录 desc降序，asc升序
+
+    /**
+     * 配单页 增加价格排序按钮
+     */
+    const bomStart = () => {
+
+        if ($('div.bom-result-progess .progess-box .progess-line-blue').text() !== '0%') {
+            $('#new-box_').attr('disabled', true)
+        } else {
+            $('#new-box_').attr('disabled', false)
+        }
+        if ($('button#new-box_').length > 0) {
+            return
+        }
+        const sortHt = `<button id='new-box_' class="new-box_" onclick="(function () {
+                const $eles = $('.el-table__row.perfect').get();
+                $eles.sort((next, prev) => {
+                    let nextPrice = $(next).find('div.dfc:contains(¥)').text().replace(/[¥ ]+/g, '')
+                    let prevPrice = $(prev).find('div.dfc:contains(¥)').text().replace(/[¥ ]+/g, '')
+                    if(localStorage.getItem('sortSign') === 'desc') {
+                        if (parseFloat(nextPrice) > parseFloat(prevPrice)) return -1;
+                        if (parseFloat(nextPrice) < parseFloat(prevPrice)) return 1;
+                    }
+                    else if(localStorage.getItem('sortSign') === 'asc') {
+                        if (parseFloat(nextPrice) > parseFloat(prevPrice)) return 1;
+                        if (parseFloat(nextPrice) < parseFloat(prevPrice)) return -1;
+                    }
+                    return 0;
+                })
+                localStorage.setItem('sortSign', (localStorage.getItem('sortSign') === 'desc') ? 'asc' : 'desc');
+                $('.el-table__body-wrapper tbody').html($eles)
+            })()"
+            style="color: #315af8; width: 100px; height: 35px; line-height: 35px;background-color: #fff;border-radius: 3px;border: 1px solid #cdf; margin-left: 10px;">
+            <div data-v-1b5f1317="" class="sg vg" style="height: 35px; display: none;">
+                <svg data-v-1b5f1317="" viewBox="25 25 50 50" class="bom-circular blue" style="width: 16px; height: 16px;">
+                    <circle data-v-1b5f1317="" cx="50" cy="50" r="20" fill="none" class="path"></circle>
+                </svg>
+            </div>
+            <div class="">
+                小计 升/降序
+            </div>
+            </button>
+            <style>
+            .new-box_:hover {
+                color: #315af8;
+                border: 1px solid #315af8 !important;
+            }
+            .new-box_:disabled {
+                border: 1px solid #dcdcdc !important;
+                cursor: not-allowed;
+                color: rgba(0, 0, 0, .3) !important;
+            }
+            </style>`;
+
+        $('div.bom-top-result.dfb div.flex-al-c:eq(2)').append(sortHt)
+    }
+
     // 搜索页
     let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html');
     // 购物车页
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
+    // BOM配单页
+    let isBomPage = () => location.href.includes('bom.szlcsc.com/member/eda/search.html');
+
 
     setInterval(function () {
 
@@ -2314,6 +2376,10 @@
 
         if (isSearchPage()) {
             searchStart()
+        }
+
+        if (isBomPage()) {
+            bomStart()
         }
     }, 500)
 })()
