@@ -1222,6 +1222,8 @@
         border-radius: 5px;
         z-index: 1501;
         font-size: 16px;
+        cursor: pointer;
+        user-select:none;
     }
     
     .hide_ {
@@ -1442,11 +1444,6 @@
         height: 30px;
         border: unset;
         background-color: white;
-    }
-    
-    
-    .hideBtn {
-        cursor: pointer;
     }
 
     button.btn-right_:hover,
