@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.17
+// @version      1.7.18
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -816,10 +816,10 @@
         $('.hideBtn,.showBtn').remove()
 
         return `
-        <div class="hideBtn">
+        <div class="hideBtn" ${getLocalData('SHOW_BOOL') === 'false' ? 'hide_': ''}>
             收起助手 >
         </div>
-        <div class="showBtn hide_">
+        <div class="showBtn ${getLocalData('SHOW_BOOL') === 'true' ? 'hide_': ''}" >
             < 展开助手
         </div>
         `
@@ -1079,7 +1079,7 @@
         ` : ''}
 
         ${showOrHideButtonFactory()}
-        <div class="bd">
+        <div class="bd ${getLocalData('SHOW_BOOL') === 'true' ? '': 'hide_'}">
         ${buttonListFactory()}
         <ul>`
 
@@ -2028,10 +2028,10 @@
      * 页面加载的时候，控制小窗显示隐藏
      */
     const onLoadSet = () => {
-        if (getLocalData('SHOW_BOOL') === 'false') {
-            $('#bd').hide()
-            $('.hideBtn').click()
-        }
+        // if (getLocalData('SHOW_BOOL') === 'false') {
+        //     $('#bd').hide()
+        //     $('.hideBtn').click()
+        // }
 
         // if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
         //     $('.auto-get-coupon').attr('checked', true)
@@ -2082,8 +2082,8 @@
         
         lookCouponListModal()
 
-        await setAwait(1000)
-        onLoadSet()
+        // await setAwait(1000)
+        // onLoadSet()
     }
 
     /**
@@ -2120,7 +2120,7 @@
         onChangeCountHandler()
         autoGetCouponTimerHandler()
 
-        onLoadSet()
+        // onLoadSet()
         lookCouponListModal()
     }
 
