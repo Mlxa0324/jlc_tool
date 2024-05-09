@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.7
+// @version      1.0.9
 // @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
@@ -29,8 +29,8 @@
      */
     const getConfig = () => {
         return {
-           
-             // ================ 搜索按钮优先级：  =================================================
+
+            // ================ 搜索按钮优先级：  =================================================
             // ================  大的优先级 valueList > columnNameList  ============================
             // ================  小的优先级 每个集合中从上到下有优先级  ==============================
 
@@ -117,7 +117,7 @@
      */
     const getColumnIndex = (columnNames, i = 0, columnIndex = -1) => {
         if (!columnNames[i]) {
-            return -1
+            return undefined
         }
         const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
         if ($eles.length === 0) {
@@ -138,7 +138,7 @@
    */
     const getColumnsAllIndex = (columnNames, resArray = [], i = 0, columnIndex = -1,) => {
         if (!columnNames[i]) {
-            return [-1]
+            return [undefined]
         }
         // 找到首行所有的列th标签
         const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
@@ -225,7 +225,7 @@
             }
 
             $targetAppendTarget.append(`
-            <div style="display: flex;">
+            <div style="display: flex; ">
                 <p class="search-tb" data-query="https://s.taobao.com/search?q=${kwd}/${footprintText}"
                     style='padding: 0px 8px; background-color: #00bfff7a;cursor: pointer;border-radius: 4px; margin-left: 7px;'>
                     搜淘宝
@@ -247,7 +247,7 @@
 
         // 搜索按钮的击事件
         $(`.search-tb-,.search-tb`).click(function () {
-            GM_openInTab($(this).data('query'), {})
+            GM_openInTab($(this).data('query'), { active: true, insert: true, setParent :true })
         })
 
         $(`.oneKey-search-tb`).click(function () {
@@ -300,15 +300,32 @@
             });
         });
 
-        // 增加纯净模式
-        $('div.p-bom div.bom-btn a:eq(0)').before(`
-            <button href="javascript:void(0)" class="btn-light" style="padding: 0 16px;
-            color: #58f !important; border-radius: 4px;
-            border: 1px solid #58f !important;
-            margin-right: 16px;" lay-on="page">
-                纯净模式
-            </a>
-        `)
+        if ($('#cjms').length === 0) {
+            // 增加纯净模式
+            $('div.p-bom div.bom-btn a:eq(0)').before(`
+                <button href="javascript:void(0)" class="btn-light" id="cjms" style="padding: 0 16px;
+                color: #58f !important; border-radius: 4px;
+                border: 1px solid #58f !important;
+                margin-right: 16px;" lay-on="page">
+                    纯净模式
+                </a>
+            `)
+        }
+
+        if ($('#myCss').length === 0) {
+            // $('body').append(`
+            // <style id='myCss'>
+            //     .table td {
+            //         max-width: 500px !important;
+            //         overflow: auto;
+            //     }
+
+            //     .search-tb-, .search-tb {
+            //         margin-top: 5px;
+            //     }
+            // </style>
+            // `)
+        }
     }
 
     const timerFunc = () => {
