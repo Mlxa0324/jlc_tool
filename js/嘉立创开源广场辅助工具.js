@@ -64,7 +64,7 @@
             // https://shopsearch.taobao.com/search?q=【这里写店铺名称来获取店铺url】
 
             // 在里面增加一行，格式如下
-            // 'xxxx': 'https://xxxxxxx/',   // 深圳市集芯电子 优信分店
+            // 'xxxx': 'https://xxxxxxx/',   // 这里添加备注
             storeNameDetailList: {
                 '优信（主）': 'https://youxin-electronic.taobao.com/',  // 信用值最高
                 '优信（备）': 'https://shop35338630.taobao.com/',       // 信用值还行
