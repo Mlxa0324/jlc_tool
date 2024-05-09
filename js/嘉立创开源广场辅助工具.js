@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.5
+// @version      1.0.7
 // @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
@@ -32,6 +32,12 @@
             // ================  大的优先级 valueList > columnNameList  ============================
             // ================  小的优先级 每个集合中从上到下有优先级  ==============================
 
+            // 支持立创搜索的列
+            searchList: [
+                'Supplier Part',
+                'Manufacturer Part',
+                'Manufacturer',
+            ],
             // 按钮组要追加所在的列名，从上到下有优先级
             targetAppend: [
                 'Device',
@@ -108,9 +114,12 @@
      * 从多个指定的列名中，查找最先出现的索引位置
      */
     const getColumnIndex = (columnNames, i = 0, columnIndex = -1) => {
+        if (!columnNames[i]) {
+            return -1
+        }
         const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
         if ($eles.length === 0) {
-            return getColumnIndex(columnNames, ++i);
+            return getColumnIndex(columnNames, ++i, columnIndex);
         }
         [...$eles].some(a => {
             columnIndex++
@@ -121,14 +130,44 @@
         }
     }
 
+    /**
+   * 获取索引
+   * 从多个指定的列名中，查找最先出现的索引位置
+   */
+    const getColumnsAllIndex = (columnNames, resArray = [], i = 0, columnIndex = -1,) => {
+        if (!columnNames[i]) {
+            return [-1]
+        }
+        // 找到首行所有的列th标签
+        const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
+        if ($eles.length === 0) {
+            const res = getColumnsAllIndex(columnNames, resArray, ++i, columnIndex);
+            if (res) {
+                resArray.push(res);
+            }
+            return res;
+        }
+        // 查找索引位置
+        [...$eles].some(a => {
+            columnIndex++
+            return $(a).text() === `${columnNames[i]}`
+        });
+
+        if (columnIndex > -1) {
+            resArray.push(columnIndex);
+            return getColumnsAllIndex(columnNames, resArray, ++i, -1);
+        }
+    }
+
     const start = () => {
         // 查询用于跳转淘宝的列索引
-        const { targetAppend, columnNameList, footprintList, valueList } = getConfig();
+        const { targetAppend, columnNameList, footprintList, valueList, searchList } = getConfig();
 
         const targetAppendIndex = getColumnIndex(targetAppend)
         const searchTbIndex = getColumnIndex(columnNameList)
         const footprintIndex = getColumnIndex(footprintList)
         const valueIndex = getColumnIndex(valueList)
+        let searchIndexs = []; getColumnsAllIndex(searchList, searchIndexs)
 
         // 没找到的话，等待查找索引成功
         if (searchTbIndex === -1) {
@@ -155,6 +194,7 @@
         $tdEles.each(function () {
             const $parents = $(this).parents('tr')
             const $targetAppendTarget = $parents.find(`td:eq(${targetAppendIndex})`)
+            const searchTargets = searchIndexs.map(searchIndex => $parents.find(`td:eq(${searchIndex})`))
 
             const keyword = $(this).text().trim()
             const searchTbText = $parents.find(`td:eq(${searchTbIndex})`).text().trim()
@@ -162,7 +202,9 @@
             const valueText = $parents.find(`td:eq(${valueIndex})`).text().trim()
 
             // 最后得到的关键字
-            const kwd = valueText ? valueText : (searchTbText ? searchTbText : keyword)
+            let kwd = valueText ? valueText : (searchTbText ? searchTbText : keyword)
+            // URL会把这个符号错误转换
+            kwd = kwd.replace('Ω', '')
 
             const forHtml = getConfig().storeNameList.map(storeName => {
                 return `<p class="search-tb-" data-query="https://s.taobao.com/search?q=${storeName}/${kwd}/${footprintText}"
@@ -190,6 +232,15 @@
                 ${forDetailHtml}
             <div>
             `)
+
+            searchTargets.map(item => {
+                const $this = $(item)
+                if ($this.html().trim()) {
+                    $this.html(`<a style="border: 1px solid #58f;
+                                    border-radius: 3px;
+                                    padding: 6px 15px;" target="_blank" href='https://so.szlcsc.com/global.html?k=${$this.html()}'>${$this.html()}</a>`)
+                }
+            })
         })
 
         // 搜索按钮的击事件
