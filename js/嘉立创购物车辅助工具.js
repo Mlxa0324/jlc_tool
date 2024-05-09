@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.16
+// @version      1.7.17
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -558,13 +558,17 @@
                     // 优惠券名称
                     const couponName = $couponEle.data('name')
 
-                    getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(res => {
+                    getAjax(`${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`).then(async res => {
                         res = JSON.parse(res)
                         if (res.result === 'success' || res.code == 200) {
+                            let msg = `${couponName}券，自动领取成功`;
+                            console.log(msg);
                             Qmsg.success({
-                                msg: `${couponName} 优惠券领取成功`,
-                                timeout: 8000
+                                content: msg,
+                                timeout: 4000
                             })
+                            await setTimeout(4000);
+                            allRefresh()
                         } else {
                             console.error(`自动领取优惠券失败：${res.msg}`)
                         }
@@ -759,7 +763,7 @@
             <div style="border: unset; position: relative; padding: 8px;">
             <div class='mb10 flex flex-sx-center'>
                 <label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label>
-                <input style="margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon"/>
+                <input style="margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon" ${getLocalData('AUTO_GET_COUPON_BOOL') === 'true' ? 'checked': ''}/>
             </div>
              
             <div class='mb10 flex flex-sx-center'>
@@ -2029,9 +2033,9 @@
             $('.hideBtn').click()
         }
 
-        if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
-            $('.auto-get-coupon').attr('checked', true)
-        }
+        // if (getLocalData('AUTO_GET_COUPON_BOOL') === 'true') {
+        //     $('.auto-get-coupon').attr('checked', true)
+        // }
 
         // $('textarea').css('min-width', `${$('textarea').css('width')} !important`)
     }
@@ -2075,8 +2079,11 @@
         onChangeCountHandler()
         autoGetCouponTimerHandler()
 
-        onLoadSet()
+        
         lookCouponListModal()
+
+        await setAwait(1000)
+        onLoadSet()
     }
 
     /**
