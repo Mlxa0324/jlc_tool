@@ -1,12 +1,13 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.7.18
+// @version      1.8.1
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
+// @match        https://www.szlcsc.com/huodong.html?**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
@@ -567,7 +568,7 @@
                                 content: msg,
                                 timeout: 4000
                             })
-                            await setTimeout(4000);
+                            await setTimeout(5000);
                             allRefresh()
                         } else {
                             console.error(`自动领取优惠券失败：${res.msg}`)
@@ -763,7 +764,7 @@
             <div style="border: unset; position: relative; padding: 8px;">
             <div class='mb10 flex flex-sx-center'>
                 <label style="font-size: 14px" class='ftw1000'>自动领取优惠券</label>
-                <input style="margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon" ${getLocalData('AUTO_GET_COUPON_BOOL') === 'true' ? 'checked': ''}/>
+                <input style="margin: 0 8px;" type="checkbox" class="checkbox auto-get-coupon" ${getLocalData('AUTO_GET_COUPON_BOOL') === 'true' ? 'checked' : ''}/>
             </div>
              
             <div class='mb10 flex flex-sx-center'>
@@ -816,10 +817,10 @@
         $('.hideBtn,.showBtn').remove()
 
         return `
-        <div class="hideBtn" ${getLocalData('SHOW_BOOL') === 'false' ? 'hide_': ''}>
+        <div class="hideBtn" ${getLocalData('SHOW_BOOL') === 'false' ? 'hide_' : ''}>
             收起助手 >
         </div>
-        <div class="showBtn ${getLocalData('SHOW_BOOL') === 'true' ? 'hide_': ''}" >
+        <div class="showBtn ${getLocalData('SHOW_BOOL') === 'true' ? 'hide_' : ''}" >
             < 展开助手
         </div>
         `
@@ -1079,7 +1080,7 @@
         ` : ''}
 
         ${showOrHideButtonFactory()}
-        <div class="bd ${getLocalData('SHOW_BOOL') === 'true' ? '': 'hide_'}">
+        <div class="bd ${getLocalData('SHOW_BOOL') === 'true' ? '' : 'hide_'}">
         ${buttonListFactory()}
         <ul>`
 
@@ -1453,8 +1454,7 @@
     .look-coupon-closebtn:hover,
     .look-coupon-btn:hover,
     .share_:hover,
-    .coupon-item-btn-text_:hover,
-    .coupon-item-goto:hover
+    .coupon-item-btn-text_:hover
     {
         background-color: #53a3d6 !important;
         color: white !important;
@@ -1609,29 +1609,6 @@
         text-align: center;
         border-radius: 5px;
         padding: 6px;
-    }
-
-    .coupon-item-goto {
-        right: 6% !important;
-        left: unset !important;
-        width: 43% !important;
-        position: absolute;
-        bottom: 12px;
-        margin-left: -96px;
-        box-sizing: border-box;
-        height: 30px;
-        text-align: center;
-        font-size: 14px;
-        font-weight: 400;
-        color: #fff;
-        line-height: 30px;
-        cursor: pointer;
-        border-radius: 4px;
-        background: #53a3d6;
-    }
-
-    .coupon-item-btn {
-        width: 43% !important;
     }
     </style>
     `
@@ -2000,6 +1977,43 @@
      */
     const couponGotoHandler = () => {
 
+        if ($('.coupon-item-goto').length > 0) {
+            return;
+        }
+
+        if ($('#conponCss_').length === 0)
+            $('body').append(`
+            <style id="conponCss_">
+                .coupon-item-goto {
+                    right: 6% !important;
+                    left: unset !important;
+                    width: 43% !important;
+                    position: absolute;
+                    bottom: 12px;
+                    margin-left: -96px;
+                    box-sizing: border-box;
+                    height: 30px;
+                    text-align: center;
+                    font-size: 14px;
+                    font-weight: 400;
+                    color: #fff;
+                    line-height: 30px;
+                    cursor: pointer;
+                    border-radius: 4px;
+                    background: #53a3d6;
+                }
+                .coupon-item-goto:hover
+                {
+                    background-color: #53a3d6 !important;
+                    color: white !important;
+                    cursor: pointer;
+                }
+                .coupon-item-btn {
+                    width: 43% !important;
+                }
+            </style>
+            `)
+
         const append_ = `
         <a class='coupon-item-goto' href="" target="_blank">
          快速入口
@@ -2076,7 +2090,7 @@
         onChangeCountHandler()
         autoGetCouponTimerHandler()
 
-        
+
         lookCouponListModal()
 
         // await setAwait(1000)
@@ -2296,6 +2310,32 @@
             </style>
             `)
         }
+
+        /**
+         * 显示最低购入价
+         * @param {*} params 
+         */
+        function minBuyMoney(params) {
+            $('.three-nr').find('.three-nr-item:eq(0) .price-warp p').each(function () {
+                let minMum = parseInt($(this).attr('minordernum'));
+                let orderPrice = parseFloat($(this).attr('orderprice'));
+
+                $(this).parents('.three-nr-item').before(`
+                    <p class="minBuyMoney_" style="
+                        width: fit-content;
+                        padding: 2px 3px;
+                        font-weight: 600;
+                        color: #0094e7;">最低购入价： ${(minMum * orderPrice).toFixed(6)}</p>
+                `)
+            })
+        }
+
+        // 
+        if ($('.minBuyMoney_').length === 0) {
+            minBuyMoney()
+        }
+
+
         // 多选展开按钮
         $('#more-brand').click(_renderMulitFilterBrandColor)
         // 品牌单选
@@ -2370,7 +2410,8 @@
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
     // BOM配单页
     let isBomPage = () => location.href.includes('bom.szlcsc.com/member/eda/search.html');
-
+    // BOM配单页
+    let isCouponPage = () => location.href.includes('www.szlcsc.com/huodong.html');
 
     setInterval(function () {
 
@@ -2384,6 +2425,10 @@
 
         if (isBomPage()) {
             bomStart()
+        }
+
+        if (isCouponPage()) {
+            couponGotoHandler()
         }
     }, 500)
 })()
