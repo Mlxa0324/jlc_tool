@@ -2410,7 +2410,7 @@
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
     // BOM配单页
     let isBomPage = () => location.href.includes('bom.szlcsc.com/member/eda/search.html');
-    // BOM配单页
+    // 优惠券页
     let isCouponPage = () => location.href.includes('www.szlcsc.com/huodong.html');
 
     setInterval(function () {
