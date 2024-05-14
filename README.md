@@ -30,8 +30,7 @@
 ## 插件截图
 
 - 购物车页
-
-![[购物车页](https://cart.szlcsc.com/cart/display.html)](/assets/cart_page.png)
+![[购物车页](https://cart.szlcsc.com/cart/display.html)](/assets/cart_page_.png)
 
 - 优惠券按钮
 
@@ -39,7 +38,7 @@
 
 - 搜索页
 
-![[搜索页](https://so.szlcsc.com/global.html)](/assets/search_page_.png)
+![[搜索页](https://so.szlcsc.com/global.html)](/assets/search_page.png)
 
 ## 关于
 
