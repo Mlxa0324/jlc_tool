@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.1
+// @version      1.8.2
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1108,7 +1108,7 @@
             tempHtml += `
             <li class='li-cs click-hv ftw500'>
                 <div>
-                    <p class="small-sign ${juageMultiDepotByBrandName(key) ? 'multi_' : 'multi_default'} multi_pos_">多</p>
+                    <p class="small-sign ${juageMultiDepotByBrandName(key) ? 'multi_' : 'multi_default'} multi_pos_" style="font-size: 12px; line-height: 100%;">多仓库</p>
                     <span class='key sort_' style="width: 155px; text-overflow: ellipsis;overflow: hidden;white-space: nowrap;">${key}</span>
                     <span class='val sort_' style="width: 90px;">${val}</span>
                     <span class='val sort_' style="width: 80px;">${(16 - val).toFixed(2)}</span>
