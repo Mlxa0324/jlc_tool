@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.2
+// @version      1.8.3
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -12,6 +12,7 @@
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
 // @resource customCSS https://gitee.com/snwjas/message.js/raw/master/dist/message.min.css
+// @grant        GM_openInTab
 // @grant        GM_xmlhttpRequest
 // @grant        GM_setClipboard
 // @grant        GM_addStyle
@@ -2333,6 +2334,24 @@
         // 
         if ($('.minBuyMoney_').length === 0) {
             minBuyMoney()
+        }
+
+        // 搜索页的 一键搜淘宝
+        if($('.searchTaobao_').length === 0) {
+            
+            $('.line-box:not(:contains("预售拼团")) li.pan-list').append(`
+                <button type="button" class="pan-list-btn searchTaobao_" style="margin-top: 5px; background: #199fe9;">一键搜淘宝</button>
+            `)
+
+            $('.searchTaobao_').on('click', function (params) {
+                const $parents = $(this).parents('td.line-box')
+                const productName = $parents.find('a.product-name-link').attr('title')
+                const footprint = $parents.find('li.li-ellipsis:contains("封装:") span:eq(1)').attr('title')
+                // console.log('===================', productName, footprint);
+
+                GM_openInTab(`https://s.taobao.com/search?q=${productName}/${footprint}`, { active: true, insert: true, setParent: true })
+            })
+
         }
 
 
