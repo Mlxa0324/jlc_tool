@@ -1,14 +1,15 @@
 // ==UserScript==
-// @name         淘宝店铺名追加工具
+// @name         嘉立创-淘宝搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
 // @version      1.1.1
-// @description  try to take over the world!
+// @description  淘宝搜索栏的增强按钮组
 // @author       You
 // @match        https://s.taobao.com/search?**
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.9/layui.min.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=taobao.com
 // @grant        none
+// @license      MIT
 // ==/UserScript==
 
 (function () {
@@ -21,7 +22,8 @@
             // 这里不做配置
             '$OBJECT_KEY$': '_',
             storeConf: {
-                // 优信电子 这块，名字不能重复
+                // 优信电子-模糊 这块，名字不能重复
+                // 只取第一个横线前面的字符
                 '优信电子-模糊': {
                     // 支持精确店铺查询，为空则在淘宝首页搜索
                     url: ``,
