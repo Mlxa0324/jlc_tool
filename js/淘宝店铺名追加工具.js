@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         淘宝店铺名追加工具
 // @namespace    http://tampermonkey.net/
-// @version      2024-05-17
+// @version      1.1.1
 // @description  try to take over the world!
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -17,58 +17,128 @@
     // 配置信息
     const config = () => {
         return {
-            storeNames: {
-                '优信电子': {
-                    attr: {
-                        'style': `right: 76px; background: #aaaaaa;`,
-                        'lay-on': 'yxdz',
-                    },
-                    'func': function () {
-                        const k = '优信电子'
-                        if (!$('#q').val().includes(k)) {
-                            $('#q').val($('#q').val().replace(/(\ .+电子)/g, '') + ' ' + k)
-                        }
-                        $('#button').click()
-                    },
-
+            // func中，替换替换对象Key  '优信电子'中的func $OBJECT_KEY$会被替换成 "优信电子"
+            // 这里不做配置
+            '$OBJECT_KEY$': '_',
+            storeConf: {
+                // 优信电子 这块，名字不能重复
+                '优信电子-模糊': {
+                    // 支持精确店铺查询，为空则在淘宝首页搜索
+                    url: ``,
+                },
+                '集芯电子-模糊': {
+                    // 支持精确店铺查询，为空则在淘宝首页搜索
+                    url: ``,
+                },
+                '优信电子-主': {
+                    // 支持精确店铺查询，为空则在淘宝首页搜索
+                    url: `https://youxin-electronic.taobao.com/`,
+                },
+                '优信电子-备': {
+                    // 支持精确店铺查询，为空则在淘宝首页搜索
+                    url: `https://shop35338630.taobao.com/`,
                 },
                 '集芯电子': {
-                    attr: {
-                        'style': `right: 150px; background: #aaaaaa;`,
-                        'lay-on': 'jxdz',
-                    },
-                    'func': function () {
-                        const k = '集芯电子'
-                        if (!$('#q').val().includes(k)) {
-                            $('#q').val($('#q').val().replace(/(\ .+电子)/g, '') + ' ' + k)
-                        }
-                        $('#button').click()
-                    },
+                    // 支持精确店铺查询，为空则在淘宝首页搜索
+                    url: `https://shop107953716.taobao.com/`,
                 },
             }
         }
     }
 
-    let html = ``
-    let funcs_res = {}, funcs = []
-    const storeNames = config().storeNames
-    for (let k of Object.keys(storeNames)) {
-        const v = storeNames[k];
-        const attr = v.attr
-        const attr_res = Object.keys(attr).map(a => `${a}="${attr[a]}"`).join(' ')
-        html += `
-            <button class="btn-search" ${attr_res} type="button">${k}</button>
-            `
-        funcs.push({ [v.attr['lay-on']]: v['func'] })
+    /**
+     * config加工处理
+     * @returns 
+     */
+    const getConfig = () => {
+        const config_ = config();
+
+        for (let storeName of Object.keys(config_.storeConf)) {
+            let storeConfig = config_.storeConf[storeName];
+            // 混入店铺的基础配置
+            config_.storeConf[storeName] = { ...storeConfig, ...baseConf() }
+        }
+
+        return config_;
+    }
+
+    /**
+  * 深色 随机色
+  * @returns 
+  */
+    const srdmRgbColor = () => {
+        //随机生成RGB颜色
+        let arr = [];
+        for (var i = 0; i < 3; i++) {
+            // 暖色
+            arr.push(Math.floor(Math.random() * 128 + 64));
+            // 亮色
+            // arr.push(Math.floor(Math.random() * 128 + 128));
+        }
+        let [r, g, b] = arr;
+        // rgb颜色
+        // var color=`rgb(${r},${g},${b})`;
+        // 16进制颜色
+        var color = `#${r.toString(16).length > 1 ? r.toString(16) : '0' + r.toString(16)}${g.toString(16).length > 1 ? g.toString(16) : '0' + g.toString(16)}${b.toString(16).length > 1 ? b.toString(16) : '0' + b.toString(16)}`;
+        return color;
+    }
+
+    const baseConf = () => ({
+        attr: {
+            'style': `background: ${srdmRgbColor()};
+                        width: fit-content;
+                        padding: 5px 7px;
+                        position: unset;
+                        margin-right: 10px;
+                        font-size: larger;
+                        height: fit-content;`,
+            'lay-on': `func_${(Math.random() + '').replace('0.', '')}`,
+        },
+        'func': function () {
+            // 跳转店铺逻辑
+            if ($(this).data('url').length) {
+                window.open($(this).data('url'), $(this).data('target'))
+            }
+            // 模糊匹配模块
+            else {
+                if (!$('#q').val().includes(('$OBJECT_KEY$').split('-')[0])) {
+                    const arr = $('#q').val().split(' ')
+                    $('#q').val($('#q').val().replace(` ${arr[arr.length - 1]}`, '') + ' ' + ('$OBJECT_KEY$').split('-')[0])
+                }
+            }
+            $('#button').click()
+        }
+    })
+
+    let html_start = `<div style="display: flex; margin-top: 8px;">`;
+    let html_content = ``;
+    let html_end = `</div>`;
+
+    let funcs_res = {}, funcs = [];
+    const storeConf = getConfig().storeConf;
+    for (let storeName of Object.keys(storeConf)) {
+        const entity = storeConf[storeName];
+        // 取值
+        const { attr, url } = entity;
+        // 标签属性
+        const attr_res = Object.keys(attr).map(a => `${a}="${attr[a]}"`).join(' ');
+        // 生成淘宝店铺搜索的链接
+        const storeSearchPath = url.length ? `${url}/search.htm?keyword=${$('#q').val().replace(/[\ \u4e00-\u9fa5]+/g, '')}` : '';
+
+        console.log(storeSearchPath)
+        html_content += `<button class="btn-search" data-url="${storeSearchPath}" data-target="_blank" ${attr_res} type="button">${storeName}</button>`;
+        // 只取function的正文
+        const funcContent = entity['func'].toString().replace(/\$OBJECT_KEY\$/g, storeName).replace(/}$/g, '').replace(/(function|\(\) {|\(\){)/g, '')
+        funcs.push({ [entity.attr['lay-on']]: new Function(funcContent) })
     }
 
     funcs.forEach(item => {
         funcs_res = {
             ...funcs_res,
-            ...item
+            ...item,
         }
     })
-    $('#J_Search form').append(html)
+    $('#J_Search form').append(html_start + html_content + html_end)
 
     layui.use(function () {
         layui.util.on('lay-on', funcs_res);

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.4
+// @version      1.8.5
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -2143,20 +2143,73 @@
      */
     const searchStart = async () => {
 
-         // 搜索页的 一键搜淘宝
-         if($('.searchTaobao_').length === 0) {
-            
+        // 搜索页的 一键搜淘宝
+        if ($('.searchTaobao_').length === 0) {
+
+            /**
+            * 非阻容，其他数据处理
+            * @param {*} parents 行级标签
+            * @param {*} resArr  数据存放的数组
+             */
+            function other(parents, resArr) {
+                let productName = parents.find('a.product-name-link').attr('title') || '';
+
+                if (productName.length === 0 || resArr.length > 0) {
+                    return;
+                }
+
+                let footprint = parents.find('li.li-ellipsis:contains("封装:") span:eq(1)').attr('title') || '';
+                resArr.push(productName); resArr.push(footprint);
+            }
+            /**
+             * 电阻数据处理
+             * @param {*} parents 行级标签
+             * @param {*} resArr  数据存放的数组
+             */
+            function R(parents, resArr) {
+                const r = parents.find('li.li-ellipsis:contains("阻值:")').text().replace(/(阻值:|Ω)+/g, '').trim()
+
+                if (r.length === 0 || resArr.length > 0) {
+                    return;
+                }
+                const f = parents.find('li.li-ellipsis:contains("封装:")').text().replace('封装:', '').trim()
+                const j = parents.find('li.li-ellipsis:contains("精度:")').text().replace(/(精度:|\±)+/g, '').trim()
+
+                resArr.push(r); resArr.push(f); resArr.push(j);
+            }
+
+            /**
+             * 电容数据处理
+             * @param {*} parents  行级标签
+             * @param {*} resArr  数据存放的数组
+             */
+            function C(parents, resArr) {
+                const c = parents.find('li.li-ellipsis:contains("容值:")').text().replace('容值:', '').trim()
+
+                if (c.length === 0 || resArr.length > 0) {
+                    return;
+                }
+
+                const v = parents.find('li.li-ellipsis:contains("额定电压:")').text().replace('额定电压:', '').trim()
+                const j = parents.find('li.li-ellipsis:contains("精度:")').text().replace(/(精度:|\±)+/g, '').trim()
+                const f = parents.find('li.li-ellipsis:contains("封装:")').text().replace('封装:', '').trim()
+
+                resArr.push(c); resArr.push(v); resArr.push(j); resArr.push(f);
+            }
+
+            // 预售拼团 不处理，其他的都追加按钮
             $('.line-box:not(:contains("预售拼团")) li.pan-list').append(`
                 <button type="button" class="pan-list-btn searchTaobao_" style="margin-top: 5px; background: #199fe9;">一键搜淘宝</button>
             `)
 
             $('.searchTaobao_').on('click', function (params) {
-                const $parents = $(this).parents('td.line-box')
-                const productName = $parents.find('a.product-name-link').attr('title')
-                const footprint = $parents.find('li.li-ellipsis:contains("封装:") span:eq(1)').attr('title')
-                // console.log('===================', productName, footprint);
+                let searchArrVals = [];
 
-                GM_openInTab(`https://s.taobao.com/search?q=${productName}/${footprint}`, { active: true, insert: true, setParent: true })
+                const $parents = $(this).parents('td.line-box');
+                // 阻容处理、其他元件处理
+                R($parents, searchArrVals); C($parents, searchArrVals); other($parents, searchArrVals);
+
+                GM_openInTab(`https://s.taobao.com/search?q=${searchArrVals.join('/')}`, { active: true, insert: true, setParent: true })
             })
 
         }
