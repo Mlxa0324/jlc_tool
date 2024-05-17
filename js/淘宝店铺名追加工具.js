@@ -53,7 +53,6 @@
     let funcs_res = {}, funcs = []
     const storeNames = config().storeNames
     for (let k of Object.keys(storeNames)) {
-        debugger
         const v = storeNames[k];
         const attr = v.attr
         const attr_res = Object.keys(attr).map(a => `${a}="${attr[a]}"`).join(' ')
