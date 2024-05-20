@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.5
+// @version      1.8.7
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @match        https://www.szlcsc.com/huodong.html?**
+// @match        https://list.szlcsc.com/brand_page/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
@@ -2214,10 +2215,6 @@
 
         }
 
-        if ($('div#_remind').length > 0) {
-            return;
-        }
-
         /**
         * 设置单选的背景颜色
         */
@@ -2332,13 +2329,6 @@
             $('.hoice-ys .more-input02').click()
         }
 
-        // 更新优惠券列表到集合中
-        await getCouponHTML()
-
-        _renderFilterBrandColor()
-
-        listRenderBrandColor()
-
         if ($('#_remind').length === 0) {
             $('.det-screen:contains("品牌：")').append(`
             <div id='_remind'>
@@ -2381,6 +2371,23 @@
             }
             </style>
             `)
+
+            // 更新优惠券列表到集合中
+            await getCouponHTML()
+
+            _renderFilterBrandColor()
+
+            listRenderBrandColor()
+
+            // 多选展开按钮
+            $('#more-brand').click(_renderMulitFilterBrandColor)
+            // 品牌单选
+            $('.screen-more .more-brand').click(_renderFilterBrandColor)
+            // 多选新人券
+            $('.get_new_coupon').click(() => multiFilterBrand(true))
+            // 多选非新人券
+            $('.get_notnew_coupon').click(() => multiFilterBrand(false))
+
         }
 
         /**
@@ -2406,16 +2413,6 @@
         if ($('.minBuyMoney_').length === 0) {
             minBuyMoney()
         }
-
-
-        // 多选展开按钮
-        $('#more-brand').click(_renderMulitFilterBrandColor)
-        // 品牌单选
-        $('.screen-more .more-brand').click(_renderFilterBrandColor)
-        // 多选新人券
-        $('.get_new_coupon').click(() => multiFilterBrand(true))
-        // 多选非新人券
-        $('.get_notnew_coupon').click(() => multiFilterBrand(false))
     }
 
     // 排序记录 desc降序，asc升序
@@ -2477,7 +2474,7 @@
     }
 
     // 搜索页
-    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html');
+    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand_page/');
     // 购物车页
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
     // BOM配单页
