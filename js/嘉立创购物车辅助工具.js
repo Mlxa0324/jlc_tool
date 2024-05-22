@@ -1889,7 +1889,7 @@
 
             // 当前品牌全选
             if ($brandCheckedEle.length != $brandEle.length) {
-                setAwaitFunc(100, function() {
+                setAwaitFunc(10, function() {
                     $brandNotCheckedEle.click();
                 })
                 return;
@@ -1915,13 +1915,13 @@
 
             if (isNckOtherPdtsBool) {
                 // 获取现货
-                  setAwaitFunc(100, function() {
+                  setAwaitFunc(10, function() {
                     _filterNotSelf($havedEles, brandName, `li.cart-li .check-box:checked`).click()
                 })
             }
             else {
                 // 全选
-                setAwaitFunc(100, function() {
+                setAwaitFunc(10, function() {
                     _filterNotSelf(getHavedNotCheckedLineInfo(), brandName, `li.cart-li .check-box:not(:checked)`).click()
                 })
             }
