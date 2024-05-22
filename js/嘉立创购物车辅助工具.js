@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.7
+// @version      1.8.8
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -718,7 +718,6 @@
             setTimeout(() => {
                 cartModuleLoadCartList();
                 setTimeout(allRefresh, 800);
-                basicSettings()
             }, 1000);
 
         })
@@ -752,7 +751,6 @@
             setTimeout(() => {
                 cartModuleLoadCartList();
                 setTimeout(allRefresh, 800);
-                basicSettings()
             }, 1000);
         })
     }
@@ -808,6 +806,25 @@
              ${lookCouponListBtnFactory()}
         </div>
         `
+    }
+
+    /**
+     * 手动刷新按钮
+     * @returns 
+     */
+    const refreshBtnFactory = () => {
+        const svg_ = `<svg t="1716342086339" style="position: absolute; top: 24px; left: 4px; cursor: pointer;" class="icon refresh_btn_" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="2572" width="24" height="24"><path d="M981.314663 554.296783a681.276879 681.276879 0 0 1-46.986468 152.746388q-105.706098 230.734238-360.983096 242.19829a593.06288 593.06288 0 0 1-228.689008-33.853939v-1.022615l-31.808709 79.979258a55.759429 55.759429 0 0 1-20.506122 22.551352 40.043451 40.043451 0 0 1-21.04434 5.382184 51.076928 51.076928 0 0 1-19.483507-5.382184 95.210839 95.210839 0 0 1-13.347817-7.158305 52.314831 52.314831 0 0 1-5.382184-4.628679L71.671707 731.908862a57.427906 57.427906 0 0 1-7.158305-21.528737 46.932646 46.932646 0 0 1 1.022615-17.438277 35.952991 35.952991 0 0 1 7.158305-13.347816 74.435608 74.435608 0 0 1 10.279972-10.279972 60.495751 60.495751 0 0 1 11.248765-7.373593 50.431066 50.431066 0 0 1 8.18092-3.606063 6.189512 6.189512 0 0 0 3.067845-1.776121l281.003839-74.866183a91.497132 91.497132 0 0 1 35.899168-2.583448 122.337047 122.337047 0 0 1 22.174599 6.404799 21.528737 21.528737 0 0 1 12.325202 12.325202 76.157907 76.157907 0 0 1 4.628679 14.854829 47.63233 47.63233 0 0 1 0 14.370431 55.167388 55.167388 0 0 1-2.04523 10.764369 10.764368 10.764368 0 0 0-1.022615 3.606063l-32.831324 79.979258a677.50935 677.50935 0 0 0 164.264262 39.505232q77.395809 7.696523 131.809692-3.606063a358.507291 358.507291 0 0 0 101.023598-36.921784 381.27393 381.27393 0 0 0 73.951211-50.753997 352.64071 352.64071 0 0 0 48.708767-55.382676 410.391547 410.391547 0 0 0 26.910921-41.550462c3.767529-7.481236 6.673908-13.616926 8.719139-18.460892zM40.885614 449.667121a685.69027 685.69027 0 0 1 63.563595-176.427998q118.0313-212.273346 374.330913-207.160271a571.803252 571.803252 0 0 1 207.160271 39.989629l33.853939-78.956643A75.619688 75.619688 0 0 1 735.187378 9.189165a37.67529 37.67529 0 0 1 15.393047-8.234742 42.303968 42.303968 0 0 1 14.854829-0.538219 47.578509 47.578509 0 0 1 13.347817 3.606064 102.907362 102.907362 0 0 1 11.302586 6.13569 49.569917 49.569917 0 0 1 6.673909 4.628678l3.067845 3.067845 154.84544 276.913379a81.970666 81.970666 0 0 1 6.13569 22.712817 46.986468 46.986468 0 0 1-1.022615 17.438277 32.293105 32.293105 0 0 1-7.696523 13.347817 69.322533 69.322533 0 0 1-10.764369 9.741753 92.142994 92.142994 0 0 1-11.302587 6.673909l-8.18092 4.09046a7.104483 7.104483 0 0 1-3.067845 1.022615l-283.049068 67.546412a112.003254 112.003254 0 0 1-46.125319-1.022615c-11.571696-3.390776-19.160576-8.019454-22.551352-13.832214a41.173709 41.173709 0 0 1-5.382184-21.04434 97.256069 97.256069 0 0 1 1.291724-17.438277 24.381295 24.381295 0 0 1 3.067845-8.234742L600.632773 296.81309a663.730958 663.730958 0 0 0-164.102797-43.057474q-77.987849-9.203535-131.809692 0a348.227319 348.227319 0 0 0-101.292707 33.853938 368.571976 368.571976 0 0 0-75.350579 49.246986 383.31916 383.31916 0 0 0-50.269601 54.360061 408.507783 408.507783 0 0 0-28.740863 41.012244A113.025869 113.025869 0 0 0 40.885614 449.667121z m0 0" fill="#3498db" p-id="2573"></path></svg>`
+        return svg_
+    }
+    
+    /**
+     * 手动刷新按钮 点击事件
+     */
+    const refreshBtnHandler = () => {
+        $('.refresh_btn_').click(function() {
+            cartModuleLoadCartList()
+            allRefresh()
+        })
     }
 
 
@@ -1088,6 +1105,7 @@
 
         const head = `
         <li class='li-cs' style="position: sticky; top: 0px; background-color: white;">
+        ${refreshBtnFactory()}
                 <div>
                 <!-- 勾选的品牌数量 -->
                     ${brandCountFactory()}
@@ -1620,7 +1638,7 @@
      */
     const appendHtml = () => {
 
-        console.time('appendHtml')
+        // console.time('appendHtml')
 
         if ($('#myCss').length === 0) {
             $('body').append(cssFactory())
@@ -1640,10 +1658,11 @@
         shareHandler()
         shareParseHandler()
         lockProductHandler()
+        refreshBtnHandler()
         // =============================
         resizeHeight()
 
-        console.timeEnd('appendHtml')
+        // console.timeEnd('appendHtml')
     }
 
     /**
@@ -1651,19 +1670,18 @@
      */
     const basicSettings = () => {
         // 多选框放大
-        $('input.check-box').css('zoom', '150%')
+        $('input.check-box:not([style*=zoom])').css('zoom', '150%')
 
         // 点击物料图片，操作多选框
-        $('.product-img').each(function () {
-            $(this).on('click', function (target) {
-                $(this).prev('.check-box').click()
+        $('.product-img:not([class*=click_do_])').addClass('click_do_')
+            .on('click', function () {
+                $(this).addClass('click_do_').prev('.check-box').click();
             })
-        })
 
         // 购物车列表 点击品牌跳转到该品牌下的商品
-        let brandElement = $('.product-item li.cart-li-pro-info').find('div:eq(2)')
+        let brandElement = $('.product-item li.cart-li-pro-info:not([class*=open_do_])').find('div:eq(2)')
         brandElement.css({ cursor: 'pointer' })
-        brandElement.on('click', function () {
+        brandElement.addClass('open_do_').on('click', function () {
             window.open(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRegex(this.innerText)}`)
         })
     }
@@ -1848,6 +1866,19 @@
 
             let brandName = $(this).text().trim()
 
+            // 当前品牌行
+            const $brandEle = $(`.product-item:contains("${brandName}")`)
+            // 当前品牌选中的
+            const $brandCheckedEle = $(`.product-item:contains("${brandName}") li.cart-li .check-box:checked`)
+            // 当前品牌没有选中的
+            const $brandNotCheckedEle = $(`.product-item:contains("${brandName}") li.cart-li .check-box:not(:checked)`)
+
+            // 当前品牌全选
+            if ($brandCheckedEle.length != $brandEle.length) {
+                $brandNotCheckedEle.click();
+                return;
+            }
+
             /**
              * 过滤封装
              * @param {*} eles 
@@ -1861,6 +1892,7 @@
 
             // 获取选中的现货
             const $havedEles = getHavedCheckedLineInfo()
+
 
             // 看看有没有选中除自己之外，其他品牌的商品
             const isNckOtherPdtsBool = _filterNotSelf($havedEles, brandName, `li.cart-li:eq(2):not(:contains(${brandName}))`).length > 0
@@ -2059,7 +2091,7 @@
      */
     const refresh = async (notRefreshCouponHtml) => {
 
-        console.time('refresh')
+        // console.time('refresh')
 
         if (getLocalData('SHOW_BOOL') === 'false') {
             return
@@ -2075,7 +2107,7 @@
 
         setBrandColor()
 
-        console.timeEnd('refresh')
+        // console.timeEnd('refresh')
     }
 
     /**
@@ -2083,7 +2115,6 @@
      */
     const allRefresh = async () => {
 
-        basicSettings()
         await getCouponHTML()
 
         refresh(true)
@@ -2117,13 +2148,15 @@
      */
     const cartStart = async () => {
 
+        // 判断是否已经处理完成，否则会有性能问题
+        basicSettings()
+
         if ($('div.bd').length > 0) {
             return;
         }
 
         window.addEventListener('resize', resizeHeight)
 
-        basicSettings()
         eachCartList()
         await getCouponHTML()
         appendHtml()
