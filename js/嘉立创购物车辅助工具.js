@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.8
+// @version      1.8.9
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -112,6 +112,19 @@
         return new Promise((resolve, reject) => {
             setTimeout(() => {
                 resolve(true)
+            }, timeout);
+        })
+    }
+
+    /**
+     * 等待 执行函数
+     * @param {*} timeout 
+     * @returns 
+     */
+    const setAwaitFunc = (timeout, func) => {
+        return new Promise((resolve, reject) => {
+            setTimeout(() => {
+                func && func()
             }, timeout);
         })
     }
@@ -824,6 +837,7 @@
         $('.refresh_btn_').click(function() {
             cartModuleLoadCartList()
             allRefresh()
+            Qmsg.success(`静默刷新购物车成功！`)
         })
     }
 
@@ -1875,7 +1889,9 @@
 
             // 当前品牌全选
             if ($brandCheckedEle.length != $brandEle.length) {
-                $brandNotCheckedEle.click();
+                setAwaitFunc(100, function() {
+                    $brandNotCheckedEle.click();
+                })
                 return;
             }
 
@@ -1899,11 +1915,15 @@
 
             if (isNckOtherPdtsBool) {
                 // 获取现货
-                _filterNotSelf($havedEles, brandName, `li.cart-li .check-box:checked`).click()
+                  setAwaitFunc(100, function() {
+                    _filterNotSelf($havedEles, brandName, `li.cart-li .check-box:checked`).click()
+                })
             }
             else {
                 // 全选
-                _filterNotSelf(getHavedNotCheckedLineInfo(), brandName, `li.cart-li .check-box:not(:checked)`).click()
+                setAwaitFunc(100, function() {
+                    _filterNotSelf(getHavedNotCheckedLineInfo(), brandName, `li.cart-li .check-box:not(:checked)`).click()
+                })
             }
         })
     }
