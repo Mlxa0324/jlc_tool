@@ -42,7 +42,7 @@
 
 - 搜索页
 
-![[搜索页](https://so.szlcsc.com/global.html)](/assets/search_page.png)
+![[搜索页](https://so.szlcsc.com/global.html)](/assets/search_page_2.jpg)
 
 - 官方优惠券页
 

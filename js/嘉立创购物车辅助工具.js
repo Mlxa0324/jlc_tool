@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.9
+// @version      1.8.11
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -2225,6 +2225,74 @@
      * @param {*} type 单选多选 ONE/MORE
      */
     const searchStart = async () => {
+
+        // 回到顶部
+        if ($('div.logo-wrap').hasClass('active')) {
+            if ($('#scrollTo_').length === 0) {
+                $('#productListFixedHeader:visible').parents('body').after(`
+                <a id="scrollTo_" style="border-radius: 5px; z-index: 10000; position: fixed; right: 30px; bottom: 100px;padding: 20px; background: white; border: 2px solid #199fe9; font-size: 20px; font-weight: 600;" href="javascript:scrollTo(0,0)">
+                    <svg t="1716543304931" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4240" width="40" height="40"><path d="M0 96V0h1024v96z" fill="#3498db" p-id="4241"></path><path d="M384 1022.72V606.4H255.488a64 64 0 0 1-46.336-108.16l256.448-269.312a64 64 0 0 1 92.8 0l255.744 269.44a64 64 0 0 1-46.4 108.032h-120.32v416.32H384z" fill="#3498db" p-id="4242"></path></svg>
+                </a>
+                `);
+            }
+        } else {
+            $('#scrollTo_').remove();
+        }
+
+        if ($('span[class*=select-spec-]').length === 0) {
+            // 查询封装规格
+            const selectSpecHandler = () => {
+                /**
+                 * 封装查询-多选框点击
+                 * @param scpcName   规格封装名称
+                 * @param selectType 模糊查：MHC，精确查：JQC
+                 */
+                const _clickSpecFunc = async (scpcName, selectType) => {
+                    // 统一文字
+                    $(`.det-screen:contains("规格：") .det-screen-title`).text('封装：');
+                    // 展开规格
+                    $(`.det-screen:contains("封装：") #more-standard`).click()
+
+                    switch (selectType) {
+                        // 模糊查
+                        case "MHC":
+                            $(`.det-screen:contains("封装：") label.fuxuanku-lable:contains("${scpcName}")`).click()
+                            break;
+                        // 精确查
+                        case "JQC":
+                            $(`.det-screen:contains("封装：") label.fuxuanku-lable[title="${scpcName}"]`).click()
+                            break;
+                        default:
+                            break;
+                    }
+
+                    // 查找规格对应的选项
+                    $(`.det-screen:contains("封装：") input[value="确定"]`).click()
+                }
+
+                $('.li-ellipsis:contains("封装:")').each(function () {
+                    // 查询到点击追加的规格名称
+                    let specName = $(this).find('span:eq(1)').attr('title');
+                    // 页面追加按钮元素
+                    $(this).after(`
+                    <li class="li-el">
+                    <span class="select-spec-mh" style="border-radius: 2px; display: inline-flex; padding: 3px 8px; color: white; cursor: pointer; user-select: none; background: #199fe9;" 
+                            specName="${specName}" selectType="MHC">封装模糊匹配</span>
+                    <span class="select-spec-jq" style="border-radius: 2px; display: inline-flex; padding: 3px 8px; color: white; cursor: pointer; user-select: none; background: #199fe9; margin-left: 3px;" 
+                            specName="${specName}" selectType="JQC">封装精确匹配</span>
+                    </li>
+                    `);
+                });
+
+                $('.li-el + li').css('height', '10px')
+                // 查询封装-按钮事件
+                $('span[class*=select-spec-]').on('click', function () {
+                    _clickSpecFunc($(this).attr('specName'), $(this).attr('selectType'))
+                })
+            }
+            // 查询规格快捷按钮
+            selectSpecHandler()
+        }
 
         // 搜索页的 一键搜淘宝
         if ($('.searchTaobao_').length === 0) {
