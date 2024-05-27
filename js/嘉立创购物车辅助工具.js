@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.11
+// @version      1.8.13
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @match        https://www.szlcsc.com/huodong.html?**
-// @match        https://list.szlcsc.com/brand_page/**
+// @match        https://list.szlcsc.com/brand**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
@@ -1722,11 +1722,10 @@
             })
 
         // 购物车列表 点击品牌跳转到该品牌下的商品
-        let brandElement = $('.product-item li.cart-li-pro-info:not([class*=open_do_])').find('div:eq(2)')
-        brandElement.css({ cursor: 'pointer' })
-        brandElement.addClass('open_do_').on('click', function () {
-            window.open(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRegex(this.innerText)}`)
-        })
+        $('.product-item li.cart-li-pro-info:not(:has([class*=open_do_]))').find('div:eq(2)')
+            .css({ cursor: 'pointer' }).addClass('open_do_').click(function () {
+                GM_openInTab(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRegex(this.innerText)}`, { active: true, insert: true, setParent: true })
+            })
     }
 
 
@@ -2624,7 +2623,7 @@
     }
 
     // 搜索页
-    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand_page/');
+    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand');
     // 购物车页
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
     // BOM配单页
