@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.14
+// @version      1.8.15
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -9,6 +9,7 @@
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @match        https://www.szlcsc.com/huodong.html?**
 // @match        https://list.szlcsc.com/brand**
+// @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
@@ -2623,7 +2624,7 @@
     }
 
     // 搜索页
-    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand');
+    let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand') || location.href.includes('list.szlcsc.com/catalog');
     // 购物车页
     let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html');
     // BOM配单页
