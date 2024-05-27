@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.15
+// @version      1.8.16
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -2303,7 +2303,7 @@
             * @param {*} resArr  数据存放的数组
              */
             function other(parents, resArr) {
-                let productName = parents.find('a.product-name-link').attr('title') || '';
+                let productName = parents.find('li.li-ellipsis a:eq(0)').attr('title') || '';
 
                 if (productName.length === 0 || resArr.length > 0) {
                     return;
