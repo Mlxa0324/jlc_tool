@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         嘉立创-淘宝搜索栏的增强按钮组
+// @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.1.1
-// @description  嘉立创-淘宝搜索栏的增强按钮组
+// @version      1.1.2
+// @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
 // @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js

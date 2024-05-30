@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.9
+// @version      1.0.10
 // @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
@@ -29,7 +29,11 @@
      */
     const getConfig = () => {
         return {
-
+            // table的选择器，方便后期修改
+            tableElement: 'div[class*=detail_bom_] table',
+            tableTrElement : `div[class*=detail_bom_] table tr`,
+            tableThElement : `div[class*=detail_bom_] table tr th`,
+            buttonAppendElement : `div[class*=detail_bom-buttons_] button:eq(0)`,
             // ================ 搜索按钮优先级：  =================================================
             // ================  大的优先级 valueList > columnNameList  ============================
             // ================  小的优先级 每个集合中从上到下有优先级  ==============================
@@ -119,13 +123,13 @@
         if (!columnNames[i]) {
             return undefined
         }
-        const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
+        const $eles = $(`${getConfig().tableTrElement}:contains("${columnNames[i]}") th`);
         if ($eles.length === 0) {
             return getColumnIndex(columnNames, ++i, columnIndex);
         }
         [...$eles].some(a => {
             columnIndex++
-            return $(a).text() === `${columnNames[i]}`
+            return $(a).text().indexOf(`${columnNames[i]}`) === 0
         });
         if (columnIndex > -1) {
             return columnIndex
@@ -141,7 +145,7 @@
             return [undefined]
         }
         // 找到首行所有的列th标签
-        const $eles = $(`div.table-box .table tr:contains("${columnNames[i]}") th`);
+        const $eles = $(`${getConfig().tableTrElement}:contains("${columnNames[i]}") th`);
         if ($eles.length === 0) {
             const res = getColumnsAllIndex(columnNames, resArray, ++i, columnIndex);
             if (res) {
@@ -176,21 +180,34 @@
             return;
         }
 
-        // 添加一键搜索BOM的按钮
-        $(`div.table-box .table tr`).find(`th:eq(${targetAppendIndex})`).append(`
+        if ($('.oneKey-search-tb').length == 0) {
+            // 添加一键搜索BOM的按钮
+            $(getConfig().tableTrElement).find(`th:eq(${targetAppendIndex})`).append(`
             <p class="oneKey-search-tb" style='padding: 0px 8px; background-color: #00bfffd1;cursor: pointer;border-radius: 4px; margin-left: 20px;width:min-content;'>
             淘宝一键搜索BOM
             </br>一次性会打开很多页面，慎用！
             </br>同时会被淘宝限流
             </p>
-        `)
+        `);
+
+        $(`.oneKey-search-tb`).click(function () {
+            $(`.search-tb`).each(function () {
+                GM_openInTab($(this).data('query'), {})
+
+            })
+        })
+        }
+        
 
         // const $tdEles = $(`div.table-box .table tr`).find(`td:eq(${targetAppendIndex})`).css({
         //     "display": "flex",
         //     "justify-content": "space-between"
         // })
 
-        const $tdEles = $(`div.table-box .table tr`).find(`td:eq(${targetAppendIndex})`);
+        const $tdEles = $(getConfig().tableTrElement).find(`td:eq(${targetAppendIndex}):not(:has(p[class*=search-tb]))`);
+
+        console.log($tdEles);
+        if ($tdEles.length > 0) {
         // 页面渲染按钮组
         // 遍历每一行
         $tdEles.each(function () {
@@ -210,7 +227,7 @@
 
             const forHtml = getConfig().storeNameList.map(storeName => {
                 return `<p class="search-tb-" data-query="https://s.taobao.com/search?q=${storeName}/${kwd}/${footprintText}"
-                            style='padding: 0px 8px; background-color: #f4a4608f;cursor: pointer;border-radius: 4px; margin-left: 7px;'>
+                            style='width: fit-content; padding: 0px 8px; background-color: #f4a4608f;cursor: pointer;border-radius: 4px; margin-left: 7px; margin-top: 7px;'>
                                 搜${storeName}
                         </p>`
             }).join('')
@@ -219,15 +236,17 @@
             let forDetailHtml = '';
             for (let [prefixName, storeIndexUrl] of new Map(Object.entries(getConfig().storeNameDetailList))) {
                 forDetailHtml += `<p class="search-tb-" data-query="${storeIndexUrl}/search.htm?keyword=${kwd}/${footprintText}"
-                style='padding: 0px 8px; background-color: #c0c4cc;cursor: pointer;border-radius: 4px; margin-left: 7px;'  lay-on="searchTb">
+                style='width: fit-content; padding: 0px 8px; background-color: #c0c4cc;cursor: pointer;border-radius: 4px; margin-left: 7px; margin-top: 7px;'  lay-on="searchTb">
                 搜${prefixName}
                 </p>`
             }
 
             $targetAppendTarget.append(`
-            <div style="display: flex; ">
+            <div style="width: 350px;
+            display: flex;
+            flex-wrap: wrap; ">
                 <p class="search-tb" data-query="https://s.taobao.com/search?q=${kwd}/${footprintText}"
-                    style='padding: 0px 8px; background-color: #00bfff7a;cursor: pointer;border-radius: 4px; margin-left: 7px;'>
+                    style='width: fit-content; padding: 0px 8px; background-color: #00bfff7a;cursor: pointer;border-radius: 4px; margin-left: 7px; margin-top: 7px;'>
                     搜淘宝
                 </p>
                 ${forHtml}
@@ -238,75 +257,75 @@
             searchTargets.map(item => {
                 const $this = $(item)
                 if ($this.html().trim()) {
-                    $this.html(`<a style="border: 1px solid #58f;
+                    $this.html(`<a style="display: inline-block; width: fit-content; border: 1px solid #58f;
                                     border-radius: 3px;
                                     padding: 6px 15px;" target="_blank" href='https://so.szlcsc.com/global.html?k=${$this.html()}'>${$this.html()}</a>`)
                 }
             })
-        })
-
-        // 搜索按钮的击事件
-        $(`.search-tb-,.search-tb`).click(function () {
-            GM_openInTab($(this).data('query'), { active: true, insert: true, setParent :true })
-        })
-
-        $(`.oneKey-search-tb`).click(function () {
-            $(`.search-tb`).each(function () {
-                GM_openInTab($(this).data('query'), {})
-
-            })
-        })
-
-        layui.use(function () {
-            var layer = layui.layer;
-            var util = layui.util;
-            // 批量事件
-            util.on('lay-on', {
-                page: function () {
-                    $('#P3').css('z-index', 9999)
-                    const $html = $('div.p-bom div.table-box table.table')
-                    // 纯净模式
-                    layer.open({
-                        type: 1,
-                        maxmin: true,
-                        shade: false,
-                        shadeClose: true,
-                        closeBtn: 1,
-                        title: 'BOM',
-                        area: ['98%', '88%'], // 宽高
-                        content: $html,
-                        end: function () {
-                            $('#P3').css('z-index', 11)
-                        }
-                    });
-                },
-                // 搜索淘宝
-                // searchTb: async function () {
-                //     let html_ = await getAjax(`https://www.baidu.com`)
-
-                //     const $html_ = $(html_).find('.water-container')
-                //     console.log($html_);
-                //     layer.open({
-                //         type: 1,
-                //         maxmin: true,
-                //         shade: [0.1, '#000'],
-                //         shadeClose: true,
-                //         closeBtn: 1,
-                //         title: '淘宝',
-                //         area: ['900px', '600px'],
-                //         content: $html_
-                //     });
-                // }
-            });
         });
 
+        // 搜索按钮的击事件
+        $(`.search-tb-,.search-tb`).unbind('click').click(function () {
+            GM_openInTab($(this).data('query'), { active: true, insert: true, setParent: true })
+        })
+    }
+
+
         if ($('#cjms').length === 0) {
+            layui.use(function () {
+                var layer = layui.layer;
+                var util = layui.util;
+                // 批量事件
+                util.on('lay-on', {
+                    page: function () {
+                        $('#P3').css('z-index', 9999)
+                        const $html = $(getConfig().tableElement)
+                        // 纯净模式
+                        layer.open({
+                            type: 1,
+                            maxmin: true,
+                            shade: false,
+                            shadeClose: true,
+                            closeBtn: 1,
+                            title: 'BOM',
+                            area: ['98%', '88%'], // 宽高
+                            content: $html,
+                            end: function () {
+                                $('#P3').css('z-index', 11)
+                            }
+                        });
+                    },
+                    // 搜索淘宝
+                    // searchTb: async function () {
+                    //     let html_ = await getAjax(`https://www.baidu.com`)
+    
+                    //     const $html_ = $(html_).find('.water-container')
+                    //     console.log($html_);
+                    //     layer.open({
+                    //         type: 1,
+                    //         maxmin: true,
+                    //         shade: [0.1, '#000'],
+                    //         shadeClose: true,
+                    //         closeBtn: 1,
+                    //         title: '淘宝',
+                    //         area: ['900px', '600px'],
+                    //         content: $html_
+                    //     });
+                    // }
+                });
+            });
+
             // 增加纯净模式
-            $('div.p-bom div.bom-btn a:eq(0)').before(`
-                <button href="javascript:void(0)" class="btn-light" id="cjms" style="padding: 0 16px;
-                color: #58f !important; border-radius: 4px;
-                border: 1px solid #58f !important;
-                margin-right: 16px;" lay-on="page">
+            $(getConfig().buttonAppendElement).before(`
+                <button href="javascript:void(0)" class="btn-light ant-btn ant-btn-default" style="
+                width: 101px;
+                height: 36px;
+                background: #fff;
+                border: 1px solid #cdf;
+                border-radius: 4px;
+                color: #3673fe;
+                margin-right: 16px;
+                " id="cjms" lay-on="page">
                     纯净模式
                 </a>
             `)
@@ -328,14 +347,21 @@
         }
     }
 
+    const openButtonHandler = () => {
+        $('button:contains("展开")').click(function() {
+            $('[class*=search-tb-]').remove()
+        })
+    }
+
+    openButtonHandler()
+
     const timerFunc = () => {
         let timer = setInterval(() => {
-            const tableNotEmpty = $('div.table-box .table tr th').length > 0
-            const notEmpty = $('.search-tb').length > 0
+            const tableNotEmpty = $(getConfig().tableThElement).length > 0
 
             console.log(`等待BOM列表加载...`);
 
-            if (!notEmpty && tableNotEmpty) {
+            if (tableNotEmpty) {
                 start()
             }
         }, 4000);
