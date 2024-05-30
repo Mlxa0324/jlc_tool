@@ -241,7 +241,10 @@
                 </p>`
             }
 
-            $targetAppendTarget.append(`
+            $targetAppendTarget.css({
+                "font-size": "18px",
+                "font-weight": "600"
+            }).append(`
             <div style="width: 350px;
             display: flex;
             flex-wrap: wrap; ">
@@ -253,6 +256,11 @@
                 ${forDetailHtml}
             <div>
             `)
+
+            $targetAppendTarget.find('p').css({
+                "font-size": "14px",
+                "font-weight": "400"
+            });
 
             searchTargets.map(item => {
                 const $this = $(item)
