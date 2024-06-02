@@ -5,12 +5,12 @@
 // @description  题库
 // @author       You
 // @match        https://s.taobao.com/search?**
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
+//// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
 // @require      https://cdn.bootcss.com/blueimp-md5/2.12.0/js/md5.min.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=taobao.com
 // @match        https://exam.kaoshixing.com/exam/exam_check?**
 // @match        https://exam.kaoshixing.com/exam/exam_start/**
-// @grant        none
+// @grant        GM_xmlhttpRequest
 // @license      MIT
 // ==/UserScript==
 
@@ -20,6 +20,32 @@
     const repalceText = (text) => {
         text = text.replace(/[\n\r\ ]+/g, '')
         return text.replace(/^([A-Z]\.)*/g, '')
+    }
+
+    /**
+     * http请求
+     * @param {*} param0 
+     * @returns 
+     */
+    const Request = ({ url, method = 'GET', data, headers }) => {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method,
+                url, // 替换为你要请求的URL  
+                data,
+                headers,
+                onload: function (response) {
+                    // 当请求成功加载时，这里的代码会被执行  
+                    console.log(response.responseText); // 打印响应文本  
+                    resolve(JSON.parse(response.responseText));
+                },
+                onerror: function (response) {
+                    // 当请求发生错误时，这里的代码会被执行  
+                    console.error("Error: " + response.status);
+                    reject(response.status);
+                }
+            });
+        });
     }
 
 
@@ -76,31 +102,55 @@
                 questions[questionName] = questionMD5s;
             }
         });
-        console.log(questions);
 
-        let examQuestionList = localStorage.getItem('examQuestionList');
-        let examQuestionListObject = JSON.parse(examQuestionList);
-        // 目前看题库不多，直接暂存本地。 题库合并到本地缓存
-        localStorage.setItem('examQuestionList', JSON.stringify({...examQuestionListObject, ...questions}));
+        console.log('questions: ', questions);
+
+        Request({
+            url: 'http://127.0.0.1:8081/insertAnswer',
+            method: 'POST',
+            data: questions,
+            Headers: {
+                'ContentType': 'application/json'
+            }
+        }).then(res => {
+            debugger
+            console.log('res: ', res);
+        });
         return questions;
     }
 
 
 
     /**
-     * 在答题检查页，构建结果集
+     * 在答题页面，勾选上查询到的答案
      * @returns 
      */
-    const renderResultInExamStartPage = () => {
+    const renderResultInExamStartPage = async () => {
         // 当前页判断
         if (!location.href.includes('exam.kaoshixing.com/exam/exam_start')) {
             return;
         }
 
-        // 目前看题库不多，直接暂存本地
-        let examQuestionList = localStorage.getItem('examQuestionList');
-        let examQuestionListObject = JSON.parse(examQuestionList);
+        /**
+         * 构建题干名称列表
+         */
+        const questionNameList = [...$('.question-content').find('.question-name .pre-wrap')].map(function () {
+            // 题干
+            return repalceText($(this).text());
+        });
 
+        const res = await Request({
+            url: 'http://127.0.0.1:8081/getAnswer',
+            method: 'POST',
+            data: JSON.stringify(questionNameList),
+            Headers: {
+                'ContentType': 'application/json'
+            }
+        });
+
+        console.log('res: ', res);
+        localStorage.setItem('questionAnswerList', res);
+        const examQuestionListObject = res.data;
 
         $('.question-content').find('.question-name .pre-wrap').each(function () {
             // 题干
