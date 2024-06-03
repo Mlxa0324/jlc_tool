@@ -5,7 +5,6 @@
 // @description  TK 离线
 // @author       123
 // @require      https://cdn.bootcss.com/blueimp-md5/2.12.0/js/md5.min.js
-// @match        https://exam.kaoshixing.com/exam/exam_check?**
 // @match        https://exam.kaoshixing.com/exam/exam_start/**
 // @license      MIT
 // ==/UserScript==
