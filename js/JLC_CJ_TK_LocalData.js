@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_CJ_TK_LocalData
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  TK 离线
 // @author       123
 // @require      https://cdn.bootcss.com/blueimp-md5/2.12.0/js/md5.min.js
@@ -20,7 +20,7 @@
 
     /**
      * 在答题页面，勾选上查询到的答案
-     * @returns 
+     * @returns
      */
     const renderResultInExamStartPage = async () => {
         // 当前页判断
@@ -56,7 +56,7 @@
                 // 单选、多选
                 else {
                     // 如果选项没有内容，就认为是图片，这时候需要获取图片的地址作为md5加密的值
-                    if (text.split('.')[1].trim() === '') {
+                    if (text.split('.')[1] === '') {
                         text += $(this).find('img').attr('src');
                         let answerMD5 = md5(repalceText(text));
                         if (answerMD5List.includes(answerMD5)) {
@@ -89,11 +89,9 @@
      */
     const rednerNotFindQuestion = () => {
         setInterval(() => {
-            $('div.question-content').each(function () {
-                if ($(this).data('commit') == false) {
-                    $(this).find(`span.words-option:eq(${randomNum(0, 3)})`).click()
-                    $(this).find(`span.words:eq(${randomNum(0, 1)})`).click();
-                }
+            $('div.question-content[data-commit="false"]').each(function () {
+                $(this).find(`span.words-option:eq(${randomNum(0, 3)})`).click()
+                $(this).find(`span.words:eq(${randomNum(0, 1)})`).click();
             })
         }, 1000);
     }
@@ -106,15 +104,16 @@
             return;
         }
         // 取随机交卷时间
-        // 30、90 是随机交卷时间：30秒到90秒之间，可以根据自己的需求修改。
-        const second = randomNum(30, 90) * 1000;
+        // 30、60 是随机交卷时间：30秒到60秒之间，可以根据自己的需求修改。
+        const second = randomNum(30, 60) * 1000;
         let sencond2 = second;
 
         let timeoutTask = setInterval(() => {
+            // .attr('disabled', true)
             sencond2 = sencond2 - 1000;
             $('#endExamBtn').css({
                 padding: '10px 0px'
-            }).attr('disabled', true).text(`交卷倒计时${sencond2 / 1000}秒`);
+            }).text(`自动交卷倒计时${sencond2 / 1000}秒`);
             // 去除定时
             if ((sencond2 / 1000) <= 0) {
                 timeoutTask = null;
