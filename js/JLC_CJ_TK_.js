@@ -7,7 +7,6 @@
 // @require      https://cdn.bootcss.com/blueimp-md5/2.12.0/js/md5.min.js
 // @match        https://exam.kaoshixing.com/exam/exam_check?**
 // @match        https://exam.kaoshixing.com/exam/exam_start/**
-//// @grant        GM_xmlhttpRequest
 // @license      MIT
 // ==/UserScript==
 
@@ -18,33 +17,6 @@
         text = text.replace(/[\n\r\ ]+/g, '')
         return text.replace(/^([A-Z]\.)*/g, '')
     }
-
-    // /**
-    //  * http请求
-    //  * @param {*} param0 
-    //  * @returns 
-    //  */
-    // const Request = ({ url, method = 'GET', data, headers }) => {
-    //     return new Promise((resolve, reject) => {
-    //         GM_xmlhttpRequest({
-    //             method,
-    //             url, // 替换为你要请求的URL  
-    //             data,
-    //             headers,
-    //             onload: function (response) {
-    //                 // 当请求成功加载时，这里的代码会被执行  
-    //                 console.log(response.responseText); // 打印响应文本  
-    //                 resolve(JSON.parse(response.responseText));
-    //             },
-    //             onerror: function (response) {
-    //                 // 当请求发生错误时，这里的代码会被执行  
-    //                 console.log("Error: " + response.status);
-    //                 reject(response.status);
-    //             }
-    //         });
-    //     });
-    // }
-
 
     /**
      * 在答题检查页，构建结果集
@@ -101,18 +73,6 @@
         });
 
         console.log('questions: ', questions);
-
-        // Request({
-        //     url: 'http://127.0.0.1:8081/insertAnswer',
-        //     method: 'POST',
-        //     data: JSON.stringify(questions),
-        //     headers: {
-        //         'Content-Type': 'application/json;charset=utf-8'
-        //     }
-        // }).then(res => {
-        //     debugger
-        //     console.log('res: ', res);
-        // });
         return questions;
     }
 
@@ -138,15 +98,6 @@
         });
 
         console.log('questionNameList: ', questionNameList);
-
-        // const res = await Request({
-        //     url: 'http://127.0.0.1:8081/getAnswer',
-        //     method: 'POST',
-        //     data: JSON.stringify(questionNameList),
-        //     headers: {
-        //         'Content-Type': 'application/json;charset=utf-8'
-        //     }
-        // });
 
         const res = {
             "code": 200,
@@ -1330,13 +1281,10 @@
         switch (arguments.length) {
             case 1:
                 return parseInt(Math.random() * minNum + 1, 10);
-                break;
             case 2:
                 return parseInt(Math.random() * (maxNum - minNum + 1) + minNum, 10);
-                break;
             default:
                 return 0;
-                break;
         }
     }
 
