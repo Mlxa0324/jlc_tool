@@ -224,7 +224,41 @@
         }, 1000);
     }
 
+    /**
+     * 交卷按钮控制， 自动提交试卷
+     */
+    const buttonControl = () => {
+        if ($('#endExamBtn').length === 0) {
+            return;
+        }
+        // 取随机交卷时间
+        const second = randomNum(30, 90) * 1000;
+        let sencond2 = second;
+
+        let timeoutTask = setInterval(() => {
+            sencond2 = sencond2 - 1000;
+            $('#endExamBtn').css({
+                padding: '10px 0px'
+            }).attr('disabled', true).text(`交卷倒计时${sencond2 / 1000}秒`);
+            // 去除定时
+            if ((sencond2 / 1000) <= 0) {
+                timeoutTask = null;
+                clearInterval(timeoutTask);
+                $('#endExamBtn').css({
+                    padding: '10px 28px'
+                }).attr('disabled', false).text('提交试卷');
+            }
+        }, 1000);
+
+        // 交卷
+        setTimeout(() => {
+            $('#endExamBtn').click();
+            $('#confirmEndExamBtn').click();
+        }, second + 1000);
+    }
+
     buildResultByExamCheckPage();
     renderResultInExamStartPage();
     rednerNotFindQuestion();
+    buttonControl();
 })();
