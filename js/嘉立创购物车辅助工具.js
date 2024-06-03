@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.16
+// @version      1.8.17
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -2225,6 +2225,47 @@
      * @param {*} type 单选多选 ONE/MORE
      */
     const searchStart = async () => {
+        /**
+         * 搜索列表中，对品牌颜色进行上色
+         */
+        const listRenderBrandColor = () => {
+            for (let [brandName, brandDetail] of all16_15CouponMp) {
+                if(brandName == '芯声') {
+                    debugger
+                }
+                // 获取页面元素
+                const $brandEle = $(`a.brand-name[title*="${brandName}"]`)
+                if ($brandEle.length > 0) {
+                    $brandEle.css({
+                        "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
+                    })
+                }
+            }
+        }
+
+        /**
+        * 搜索列表中，对品牌颜色进行上色
+        * list.szlcsc.com/catalog
+        */
+        const catalogListRenderBrandColor = () => {
+            for (let [brandName, brandDetail] of all16_15CouponMp) {
+                if(brandName == '芯声') {
+                    debugger
+                }
+                // 获取页面元素
+                const $brandEle = $(`li[title*="${brandName}"],span[title*="${brandName}"]`)
+                // && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)"
+                if ($brandEle.length > 0 ) {
+                    $brandEle.css({
+                        "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
+                    })
+                }
+            }
+        }
+
+        listRenderBrandColor()
+
+        catalogListRenderBrandColor()
 
         // 回到顶部
         if ($('div.logo-wrap').hasClass('active')) {
@@ -2384,21 +2425,6 @@
         }
 
         /**
-         * 搜索列表中，对品牌颜色进行上色
-         */
-        const listRenderBrandColor = () => {
-            for (let [brandName, brandDetail] of all16_15CouponMp) {
-                // 获取页面元素
-                const $brandEle = $(`a.brand-name[title*="${brandName}"]`)
-                if ($brandEle.length > 0 && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)") {
-                    $brandEle.css({
-                        "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
-                    })
-                }
-            }
-        }
-
-        /**
          * 筛选条件：单选品牌-颜色
          */
         const _renderFilterBrandColor = async () => {
@@ -2526,8 +2552,6 @@
             await getCouponHTML()
 
             _renderFilterBrandColor()
-
-            listRenderBrandColor()
 
             // 多选展开按钮
             $('#more-brand').click(_renderMulitFilterBrandColor)
