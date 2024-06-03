@@ -107,7 +107,7 @@
         }
         // 取随机交卷时间
         // 30、90 是随机交卷时间：30秒到90秒之间，可以根据自己的需求修改。
-        const second = randomNum(2, 5) * 1000;
+        const second = randomNum(30, 90) * 1000;
         let sencond2 = second;
 
         let timeoutTask = setInterval(() => {
