@@ -2226,15 +2226,14 @@
      */
     const searchStart = async () => {
         /**
-         * 搜索列表中，对品牌颜色进行上色
-         */
-        const listRenderBrandColor = () => {
+        * 搜索列表中，对品牌颜色进行上色
+        * list.szlcsc.com/catalog
+        */
+        const catalogListRenderBrandColor = () => {
             for (let [brandName, brandDetail] of all16_15CouponMp) {
-                if(brandName == '芯声') {
-                    debugger
-                }
                 // 获取页面元素
-                const $brandEle = $(`a.brand-name[title*="${brandName}"]`)
+                const $brandEle = $(`li[title*="${brandName}"],span[title*="${brandName}"],a.brand-name[title*="${brandName}"]`)
+                // && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)"
                 if ($brandEle.length > 0) {
                     $brandEle.css({
                         "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
@@ -2242,28 +2241,6 @@
                 }
             }
         }
-
-        /**
-        * 搜索列表中，对品牌颜色进行上色
-        * list.szlcsc.com/catalog
-        */
-        const catalogListRenderBrandColor = () => {
-            for (let [brandName, brandDetail] of all16_15CouponMp) {
-                if(brandName == '芯声') {
-                    debugger
-                }
-                // 获取页面元素
-                const $brandEle = $(`li[title*="${brandName}"],span[title*="${brandName}"]`)
-                // && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)"
-                if ($brandEle.length > 0 ) {
-                    $brandEle.css({
-                        "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
-                    })
-                }
-            }
-        }
-
-        listRenderBrandColor()
 
         catalogListRenderBrandColor()
 
