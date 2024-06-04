@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.17
+// @version      1.8.18
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1646,36 +1646,44 @@
         padding: 6px;
     }
 
-    
-    /*滚动条整体样式*/
-    .bd::-webkit-scrollbar {
-    width: 10px;     
-    height: 1px;
+    ::-webkit-scrollbar {
+         width:17px !important;
+         height:unset !important;
     }
-    /*滚动条里面小方块*/
-    .bd::-webkit-scrollbar-thumb {
-    border-radius: 10px;
-    background-color: #b4b7ba;
-    background-image: 
-        -webkit-linear-gradient(
-        45deg, 
-        rgba(255, 255, 255, .2) 25%, 
-        transparent 25%, 
-        transparent 50%, 
-        rgba(255, 255, 255, .2) 50%, 
-        rgba(255, 255, 255, .2) 75%, 
-        transparent 75%, 
-        transparent
-        );
-    }
-    /*滚动条里面轨道*/
-    .bd::-webkit-scrollbar-track {
-    -webkit-box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
-    /*border-radius: 10px;*/
-    background: #EDEDED;
+
+    ::-webkit-scrollbar-thumb {
+        background: rgb(193,193,193) !important;
     }
     </style>
-    `
+    `;
+
+    // /*滚动条整体样式*/
+    // .bd::-webkit-scrollbar {
+    // width: 10px;     
+    // height: 1px;
+    // }
+    // /*滚动条里面小方块*/
+    // .bd::-webkit-scrollbar-thumb {
+    // border-radius: 10px;
+    // background-color: #b4b7ba;
+    // background-image: 
+    //     -webkit-linear-gradient(
+    //     45deg, 
+    //     rgba(255, 255, 255, .2) 25%, 
+    //     transparent 25%, 
+    //     transparent 50%, 
+    //     rgba(255, 255, 255, .2) 50%, 
+    //     rgba(255, 255, 255, .2) 75%, 
+    //     transparent 75%, 
+    //     transparent
+    //     );
+    // }
+    // /*滚动条里面轨道*/
+    // .bd::-webkit-scrollbar-track {
+    // -webkit-box-shadow: inset 0 0 5px rgba(0,0,0,0.2);
+    // /*border-radius: 10px;*/
+    // background: #EDEDED;
+    // }
 
     /**
      * 追加到body
