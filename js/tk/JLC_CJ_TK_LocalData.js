@@ -32,7 +32,6 @@
 
         $('.question-content').find('.question-name .pre-wrap').each(function () {
             // 题干
-            debugger
             let questionName = repalceText($(this).text());
             let questionObject = md5DataList.filter(questionMd5 => questionMd5.split(':::')[0] === md5(questionName));
 
