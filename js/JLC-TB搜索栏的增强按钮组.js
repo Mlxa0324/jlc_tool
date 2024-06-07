@@ -149,7 +149,7 @@
 
     // 控制显示隐藏，不遮盖官方
     setInterval(() => {
-        let isHide = [...$('div[class*="PageHeader--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
+        let isHide = [...$('div[class*="PageHeader--headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
             || $('.search-suggest-popup').is(':visible');
 
         if (isHide) {
