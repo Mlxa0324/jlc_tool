@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -50,7 +50,7 @@
 
     /**
      * config加工处理
-     * @returns 
+     * @returns
      */
     const getConfig = () => {
         const config_ = config();
@@ -66,7 +66,7 @@
 
     /**
   * 深色 随机色
-  * @returns 
+  * @returns
   */
     const srdmRgbColor = () => {
         //随机生成RGB颜色
@@ -112,7 +112,7 @@
         }
     })
 
-    let html_start = `<div style="display: flex; margin-top: 8px;">`;
+    let html_start = `<div style="display: flex; margin-top: 8px;" id="my-tool-box">`;
     let html_content = ``;
     let html_end = `</div>`;
 
@@ -145,4 +145,17 @@
     layui.use(function () {
         layui.util.on('lay-on', funcs_res);
     });
+
+
+    // 控制显示隐藏，不遮盖官方
+    setInterval(() => {
+        let isHide = [...$('div[class*="PageHeader--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
+            || $('.search-suggest-popup').is(':visible');
+
+        if (isHide) {
+            $('#my-tool-box').hide()
+        } else {
+            $('#my-tool-box').show()
+        }
+    }, 100);
 })();
