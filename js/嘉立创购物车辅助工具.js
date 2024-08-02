@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.8.18
+// @version      1.8.19
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1042,6 +1042,62 @@
         $('.couponModal .all-coupon-page').append($main_wraper).append($navigation)
 
         couponGotoHandler()
+    }
+
+    /**
+     * 品牌多选按钮监听处理事件
+     * 追加html、事件监听、模态框都放在这里写
+     */
+    const lookCouponCheckboxHandler = () => {
+        if ($('#batch-check-branch').length == 0 && $('.batch-del-btn').length > 0) {
+            $('.foot-tool-left div:eq(0)').append(`
+                <span id="batch-check-branch" style="margin-left: 10px;
+                margin-left: 6px;
+                padding: 10px 12px;
+                background: #0093e6;
+                border-radius: 2px;
+                cursor: pointer;
+                color: white;">批量选择现货品牌</span>
+                `);
+            // 点击事件监听
+            $('#batch-check-branch').on('click', function() {
+                const $box = $('#batch-check-branch-box');
+                if ($box.length == 0) {
+                    $('body').append(`
+                        <div id="batch-check-branch-box" style="
+                            position: fixed;
+                            flex-wrap: wrap;
+                            display: flex;
+                            bottom: 60px;
+                            left: 25%;
+                            z-index: 100;
+                            overflow: auto;
+                            width: 500px;
+                            background-color: white;
+                            border: 3px solid #3498db;
+                            border-radius: 5px;
+                            ">
+                        ${[...dataBrandColorMp.keys()].reverse().map(branchName => {
+                            return `<div style="background-color: ${dataBrandColorMp.get(branchName)};
+                                                width: fit-content;
+                                                height: fit-content;
+                                                font-size: 16px;
+                                                margin: 5px 0px 5px 5px;
+                                                padding: 5px;
+                                                color: white;">
+                                        <label id="${branchName}-ckbox">
+                                            <input id="${branchName}-ckbox" type="checkbox">
+                                                ${branchName}
+                                            </input>
+                                        </label>
+                                    </div>`
+                        }).join('')}
+                        </div>
+                        `);
+                }
+                $box.is(':visible') ? $box.hide() : $box.show();
+            })
+        }
     }
 
 
@@ -2225,6 +2281,7 @@
 
         // onLoadSet()
         lookCouponListModal()
+        lookCouponCheckboxHandler()
     }
 
     /**
