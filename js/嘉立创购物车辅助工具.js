@@ -11,7 +11,7 @@
 // @match        https://list.szlcsc.com/brand**
 // @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
+// @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
 // @resource customCSS https://gitee.com/snwjas/message.js/raw/master/dist/message.min.css
 // @grant        GM_openInTab
