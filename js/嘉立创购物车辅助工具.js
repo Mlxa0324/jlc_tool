@@ -906,33 +906,33 @@
         const lookCouponListExtendsBtnHandler = () => {
 
             // 查看已领取的优惠券
-            $('.filter-haved').click(function() {
+            $('.filter-haved').off('click').on('click', function() {
                 $('.coupon-item:visible:not(:contains(立即使用))').hide()
             })
 
             // 过滤16-15的优惠券
-            $('.filter-16-15').click(function() {
+            $('.filter-16-15').off('click').on('click', function() {
                 $('.coupon-item:visible:not(:contains(满16可用))').hide()
             })
 
             // 过滤20-15的优惠券
-            $('.filter-20-15').click(function() {
+            $('.filter-20-15').off('click').on('click', function() {
                 $('.coupon-item:visible:not(:contains(满20可用))').hide()
             })
 
             // 过滤新人优惠券
-            $('.filter-newone').click(function() {
+            $('.filter-newone').off('click').on('click', function() {
                 $('.coupon-item:visible:not(:contains(新人专享))').hide()
             })
 
             // 过滤非新人优惠券
-            $('.filter-not-newone').click(function() {
+            $('.filter-not-newone').off('click').on('click', function() {
                 $('.coupon-item:visible:contains(新人专享)').hide()
             })
 
 
             // 手动刷新优惠券页面
-            $('.refresh-coupon-page').click(function() {
+            $('.refresh-coupon-page').off('click').on('click', function() {
                 setTimeout(() => {
                     Qmsg.info(`1秒后刷新优惠券页面...`)
                     setTimeout(lookCouponListModal, 500);
