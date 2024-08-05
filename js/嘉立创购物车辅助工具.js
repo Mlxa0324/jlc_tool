@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.1
+// @version      1.9.2
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1066,11 +1066,22 @@
                 if($('#batch-check-branch-box').is(':hidden')) {
                     return;
                 }
+                // CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
                 var ckMap = checkboxStatusGroupByBrandName();
-                ckMap.forEach((isChecked, brandName) => {
-                    // 判断是否未选中
-                    if($(`#${brandName}-ckbox`).is(':not(:checked)')) {
-                        $(`#${brandName}-ckbox`).prop('checked', isChecked);
+                ckMap.forEach((checkStatus, brandName) => {
+                    // 判断状态
+                    switch (checkStatus) {
+                        case 'CHECKED':
+                            $(`#${brandName}-ckbox`).prop('checked', true);
+                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = false;
+                            break;
+                        case 'UNCHECKED':
+                            $(`#${brandName}-ckbox`).prop('checked', false);
+                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = false;
+                            break;
+                        case 'INDETERMINATE':
+                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = true;
+                            break;
                     }
                 })
             }, 1500);
@@ -1122,9 +1133,11 @@
 
     /**
      * 根据品牌名称分组多选框选中状态
+     * CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
      * 只查现货的
      */
     const checkboxStatusGroupByBrandName = () => {
+        // 获取现货
         var $ele = getHavedLineInfo();
         // 品牌名是否全选
         var ckMap = new Map();
@@ -1133,15 +1146,24 @@
              // 品牌名称
             let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim();
             // 查找到品牌名称
-            brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim())
-            ckMap.set(brandName, true);
+            brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim());
             var $checkedEle = $this.find('input.check-box');
+            // 当前元素的选中状态
+            var currentCheckStatus = $checkedEle.is(':checked') ? 'CHECKED' : 'UNCHECKED';
+            if(brandName == '成兴光') {debugger}
             // 如果已经是未全选状态，直接跳出该品牌了
-            if(ckMap.get(brandName) === false) {
+            if(ckMap.get(brandName) === 'INDETERMINATE') {
                 return;
             }
-            if ($checkedEle.is(':not(:checked)')) {
-                ckMap.set(brandName, false);
+            // 不确定的状态判断
+            if(ckMap.get(brandName) != null && ckMap.get(brandName) != currentCheckStatus) {
+                ckMap.set(brandName, 'INDETERMINATE');
+                return;
+            }
+            // 默认
+            ckMap.set(brandName, currentCheckStatus);
+            if (currentCheckStatus === 'UNCHECKED') {
+                ckMap.set(brandName, currentCheckStatus);
             }
         })
         
@@ -1294,7 +1316,13 @@
                 buttonLine = `<span class='val' style="text-align: center; ">
                     <span style="font-size: 12px;">已领取-${couponEntity.isNew === false ? '普通券' : '新人券'}</span>
                 </span> `
-            } else {
+            } 
+            else if (couponEntity.isUsed === true) {
+                buttonLine = `<span class='val' style="text-align: center; ">
+                    <span style="font-size: 12px;">本月已使用</span>
+                </span> `
+            } 
+            else {
                 buttonLine = `<span class='flex-sx-center flex-zy-center flex' style="padding: 0; width: 195px; text-align: center; ">
                     <button type="button" class="to_cou">${couponEntity.isNew === false ? '普通券' : '新人券'}</button>
                  </span> `
@@ -1778,6 +1806,11 @@
     ::-webkit-scrollbar-thumb {
         background: #e1e1e1 !important;
     }
+
+    /* 选中任意的状态不确定的 <input> */
+    input:indeterminate {
+        background: lime;
+    }
     </style>
     `;
 
@@ -2104,33 +2137,29 @@
      * 获取优惠券列表信息，并暂存在变量集合中
      */
     const getCouponHTML = async () => {
-
+        // http获取优惠券信息
         let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
-
+        // 遍历优惠券
         $(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function () {
-
-            let $this = $(this)
-
+            // 获取当前元素
+            let $this = $(this);
             // 优惠券id
-            let couponId = $this.data('id')
-
+            let couponId = $this.data('id');
             // 是否已经领取
-            let isHaved = $this.find(':contains(立即使用)').length > 0
-
+            let isHaved = $this.find(':contains(立即使用)').length > 0;
             // 优惠券名称
-            let couponName = $this.data('name')
-
+            let couponName = $this.data('name');
             // 对应的品牌主页地址
-            let brandIndexHref = $this.data('href')
-
+            let brandIndexHref = $this.data('href');
             // 优惠券金额
-            let couponPrice = couponName.replace(/^.*?\>(.*?)元.*$/, '$1')
+            let couponPrice = couponName.replace(/^.*?\>(.*?)元.*$/, '$1');
             // 品牌名称
-            let brandName = couponName.replace(/^.*?元(.*?)品牌.*$/, '$1')
-
+            let brandName = couponName.replace(/^.*?元(.*?)品牌.*$/, '$1');
             // 是否新人优惠券
-            let isNew = couponName.split('新人专享').length >= 2
-
+            let isNew = couponName.split('新人专享').length >= 2;
+            // 是否已经使用过
+            let isUsed = $this.find(':contains(已使用)').length > 0;
+            // 存到变量Map中
             all16_15CouponMp.set(brandName, {
                 couponName, // 优惠券名称
                 isNew, // 是否新人专享
@@ -2138,11 +2167,11 @@
                 brandName, // 品牌名称
                 couponId, // 优惠券id
                 isHaved, // 是否已经领取
+                isUsed, // 是否已经使用过
                 brandIndexHref, // 对应的品牌主页地址
                 couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
-            })
-
-        })
+            });
+        });
     }
 
     /**
