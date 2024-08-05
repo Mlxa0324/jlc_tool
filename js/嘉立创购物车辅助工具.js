@@ -1059,6 +1059,22 @@
                 cursor: pointer;
                 color: white;">批量选择现货品牌</span>
                 `);
+
+            // 动态刷新勾选框状态，商品下所有商品选中的状态才会打勾    
+            setInterval(() => {
+                // 小模态框未显示的话，直接跳过
+                if($('#batch-check-branch-box').is(':hidden')) {
+                    return;
+                }
+                var ckMap = checkboxStatusGroupByBrandName();
+                ckMap.forEach((isChecked, brandName) => {
+                    // 判断是否未选中
+                    if($(`#${brandName}-ckbox`).is(':not(:checked)')) {
+                        $(`#${brandName}-ckbox`).prop('checked', isChecked);
+                    }
+                })
+            }, 1500);
+
                     // 点击事件监听
                     $('#batch-check-branch').on('click', function() {
                                 const $box = $('#batch-check-branch-box');
@@ -1087,7 +1103,7 @@
                                                 cursor: pointer;
                                                 color: white;">
                                         <label id="${brandName}-ckbox" style="cursor: pointer;display: flex;">
-                                            <input id="${brandName}-ckbox" checked type="checkbox" style="margin-right: 5px; cursor: pointer;">${brandName}</input>
+                                            <input id="${brandName}-ckbox" type="checkbox" style="margin-right: 5px; cursor: pointer;">${brandName}</input>
                                         </label>
                                     </div>`
                         }).join('')}
@@ -1102,6 +1118,34 @@
                 $box.is(':visible') ? $box.hide() : $box.show();
             })
         }
+    }
+
+    /**
+     * 根据品牌名称分组多选框选中状态
+     * 只查现货的
+     */
+    const checkboxStatusGroupByBrandName = () => {
+        var $ele = getHavedLineInfo();
+        // 品牌名是否全选
+        var ckMap = new Map();
+        [...$ele].forEach(function(that) {
+            var $this = $(that);
+             // 品牌名称
+            let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim();
+            // 查找到品牌名称
+            brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim())
+            ckMap.set(brandName, true);
+            var $checkedEle = $this.find('input.check-box');
+            // 如果已经是未全选状态，直接跳出该品牌了
+            if(ckMap.get(brandName) === false) {
+                return;
+            }
+            if ($checkedEle.is(':not(:checked)')) {
+                ckMap.set(brandName, false);
+            }
+        })
+        
+        return ckMap;
     }
 
     /**
@@ -2285,13 +2329,14 @@
     }
 
     /**
-     * 购物车页面
+     * 购物车页面 初始化（只执行一次）
      */
     const cartStart = async () => {
 
         // 判断是否已经处理完成，否则会有性能问题
         basicSettings()
 
+        // w
         if ($('div.bd').length > 0) {
             return;
         }

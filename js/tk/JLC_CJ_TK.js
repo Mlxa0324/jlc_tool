@@ -110,7 +110,6 @@
                 'Content-Type': 'application/json;charset=utf-8'
             }
         }).then(res => {
-            debugger
             console.log('res: ', res);
         });
         return questions;
