@@ -859,6 +859,17 @@
             })
         }
 
+        /**
+         * 版本号点击事件
+         */
+        const versionClickHandler = () => {
+            $('#version__').on('click', function() {
+                GM_setClipboard(
+                    'https://greasyfork.org/zh-CN/scripts/491619-%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7', 
+                    "text", 
+                    () => Qmsg.success('插件地址已设置到剪贴板中！'))
+            })
+        }
 
         /**
          * 显示隐藏 小窗的的按钮展示
@@ -1374,8 +1385,15 @@
         }
 
         return tempHtml + `</ul>
-        <div style="display: flex; justify-content: space-between;padding: 0 5px 0; box-sizing: border-box; ">
-            <span style="color: #3498dbe7; font-size: 14px; font-family: fantasy;">${__version}</span>
+        <div style="display: flex;
+            justify-content: space-between;
+            padding: 4px 5px 4px;
+            background: #fff;
+            box-sizing: border-box;
+            position: sticky;
+            user-select:none;
+            bottom: 0px;">
+            <span id="version__" title="点击版本，可以复制插件地址~" style="color: #3498dbe7; font-size: 14px; font-family: fantasy; cursor: pointer;">${__version}</span>
             <span style="color: #777;">如果觉得插件有用，请分享给你身边的朋友~</span>
         </div>
         </div>`;
@@ -1462,7 +1480,7 @@
         background-color: white;
         border: 2px solid #3498db;
         width: 380px;
-        padding: 3px;
+        padding: 3px 3px 0px 3px;
         border-radius: 5px;
         z-index: 99;
         overflow: auto;
@@ -1953,6 +1971,7 @@
         shareParseHandler()
         lockProductHandler()
         refreshBtnHandler()
+        versionClickHandler()
         // =============================
         resizeHeight()
 
