@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.2
+// @version      1.9.3
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -1150,7 +1150,6 @@
             var $checkedEle = $this.find('input.check-box');
             // 当前元素的选中状态
             var currentCheckStatus = $checkedEle.is(':checked') ? 'CHECKED' : 'UNCHECKED';
-            if(brandName == '成兴光') {debugger}
             // 如果已经是未全选状态，直接跳出该品牌了
             if(ckMap.get(brandName) === 'INDETERMINATE') {
                 return;
@@ -2159,6 +2158,23 @@
             let isNew = couponName.split('新人专享').length >= 2;
             // 是否已经使用过
             let isUsed = $this.find(':contains(已使用)').length > 0;
+
+            // 一些优惠券特殊处理
+            if(brandName === 'MDD') {
+                // 存到变量Map中
+                all16_15CouponMp.set('辰达半导体', {
+                    couponName, // 优惠券名称
+                    isNew, // 是否新人专享
+                    couponPrice, //优惠券金额减免
+                    brandName: '辰达半导体', // 品牌名称
+                    couponId, // 优惠券id
+                    isHaved, // 是否已经领取
+                    isUsed, // 是否已经使用过
+                    brandIndexHref, // 对应的品牌主页地址
+                    couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
+                });
+            }
+
             // 存到变量Map中
             all16_15CouponMp.set(brandName, {
                 couponName, // 优惠券名称
