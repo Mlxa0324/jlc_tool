@@ -26,6 +26,8 @@
 
 (async function() {
         'use strict';
+        // 软件版本
+        const __version = 'Version 1.9.4';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -1371,7 +1373,10 @@
             `
         }
 
-        return tempHtml + '</ul></div>'
+        return tempHtml + `</ul><span style="padding: 0 5px 0;
+                                box-sizing: border-box;
+                                font-weight: bold;
+                                color: #3498db;">${__version}</span></div>`;
     }
 
     /**
