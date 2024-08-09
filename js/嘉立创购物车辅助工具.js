@@ -1375,7 +1375,7 @@
 
         return tempHtml + `</ul>
         <div style="display: flex; justify-content: space-between;padding: 0 5px 0; box-sizing: border-box; ">
-            <span style="color: #3498db; font-size: 14px; font-family: fantasy;">${__version}</span>
+            <span style="color: #3498dbe7; font-size: 14px; font-family: fantasy;">${__version}</span>
             <span style="color: #777;">如果觉得插件有用，请分享给你身边的朋友~</span>
         </div>
         </div>`;
