@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 1.9.4';
+        const __version = 'Version 1.9.5';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
