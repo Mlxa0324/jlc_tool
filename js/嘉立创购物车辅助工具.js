@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.4
+// @version      1.9.5
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -162,6 +162,15 @@
          */
         const plguinIsHaved = () => {
             return $('.bd').length > 0;
+        }
+
+        /**
+         * 品牌名称加工
+         * @param {*} name 
+         * @returns 
+         */
+        const brandNameDataProcess = (name) => {
+            return name.replace(/\//g, '_')
         }
 
         // 后续支持强排序按钮
@@ -1103,6 +1112,7 @@
                 // CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
                 var ckMap = checkboxStatusGroupByBrandName();
                 ckMap.forEach((checkStatus, brandName) => {
+                    brandName = brandNameDataProcess(brandName);
                     // 判断状态
                     switch (checkStatus) {
                         case 'CHECKED':
@@ -1139,7 +1149,9 @@
                             border-radius: 5px;
                             ">
                         ${[...dataBrandColorMp.keys()].reverse().map(brandName => {
-                            return `<div class="hover-cs checkbox-branch-btn" style="background-color: ${dataBrandColorMp.get(brandName)};
+                            var tempBname = brandName;
+                            brandName = brandNameDataProcess(brandName);
+                            return `<div class="hover-cs checkbox-branch-btn" style="background-color: ${dataBrandColorMp.get(tempBname)};
                                                 width: fit-content;
                                                 height: fit-content;
                                                 font-size: 14px;
@@ -1148,7 +1160,7 @@
                                                 cursor: pointer;
                                                 color: white;">
                                         <label id="${brandName}-ckbox" style="cursor: pointer;display: flex;">
-                                            <input id="${brandName}-ckbox" type="checkbox" style="margin-right: 5px; cursor: pointer;">${brandName}</input>
+                                            <input id="${brandName}-ckbox" type="checkbox" style="margin-right: 5px; cursor: pointer;">${tempBname}</input>
                                         </label>
                                     </div>`
                         }).join('')}
@@ -1237,6 +1249,8 @@
             let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim();
             // 查找到品牌名称
             brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim());
+            // 处理特殊字符
+            brandName = brandNameDataProcess(brandName);
             var $checkedEle = $this.find('input.check-box');
             // 当前元素的选中状态
             var currentCheckStatus = $checkedEle.is(':checked') ? 'CHECKED' : 'UNCHECKED';
