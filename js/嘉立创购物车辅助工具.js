@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.3
+// @version      1.9.4
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -146,6 +146,21 @@
             localStorage.setItem(k, v)
         }
 
+        /**
+         * 判断插件是否已经加载切是显示状态
+         * @returns 
+         */
+        const plguinIsHavedAndShow = () => {
+            return plguinIsHaved() && $('.bd').is(':visible');
+        }
+
+        /**
+         * 判断插件是否已经加载
+         * @returns 
+         */
+        const plguinIsHaved = () => {
+            return $('.bd').length > 0;
+        }
 
         // 后续支持强排序按钮
 
@@ -935,7 +950,7 @@
             $('.refresh-coupon-page').off('click').on('click', function() {
                 setTimeout(() => {
                     Qmsg.info(`1秒后刷新优惠券页面...`)
-                    setTimeout(lookCouponListModal, 500);
+                    setTimeout(() => lookCouponListModal(true), 500);
                 }, 500);
 
             })
@@ -946,8 +961,7 @@
             $('.get-all').click(function() {
                 const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
 
-                let totalCount = 0,
-                    successCount = 0
+                let totalCount = 0, successCount = 0;
                 $couponEles.each(function() {
 
                     //优惠券ID
@@ -999,23 +1013,30 @@
                     $('#couponModal').hide()
                 }
             }
-            $('.look-coupon-btn,.look-coupon-closebtn').click(_lookCouponClick)
+            $('.look-coupon-btn,.look-coupon-closebtn').on('click', _lookCouponClick)
         }
 
+        // 优惠券模态框的锁
+        var lookCouponLock = false;
         /**
          * 优惠券模态框
          */
-        const lookCouponListModal = async() => {
+        const lookCouponListModal = async(clear = false) => {
+           
+            if(lookCouponLock || !plguinIsHavedAndShow() || ($('.couponModal .all-coupon-page').length > 0 && clear === false)) {
+                return;
+            }
+             //上锁, 防止这次还没处理完， 下次定时任务就已经就绪了。
+             lookCouponLock = true;
+            let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`);
 
-            let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
+            const $couponHTML = $(couponHTML);
 
-            const $couponHTML = $(couponHTML)
+            let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML;
+            let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML;
 
-            let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML
-            let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML
-
-            let $main_wraper = $couponHTML.find('.main_wraper')
-            let $navigation = $couponHTML.find('.navigation')
+            let $main_wraper = $couponHTML.find('.main_wraper');
+            let $navigation = $couponHTML.find('.navigation');
 
             let ht = `
             <div class="all-coupon-page"></div>
@@ -1033,15 +1054,15 @@
                 </div>
                 </div>
                 <div class="mask">
-            </div>`
+            </div>`;
+            const $couponEle = $('.couponModal');
+            $couponEle.empty().append(ht).append($cssLink).append($jsLink);
 
-            const $couponEle = $('.couponModal')
-            $couponEle.empty()
-            $couponEle.append(ht).append($cssLink).append($jsLink)
+            $('.couponModal .all-coupon-page').append($main_wraper).append($navigation);
 
-            $('.couponModal .all-coupon-page').append($main_wraper).append($navigation)
-
-            couponGotoHandler()
+            couponGotoHandler();
+            // 解锁
+            lookCouponLock = false;
         }
 
         /**
@@ -1063,7 +1084,7 @@
             // 动态刷新勾选框状态，商品下所有商品选中的状态才会打勾    
             setInterval(() => {
                 // 小模态框未显示的话，直接跳过
-                if($('#batch-check-branch-box').is(':hidden')) {
+                if($('#batch-check-branch-box').length === 0 || $('#batch-check-branch-box').is(':hidden')) {
                     return;
                 }
                 // CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
@@ -1129,6 +1150,62 @@
                 $box.is(':visible') ? $box.hide() : $box.show();
             })
         }
+    }
+    
+    // 暂存已经领取的优惠券列表
+    var havedCouponList = [];
+    /**
+     * 比较慢的定时，去尝试获取已经拥有的优惠券
+     * 遍历我的优惠券页面，这显然不是一个很好的方法
+     */
+    const lookHavedCouponList = () => {
+        // 清空集合
+        havedCouponList = [];
+        // 动态url
+        const renderUrl = (page) =>  `https://activity.szlcsc.com/member/couponList.html?currentPage=${page || 1}&couponUseStatus=no`;
+        // 当前页标记
+        var currentPage = 1;
+        // 定时取页面数据
+        var lookHavedCouponTimer = setInterval(async () => {
+            // http获取我都优惠券
+            let couponHTML = await getAjax(renderUrl(currentPage));
+            var $html = $(couponHTML);
+            // 查看当前页是否有优惠券
+            var isNull = $html.find('td:contains(没有相关优惠券记录)').length > 0;
+            // 没找到优惠券
+            if(isNull) {
+                // 清除定时
+                clearInterval(lookHavedCouponTimer);
+                lookHavedCouponTimer = null;
+                // 30秒后再次尝试看有没有领的优惠券
+                setTimeout(lookHavedCouponList, 30 * 1000);
+                return;
+            } 
+            // 剩下的是有券的时候
+            else {
+                havedCouponList = [...new Set(
+                    [ 
+                    ...havedCouponList, 
+                    // 这里不关心 面板定制券、运费券  也不关心优惠券的金额。只要品牌名称对应上就算有券了。
+                    ...($html.find('span.yhjmingchen').text().split(/品牌优惠券?/g).map(item => item.replace(/.+元/g, '')).filter(item => item && !item.includes('面板定制', '运费券')))
+                ])];
+            }
+            currentPage++;
+            // 追加显示优惠券的状态
+            if (plguinIsHavedAndShow()) {
+                $('.bd ul li .appendStatus').each(function() {
+                    var isTrue = havedCouponList.includes($(this).attr('brandName'));
+                    if(isTrue) {
+                        $(this).off('click').removeClass('to_cou').css({
+                            border: 'none',
+                            background: 'transparent',
+                            color: 'white',
+                            fontSize: '12px'
+                        }).text('已领取-优惠券');
+                    }
+                });
+            }
+        }, 500);
     }
 
     /**
@@ -1318,17 +1395,19 @@
             } 
             else if (couponEntity.isUsed === true) {
                 buttonLine = `<span class='val' style="text-align: center; ">
-                    <span style="font-size: 12px;">本月已使用</span>
-                </span> `
+                                  <span style="font-size: 12px;">本月已使用</span>
+                              </span> `
             } 
             else {
                 buttonLine = `<span class='flex-sx-center flex-zy-center flex' style="padding: 0; width: 195px; text-align: center; ">
-                    <button type="button" class="to_cou">${couponEntity.isNew === false ? '普通券' : '新人券'}</button>
+                    <button type="button" class="to_cou appendStatus" brandName="${brandName}">${couponEntity.isNew === false ? '普通券' : '新人券'}</button>
                  </span> `
             }
         }
-
-        return $.isEmptyObject(buttonLine) ? '<span></span>' : buttonLine
+        // 这里会查一遍我的优惠券，如果有的话，就证明有券。
+        return $.isEmptyObject(buttonLine) ? `<span class='val' style="text-align: center; ">
+                    <span class="appendStatus" brandName="${brandName}">${havedCouponList.includes(brandName) ? '优惠券已领取' : '' }</span>
+                </span> ` : buttonLine
     }
 
 
@@ -2381,10 +2460,8 @@
         // 判断是否已经处理完成，否则会有性能问题
         basicSettings()
 
-        // w
-        if ($('div.bd').length > 0) {
-            return;
-        }
+        // 插件只执行一次
+        if (plguinIsHaved()) { return; }
 
         window.addEventListener('resize', resizeHeight)
 
@@ -2400,6 +2477,7 @@
         // onLoadSet()
         lookCouponListModal()
         lookCouponCheckboxHandler()
+        lookHavedCouponList()
     }
 
     /**
