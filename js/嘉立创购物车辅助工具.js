@@ -2562,31 +2562,60 @@
             // 查询封装规格
             const selectSpecHandler = () => {
                 /**
+                 * 模糊查
+                 * 如果多选中没有查找到规格，则做一些小小的递归数据处理
+                 * @param {*} specName 
+                 * @returns 
+                 */
+                const _MHCEachClick = (specName) => {
+                    if ($(`.det-screen:contains("封装：") label.fuxuanku-lable:contains("${specName}")`).length > 0) {
+                        $(`.det-screen:contains("封装：") label.fuxuanku-lable:contains("${specName}")`).click();
+                    } else {
+                        if (specName.includes('-')) {
+                            _MHCEachClick(specName.split('-').slice(0, -1).join('-'));
+                        }
+                    }
+                }
+                /**
+                 * 精确查
+                 * 如果多选中没有查找到规格，则做一些小小的递归数据处理
+                 * @param {*} specName 
+                 * @returns 
+                 */
+                   const _JQCEachClick = (specName) => {
+                    if ($(`.det-screen:contains("封装：") label.fuxuanku-lable[title="${specName}"]`).length > 0) {
+                        $(`.det-screen:contains("封装：") label.fuxuanku-lable[title="${specName}"]`).click();
+                    } else {
+                        if (specName.includes('-')) {
+                            _JQCEachClick(specName.split('-').slice(0, -1).join('-'));
+                        }
+                    }
+                }
+
+                /**
                  * 封装查询-多选框点击
-                 * @param scpcName   规格封装名称
+                 * @param specName   规格封装名称
                  * @param selectType 模糊查：MHC，精确查：JQC
                  */
-                const _clickSpecFunc = async (scpcName, selectType) => {
+                const _clickSpecFunc = async (specName, selectType) => {
                     // 统一文字
                     $(`.det-screen:contains("规格：") .det-screen-title`).text('封装：');
                     // 展开规格
-                    $(`.det-screen:contains("封装：") #more-standard`).click()
+                    $(`.det-screen:contains("封装：") #more-standard`).click();
 
                     switch (selectType) {
                         // 模糊查
                         case "MHC":
-                            $(`.det-screen:contains("封装：") label.fuxuanku-lable:contains("${scpcName}")`).click()
+                            _MHCEachClick(specName);
                             break;
                         // 精确查
                         case "JQC":
-                            $(`.det-screen:contains("封装：") label.fuxuanku-lable[title="${scpcName}"]`).click()
-                            break;
-                        default:
+                             _JQCEachClick(specName);
                             break;
                     }
 
                     // 查找规格对应的选项
-                    $(`.det-screen:contains("封装：") input[value="确定"]`).click()
+                    $(`.det-screen:contains("封装：") input[value="确定"]`).click();
                 }
 
                 $('.li-ellipsis:contains("封装:")').each(function () {
