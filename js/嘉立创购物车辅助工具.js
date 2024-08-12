@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.5
+// @version      1.9.6
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 1.9.5';
+        const __version = 'Version 1.9.6';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -1116,15 +1116,15 @@
                     // 判断状态
                     switch (checkStatus) {
                         case 'CHECKED':
-                            $(`#${brandName}-ckbox`).prop('checked', true);
-                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = false;
-                            break;
+                            $(`input#${brandName}-ckbox`).prop('checked', true);
+                            $(`input#${brandName}-ckbox`)[0].indeterminate = false;
+                            break;  
                         case 'UNCHECKED':
-                            $(`#${brandName}-ckbox`).prop('checked', false);
-                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = false;
+                            $(`input#${brandName}-ckbox`).prop('checked', false);
+                            $(`input#${brandName}-ckbox`)[0].indeterminate = false;
                             break;
                         case 'INDETERMINATE':
-                            $(`#${brandName}-ckbox input[type=checkbox]`)[0].indeterminate = true;
+                            $(`input#${brandName}-ckbox`)[0].indeterminate = true;
                             break;
                     }
                 })
