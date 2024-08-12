@@ -2549,7 +2549,16 @@
         if ($('div.logo-wrap').hasClass('active')) {
             if ($('#scrollTo_').length === 0) {
                 $('#productListFixedHeader:visible').parents('body').after(`
-                <a id="scrollTo_" style="border-radius: 5px; z-index: 10000; position: fixed; right: 30px; bottom: 100px;padding: 20px; background: white; border: 2px solid #199fe9; font-size: 20px; font-weight: 600;" href="javascript:scrollTo(0,0)">
+                <a id="scrollTo_" style="border-radius: 5px;
+                                        z-index: 10000;
+                                        position: fixed;
+                                        right: 45px;
+                                        bottom: 45px;
+                                        padding: 10px 10px 5px 10px;
+                                        background: white;
+                                        border: 2px solid #199fe9;
+                                        font-size: 20px;
+                                        font-weight: 600;" href="javascript:scrollTo(0,0)">
                     <svg t="1716543304931" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4240" width="40" height="40"><path d="M0 96V0h1024v96z" fill="#3498db" p-id="4241"></path><path d="M384 1022.72V606.4H255.488a64 64 0 0 1-46.336-108.16l256.448-269.312a64 64 0 0 1 92.8 0l255.744 269.44a64 64 0 0 1-46.4 108.032h-120.32v416.32H384z" fill="#3498db" p-id="4242"></path></svg>
                 </a>
                 `);
