@@ -874,8 +874,8 @@
         const versionClickHandler = () => {
             $('#version__').on('click', function() {
                 GM_setClipboard(
-                    'https://greasyfork.org/zh-CN/scripts/491619-%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7', 
-                    "text", 
+                    'https://greasyfork.org/zh-CN/scripts/491619-%E5%98%89%E7%AB%8B%E5%88%9B%E8%B4%AD%E7%89%A9%E8%BD%A6%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7',
+                    "text",
                     () => Qmsg.success('插件地址已设置到剪贴板中！'))
             })
         }
@@ -983,7 +983,8 @@
             $('.get-all').click(function() {
                 const $couponEles = $('.coupon-item:visible div:contains(立即抢券)')
 
-                let totalCount = 0, successCount = 0;
+                let totalCount = 0,
+                    successCount = 0;
                 $couponEles.each(function() {
 
                     //优惠券ID
@@ -1044,12 +1045,12 @@
          * 优惠券模态框
          */
         const lookCouponListModal = async(clear = false) => {
-           
-            if(lookCouponLock || !plguinIsHavedAndShow() || ($('.couponModal .all-coupon-page').length > 0 && clear === false)) {
+
+            if (lookCouponLock || !plguinIsHavedAndShow() || ($('.couponModal .all-coupon-page').length > 0 && clear === false)) {
                 return;
             }
-             //上锁, 防止这次还没处理完， 下次定时任务就已经就绪了。
-             lookCouponLock = true;
+            //上锁, 防止这次还没处理完， 下次定时任务就已经就绪了。
+            lookCouponLock = true;
             let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`);
 
             const $couponHTML = $(couponHTML);
@@ -1103,32 +1104,32 @@
                 color: white;">批量选择现货品牌</span>
                 `);
 
-            // 动态刷新勾选框状态，商品下所有商品选中的状态才会打勾    
-            setInterval(() => {
-                // 小模态框未显示的话，直接跳过
-                if($('#batch-check-branch-box').length === 0 || $('#batch-check-branch-box').is(':hidden')) {
-                    return;
-                }
-                // CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
-                var ckMap = checkboxStatusGroupByBrandName();
-                ckMap.forEach((checkStatus, brandName) => {
-                    brandName = brandNameDataProcess(brandName);
-                    // 判断状态
-                    switch (checkStatus) {
-                        case 'CHECKED':
-                            $(`input#${brandName}-ckbox`).prop('checked', true);
-                            $(`input#${brandName}-ckbox`)[0].indeterminate = false;
-                            break;  
-                        case 'UNCHECKED':
-                            $(`input#${brandName}-ckbox`).prop('checked', false);
-                            $(`input#${brandName}-ckbox`)[0].indeterminate = false;
-                            break;
-                        case 'INDETERMINATE':
-                            $(`input#${brandName}-ckbox`)[0].indeterminate = true;
-                            break;
-                    }
-                })
-            }, 1500);
+                    // 动态刷新勾选框状态，商品下所有商品选中的状态才会打勾    
+                    setInterval(() => {
+                        // 小模态框未显示的话，直接跳过
+                        if ($('#batch-check-branch-box').length === 0 || $('#batch-check-branch-box').is(':hidden')) {
+                            return;
+                        }
+                        // CHECKED选中、UNCHECKED未选中、INDETERMINATE不确定
+                        var ckMap = checkboxStatusGroupByBrandName();
+                        ckMap.forEach((checkStatus, brandName) => {
+                            brandName = brandNameDataProcess(brandName);
+                            // 判断状态
+                            switch (checkStatus) {
+                                case 'CHECKED':
+                                    $(`input#${brandName}-ckbox`).prop('checked', true);
+                                    $(`input#${brandName}-ckbox`)[0].indeterminate = false;
+                                    break;
+                                case 'UNCHECKED':
+                                    $(`input#${brandName}-ckbox`).prop('checked', false);
+                                    $(`input#${brandName}-ckbox`)[0].indeterminate = false;
+                                    break;
+                                case 'INDETERMINATE':
+                                    $(`input#${brandName}-ckbox`)[0].indeterminate = true;
+                                    break;
+                            }
+                        })
+                    }, 1500);
 
                     // 点击事件监听
                     $('#batch-check-branch').on('click', function() {
@@ -2545,27 +2546,27 @@
 
         catalogListRenderBrandColor()
 
-        // 回到顶部
-        if ($('div.logo-wrap').hasClass('active')) {
-            if ($('#scrollTo_').length === 0) {
-                $('#productListFixedHeader:visible').parents('body').after(`
-                <a id="scrollTo_" style="border-radius: 5px;
-                                        z-index: 10000;
-                                        position: fixed;
-                                        right: 45px;
-                                        bottom: 45px;
-                                        padding: 10px 10px 5px 10px;
-                                        background: white;
-                                        border: 2px solid #199fe9;
-                                        font-size: 20px;
-                                        font-weight: 600;" href="javascript:scrollTo(0,0)">
-                    <svg t="1716543304931" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4240" width="40" height="40"><path d="M0 96V0h1024v96z" fill="#3498db" p-id="4241"></path><path d="M384 1022.72V606.4H255.488a64 64 0 0 1-46.336-108.16l256.448-269.312a64 64 0 0 1 92.8 0l255.744 269.44a64 64 0 0 1-46.4 108.032h-120.32v416.32H384z" fill="#3498db" p-id="4242"></path></svg>
-                </a>
-                `);
-            }
-        } else {
-            $('#scrollTo_').remove();
-        }
+        // 回到顶部  嘉立创的返回顶部，在展开客服里。
+        // if ($('div.logo-wrap').hasClass('active')) {
+        //     if ($('#scrollTo_').length === 0) {
+        //         $('#productListFixedHeader:visible').parents('body').after(`
+        //         <a id="scrollTo_" style="border-radius: 5px;
+        //                                 z-index: 10000;
+        //                                 position: fixed;
+        //                                 right: 45px;
+        //                                 bottom: 45px;
+        //                                 padding: 10px 10px 5px 10px;
+        //                                 background: white;
+        //                                 border: 2px solid #199fe9;
+        //                                 font-size: 20px;
+        //                                 font-weight: 600;" href="javascript:scrollTo(0,0)">
+        //             <svg t="1716543304931" class="icon" viewBox="0 0 1024 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="4240" width="40" height="40"><path d="M0 96V0h1024v96z" fill="#3498db" p-id="4241"></path><path d="M384 1022.72V606.4H255.488a64 64 0 0 1-46.336-108.16l256.448-269.312a64 64 0 0 1 92.8 0l255.744 269.44a64 64 0 0 1-46.4 108.032h-120.32v416.32H384z" fill="#3498db" p-id="4242"></path></svg>
+        //         </a>
+        //         `);
+        //     }
+        // } else {
+        //     $('#scrollTo_').remove();
+        // }
 
         if ($('span[class*=select-spec-]').length === 0) {
             // 查询封装规格
