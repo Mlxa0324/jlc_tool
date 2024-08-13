@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.2
+// @version      2.0.3
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -192,7 +192,7 @@
         // 搜索页需要显示多少条数据  自行修改
         var searchPageRealSize = 100;
         // 搜索页总页数
-        var searchTotalPage = () => parseInt((searchPageTotalCount() / searchPageSize).toFixed(0)) + 1;
+        var searchTotalPage = () => (parseInt((searchPageTotalCount() / searchPageSize).toFixed(0)) + 1) || 30;
         // 存储动态的function，用做数据处理
         var jsRules = [];
         // 搜索页数据预览定时器
@@ -1156,7 +1156,7 @@
                             position: fixed;
                             flex-wrap: wrap;
                             display: flex;
-                            bottom: 60px;
+                            bottom: 55px;
                             left: 25%;
                             z-index: 100;
                             overflow: auto;
@@ -3317,7 +3317,6 @@
                              </table>`;
                          }).join('');
                          $('#product-list-box table').remove();
-                         $('#product-list-box').height('75vh');
                          $('.wait-h2').hide();
                          $('#product-list-box').append(html);
                          
@@ -3330,7 +3329,7 @@
                 position: fixed;
                 right: 45px;
                 bottom: 45px;
-                padding: 5px 20px;
+                padding: 5px 10px;
                 color: white;
                 background: #199fe9;
                 border: 2px solid #199fe9;
@@ -3346,33 +3345,38 @@
 
         if($('#product-list-box').length === 0) {
             // 这里处理前10页的最低购入价的排序
-            $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; height: 30vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
+            $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; min-height: 30vh; max-height: 75vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
                 <div style="display: flex; justify-content: space-around;height: 60px; position: sticky; top: 0px;z-index: 99999;">
-                    <button id="gd-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
-                    <button id="js-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
-                    <button id="new-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">新人</button>
-                    <button id="unnew-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">非新人</button>
+                    <div style="border: 2px solid #199fe9; display: flex; padding: 5px; width: 100%;">
+                        <button id="gd-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
+                        <button id="js-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
+                    </div>
+                    <div style="margin-left: 10px; border: 2px solid #199fe9; display: flex; padding: 5px; width: 100%;">
+                        <button id="new-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">新人券</button>
+                        <button id="unnew-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">非新人券</button>
+                        <button id="other-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">其他券</button>
+                    </div>
                 </div>
-                <h2 class="wait-h2" style="height: 80%; width: 450px; display: flex;justify-content: center;align-items: center;">等待数据加载中...</h2>
+                <h2 class="wait-h2" style="height: 200px; width: 500px; display: flex;justify-content: center;align-items: center;">数据正在加载中...</h2>
                             </div>`);
             // 广东仓过滤
             $('#gd-filter-btn').on('click', function() {
+                $('button[id*=-filter-btn]').css('background', '#aaaeb0');
                 $('#gd-filter-btn').css('background', '#199fe9');
-                $('#js-filter-btn').css('background', '#aaaeb0');
                 jsRules[0] = (item) => parseInt(item.gdWarehouseStockNumber||0) > 0;
                 renderMinPriceSearch();
             });
             // 江苏仓过滤
             $('#js-filter-btn').on('click', function() {
+                $('button[id*=-filter-btn]').css('background', '#aaaeb0');
                 $('#js-filter-btn').css('background', '#199fe9')
-                $('#gd-filter-btn').css('background', '#aaaeb0');
                 jsRules[0] = (item) => parseInt(item.jsWarehouseStockNumber||0) > 0;
                 renderMinPriceSearch();
             });
-            // 新人过滤
-            $('#new-filter-btn').on('click', function() {
-                $('#new-filter-btn').css('background', '#199fe9');
-                $('#unnew-filter-btn').css('background', '#aaaeb0');
+            // 新人券过滤
+            $('#new-filter-coupon-btn').on('click', function() {
+                $('button[id*=-filter-coupon-btn]').css('background', '#aaaeb0');
+                $('#new-filter-coupon-btn').css('background', '#199fe9');
                 jsRules[1] = (item) => {
                     try {
                         return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === true;
@@ -3382,10 +3386,10 @@
                 };
                 renderMinPriceSearch();
             });
-            // 非新人过滤
-            $('#unnew-filter-btn').on('click', function() {
-                $('#unnew-filter-btn').css('background-color', '#199fe9');
-                $('#new-filter-btn').css('background-color', '#aaaeb0');
+            // 非新人券过滤
+            $('#unnew-filter-coupon-btn').on('click', function() {
+                $('button[id*=-filter-coupon-btn]').css('background', '#aaaeb0');
+                $('#unnew-filter-coupon-btn').css('background-color', '#199fe9');
                 jsRules[1] = (item) => {
                     try {
                         return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === false;
@@ -3395,9 +3399,24 @@
                 };;
                 renderMinPriceSearch();
             });
+             // 其他券过滤
+             $('#other-filter-coupon-btn').on('click', function() {
+                $('button[id*=-filter-coupon-btn]').css('background', '#aaaeb0');
+                $('#other-filter-coupon-btn').css('background-color', '#199fe9');
+                jsRules[1] = (item) => {
+                    try {
+                        // 这里不返回，就看领券中心有没有这个品牌的券，不太准确反正
+                        all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew;
+                    } catch (error) {
+                        // 不在领券中心的商品
+                        return true;
+                    }
+                };;
+                renderMinPriceSearch();
+            });
         } else if($('#product-list-box').is(':visible')) {
             // 总页数。默认：30页
-            const totalPage = searchTotalPage() || 30;
+            const totalPage = searchTotalPage();
             // 持续请求 && 定时器未初始化 && 未查询到结果的时候
              if(searchPageNum <= totalPage && searchTimer === null && searchTempList.length === 0) {
                 // 初始化定时器任务
@@ -3421,6 +3440,7 @@
                             if (response.result.productRecordList != null) {
                                 searchTempList = [...searchTempList, ...response.result.productRecordList];
                             }
+                            $('.wait-h2').text(`数据加载中(共${searchTotalPage()}页，正在加载第${searchPageNum}页)...`);
                         }
                         searchPageNum++;
                      });
