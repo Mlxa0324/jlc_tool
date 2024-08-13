@@ -3448,7 +3448,7 @@
                         "method": "POST",
                         "data": { "pn": searchPageNum, "k": val, "sk": val }
                     };
-                    await setAwait(300);
+                    // await setAwait(300);
                     await $.ajax(settings).done(function (response) {
                         if(response.code === 200 && response.result != null) {
                             if (response.result.productRecordList != null) {
