@@ -2967,6 +2967,7 @@
                                  gdWarehouseStockNumber        ,
                                  jsWarehouseStockNumber        ,
                                  paramLinkedMap                ,
+                                 recentlySalesCount
                               } = item;
  
                              return `<table class="inside inside-page tab-data no-one-hk list-items"
@@ -3269,7 +3270,7 @@
  
                                                  <div class="stocks">
  
-                                                     <span>近期成交23单</span>
+                                                     <span>近期成交${recentlySalesCount}单</span>
  
                                                  </div>
  
