@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.9.7
+// @version      2.0.2
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 1.9.7';
+        const __version = 'Version 2.0.2';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -182,7 +182,23 @@
             // 优惠券页面，数据暂存。只保存16-15的优惠券
         const all16_15CouponMp = new Map()
             // 自动领券的定时器
-        let couponTimer = null
+        let couponTimer = null;
+        // 搜索页页码
+        var searchPageNum = 1;
+        // 搜索页总条数
+        var searchPageTotalCount = () => parseInt($('div.g01 span:eq(1)').text()) || parseInt($('#by-channel-total b').text());
+        // 搜索页单页条数
+        var searchPageSize = 30;
+        // 搜索页需要显示多少条数据  自行修改
+        var searchPageRealSize = 100;
+        // 搜索页总页数
+        var searchTotalPage = () => parseInt((searchPageTotalCount() / searchPageSize).toFixed(0)) + 1;
+        // 存储动态的function，用做数据处理
+        var jsRules = [];
+        // 搜索页数据预览定时器
+        var searchTimer = null;
+        // 搜索页数据暂存
+        var searchTempList = [];
 
         // 消息弹框全局参数配置
         Qmsg.config({
@@ -2534,7 +2550,7 @@
         const catalogListRenderBrandColor = () => {
             for (let [brandName, brandDetail] of all16_15CouponMp) {
                 // 获取页面元素
-                const $brandEle = $(`li[title*="${brandName}"],span[title*="${brandName}"],a.brand-name[title*="${brandName}"]`)
+                const $brandEle = $(`li[title*="${brandName}"]:not([style*=background-color]),span[title*="${brandName}"]:not([style*=background-color]),a.brand-name[title*="${brandName}"]:not([style*=background-color])`);
                 // && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)"
                 if ($brandEle.length > 0) {
                     $brandEle.css({
@@ -2652,9 +2668,14 @@
             selectSpecHandler()
         }
 
-        // 搜索页的 一键搜淘宝
         if ($('.searchTaobao_').length === 0) {
-
+            // 预售拼团 不处理，其他的都追加按钮
+            $('.line-box:not(:contains("预售拼团")) li.pan-list').append(`
+                <button type="button" class="pan-list-btn searchTaobao_" style="margin-top: 5px; background: #199fe9;">一键搜淘宝</button>
+            `)
+        } else
+        // 搜索页的 一键搜淘宝
+        if ($('.searchTaobao_:not([addedClickHandler])').length > 0) {
             /**
             * 非阻容，其他数据处理
             * @param {*} parents 行级标签
@@ -2705,13 +2726,7 @@
 
                 resArr.push(c); resArr.push(v); resArr.push(j); resArr.push(f);
             }
-
-            // 预售拼团 不处理，其他的都追加按钮
-            $('.line-box:not(:contains("预售拼团")) li.pan-list').append(`
-                <button type="button" class="pan-list-btn searchTaobao_" style="margin-top: 5px; background: #199fe9;">一键搜淘宝</button>
-            `)
-
-            $('.searchTaobao_').on('click', function (params) {
+            $('.searchTaobao_:not([addedClickHandler])').attr('addedClickHandler', true).on('click', function (params) {
                 let searchArrVals = [];
 
                 const $parents = $(this).parents('td.line-box');
@@ -2720,7 +2735,6 @@
 
                 GM_openInTab(`https://s.taobao.com/search?q=${searchArrVals.join('/')}`, { active: true, insert: true, setParent: true })
             })
-
         }
 
         /**
@@ -2904,7 +2918,517 @@
         if ($('.minBuyMoney_').length === 0) {
             minBuyMoney()
         }
+
+        /**
+         * 搜索页-查找最低价 列表渲染方法
+         */
+        const renderMinPriceSearch = () => {
+            // 如果广东仓和江苏仓同时没有货的话，那么就属于订货商品，不需要显示
+                         // 如果没有价格区间，证明是停售商品
+                         var newList = searchTempList.filter(item =>!(parseInt(item.jsWarehouseStockNumber||0) <= 0 && parseInt(item.gdWarehouseStockNumber||0) <= 0) && item.productPriceList.length > 0);
+                         // 列表自动正序，方便凑单
+                         newList.sort((o1, o2) =>{
+                             return (o1.theRatio*o1.productPriceList[0].productPrice).toFixed(6) - (o2.theRatio*o2.productPriceList[0].productPrice).toFixed(6);
+                         });
+                         // 外部动态js规则组
+                         if (jsRules.length > 0) {
+                             jsRules.forEach(jsr => { newList = newList.filter(jsr); });
+                         }
+                         // 只取前默认50个
+                         var html = newList.slice(0, (searchPageRealSize || 50)).map(item => {
+                             const { 
+                                 productId                     ,
+                                 lightStandard                 ,
+                                 lightProductCode              ,
+                                 productMinEncapsulationNumber ,
+                                 productMinEncapsulationUnit   ,
+                                 productName                   ,
+                                 productModel                  ,
+                                 lightProductModel             ,
+                                 productGradePlateId           ,
+                                 productPriceList              ,
+                                 productGradePlateName         ,
+                                 hkConvesionRatio              ,
+                                 convesionRatio                ,
+                                 theRatio                      ,
+                                 smtStockNumber                ,
+                                 smtLabel                      ,
+                                 productStockStatus            ,
+                                 isPlusDiscount                ,
+                                 productUnit                   ,
+                                 isPresent                     ,
+                                 isGuidePrice                  ,
+                                 minBuyNumber                  ,
+                                 hasSampleRule                 ,
+                                 breviaryImageUrl              ,
+                                 luceneBreviaryImageUrls       ,
+                                 productType                   ,
+                                 productTypeCode               ,
+                                 pdfDESProductId               ,
+                                 gdWarehouseStockNumber        ,
+                                 jsWarehouseStockNumber        ,
+                                 paramLinkedMap                ,
+                                 recentlySalesCount
+                              } = item;
+ 
+                             return `<table class="inside inside-page tab-data no-one-hk list-items"
+                             id="product-tbody-line-${productId}" width="100%" border="0"
+                             cellspacing="0" cellpadding="0" data-curpage="1" data-mainproductindex="0"
+                             pid="${productId}" psid
+                             data-batchstocklimit="1200" data-encapstandard="${lightStandard}"
+                             data-hassamplerule="${hasSampleRule}" data-productcode="${lightProductCode}"
+                             data-productminencapsulationnumber="${productMinEncapsulationNumber}"
+                             data-productminencapsulationunit="${productMinEncapsulationUnit}" data-productmodel="${productModel}"
+                             data-productname="${productName}" 
+                             data-productstockstatus="${productStockStatus}"
+                             data-convesionratio="${convesionRatio}" data-theratio="${theRatio}" data-hkconvesionratio="${hkConvesionRatio}"
+                             data-productunit="${productUnit}" data-isplusdiscount="${isPlusDiscount}"
+                             data-isguideprice="${isGuidePrice}" data-ispresent="${isPresent}" data-brandid="${productGradePlateId}"
+                             data-brandname="${productGradePlateName}"
+                             data-productmodel-unlight="${lightProductModel}" data-istiprovider data-isptoc
+                             data-firstprice="${productPriceList[0].productPrice}" data-minbuynumber="${minBuyNumber}"
+                             data-provider data-reposition data-productid="${productId}">
+                             <tbody>
+                                 <tr class="no-tj-tr add-cart-tr" data-inventory-type="local" pid="${productId}">
+                                 <td class="line-box">
+                                     <div class="one line-box-left">
+                                     <a class="one-to-item-link"
+                                         href="https://item.szlcsc.com/${productId}.html?fromZone=s_s__%2522123%2522"
+                                         target="_blank" data-trackzone="s_s__&quot;123&quot;"
+                                         onclick="goItemDetailBuriedPoint('${productId}', this, 'picture', 's_s__&quot;${$("#search-input").val()}&quot;', null, '0')">
+                                         <img
+                                         src="${breviaryImageUrl}"
+                                         productid="${productId}" alt="${productName}"
+                                         xpath="${breviaryImageUrl}"
+                                         data-urls="${luceneBreviaryImageUrls}"
+                                         showflag="yes"
+                                         onerror="javascript:this.src='//static.szlcsc.com/ecp/assets/web/static/images/default_pic.gif'">
+                                     </a>
+                                     <span>
+                                         <input type="button" class="db" data-add-compare="${productId}"
+                                         title="对比后该商品会添加到对比栏中" value>
+                                         <input type="button" class="sc common-sc productId-${productId} "
+                                         title="收藏后该商品会保存到[会员中心]下的[我的收藏]中"
+                                         data-productid="${productId}">
+                                     </span>
+                                     </div>
+                                     <div class="line-box-right">
+                                     <div class="line-box-right-bottom">
+                                         <div class="two">
+                                         <div class="two-01 two-top">
+                                             <ul class="l02-zb">
+                                             <li class="li-ellipsis">
+                                                 <a title="${productName}"
+                                                 class="ellipsis product-name-link  item-go-detail"
+                                                 href="https://item.szlcsc.com/${productId}.html?fromZone=s_s__%2522123%2522"
+                                                 target="_blank"
+                                                 data-trackzone="s_s__&quot;123&quot;"
+                                                 onclick="goItemDetailBuriedPoint('${productId}', this, 'name', 's_s__&quot;${$("#search-input").val()}&quot;', null, '0')">
+                                                 ${productName}</a>
+                                             </li>
+                                             <li class="band li-ellipsis"
+                                                 onclick="commonBuriedPoint(this, 'go_brand')">
+                                                 <span class="c9a9a9a" title="品牌：${productGradePlateName}">品牌:</span>
+                                                 <a class="brand-name" title="点击查看${productGradePlateName}的品牌信息"
+                                                 href="https://list.szlcsc.com/brand/${productGradePlateId}.html"
+                                                 target="_blank">
+                                                 ${productGradePlateName}
+                                                 </a>
+                                             </li>
+                                             <li class="li-ellipsis">
+                                                 <span class="c9a9a9a" title="封装:${lightStandard}">封装:</span>
+                                                 <span title="${lightStandard}">${lightStandard}</span>
+                                             </li>
+                                             <!--<li class="li-el">
+                                                 <span class="select-spec-mh"
+                                                 style="border-radius: 2px; display: inline-flex; padding: 3px 8px; color: white; cursor: pointer; user-select: none; background: #199fe9;"
+                                                 specname="${lightStandard}" selecttype="MHC">封装模糊匹配</span>
+                                                 <span class="select-spec-jq"
+                                                 style="border-radius: 2px; display: inline-flex; padding: 3px 8px; color: white; cursor: pointer; user-select: none; background: #199fe9; margin-left: 3px;"
+                                                 specname="${lightStandard}" selecttype="JQC">封装精确匹配</span>
+                                             </li>-->
+                                             <li>
+                                             </li>
+                                             </ul>
+                                             <ul class="l02-zb params-list">
+                                             ${Object.keys(paramLinkedMap).map(key => {
+                                                 return `<li class="li-ellipsis">
+                                                 <span class="c9a9a9a">${key}</span>:
+                                                 <span title="${paramLinkedMap[key]}">${paramLinkedMap[key]}</span>
+                                                 </li>`
+                                             }).join('')}
+                                             </ul>
+                                             <ul class="l02-zb">
+                                             <li class="li-ellipsis"
+                                                 onclick="commonBuriedPoint(this, 'go_catalog')">
+                                                 <span class="c9a9a9a">类目:</span>
+                                                 <a title="${productType}" target="_blank"
+                                                 class="catalog ellipsis underLine"
+                                                 href="https://list.szlcsc.com/catalog/${productTypeCode}.html">
+                                                 ${productType}
+                                                 </a>
+                                             </li>
+                                             <li class="li-ellipsis">
+                                                 <span class="c9a9a9a">编号:</span>
+                                                 <span>${lightProductCode}</span>
+                                             </li>
+                                             <li class="li-ellipsis">
+                                                 <span class="c9a9a9a">详细:</span>
+                                                 <a class="sjsc underLine" productid="${productId}"
+                                                 param-click="${pdfDESProductId}">
+                                                 数据手册
+                                                 </a>
+                                             </li>
+                                             </ul>
+                                         </div>
+                                         <div class="two-bottom">
+                                             <!-- <li class="tag-wrapper">-->
+                                             <!--</li>-->
+                                             <!--<div class="three-box-bottom common-label common-useless-label">-->
+                                             <!--<section class="smt-price" id="SP-LIST">-->
+                                             <!--    <a target="_blank" data-pc="${lightProductCode}" class="to-jlc-smt-list"-->
+                                             <!--    href="https://www.jlcsmt.com/lcsc/detail?componentCode=${lightProductCode}&amp;stockNumber=10&amp;presaleOrderSource=shop">嘉立创贴片惊喜价格(库存<span-->
+                                             <!--        class="smtStockNumber">${smtStockNumber}</span>)</a>-->
+                                             <!--</section>-->
+                                             <!--</div>-->
+                                             <!-- SMT 基础库、扩展库 -->
+                                             <!--<div class="smt-flag common-label">${smtLabel}</div> -->
+                                         </div>
+                                         </div>
+                                         <div class="three-box hasSMT">
+                                         <div class="three-box-top">
+                                             <div class="three">
+                                             <ul class="three-nr">
+                                                 <!--
+                                                 价格逻辑:
+                                                     第一次加载时
+                                                     有折扣，显示折扣价
+                                                     Plus折扣商品，显示原价
+                                                     没折扣，显示原价
+                                                     登录判断用户身份后（js中接口走完的回调）
+                                                     用户不是plus会员时，并且该商品是plus会员折扣商品，js循环修改显示的价格为原价
+                                                 -->
+                                                 <p class="minBuyMoney_" style="
+                                                     width: fit-content;
+                                                     padding: 2px 3px;
+                                                     font-weight: 600;
+                                                     color: #0094e7;">最低购入价： ${(theRatio*productPriceList[0].productPrice).toFixed(6)}</p>
+                                                
+                                                     ${productPriceList.map(item => {
+                                                         return `<li class="three-nr-item">
+                                                                     <div class="price-warp price-warp-local">
+                                                                         <p class="ppbbz-p no-special " minordernum="${item.startPurchasedNumber * theRatio}"
+                                                                         originalprice="${item.productPrice}" discountprice
+                                                                         orderprice="${item.productPrice}">
+                                                                         ${item.startPurchasedNumber * theRatio}+:&nbsp;
+                                                                         </p>
+                                                                         <span class="ccd ccd-ppbbz show-price-span"
+                                                                         minordernum="${item.startPurchasedNumber * theRatio}" data-endpurchasednumber="9"
+                                                                         data-productprice="${item.productPrice}" data-productprice-discount
+                                                                         orderprice="${item.productPrice}"
+                                                                         data-startpurchasednumber="1">
+                                                                         ￥${item.productPrice}
+                                                                         </span>
+                                                                     </div>
+                                                                 </li>`;
+                                                     }).join('')}
+                                                 
+                                             </ul>
+                                             </div>
+                                             <div class="three three-hk">
+                                             </div>
+                                         </div>
+                                         </div>
+                                         <div class="conformity-box">
+                                         <div class="conformity-box-top">
+ 
+                                             <div class="three-change">
+ 
+                                             <span class="three-nr-01 three-nr-long">现货最快4H发</span>
+ 
+                                             <ul class="finput">
+ 
+                                                 <li class="stocks stocks-change stocks-style"
+                                                 local-show="yes" hk-usd-show="no">
+ 
+                                                 <div class="stock-nums-gd">
+                                                     广东仓:
+                                                     <span style="font-weight:bold">${gdWarehouseStockNumber}</span>
+                                                 </div>
+                                                 <div class="stock-nums-js">
+                                                     江苏仓:
+                                                     <span style="font-weight:bold">${jsWarehouseStockNumber}</span>
+                                                 </div>
+ 
+                                                 </li>
+                                                 <li class="display-none">
+                                                 <div local-show="no" hk-usd-show="yes">
+                                                 </div>
+                                                 </li>
+                                             </ul>
+                                             <!-- 
+                                                 <div class="smt-stock">广东SMT仓: <span style="font-weight:bold">
+                                                 ${smtStockNumber}
+                                                 </span></div>
+                                             -->
+                                             </div>
+                                             <div class="ffour">
+                                             <ul class="finput">
+ 
+                                                 <li class="price-input price-input-gd local-input">
+                                                 <input type="text" maxlength="9" unit-type="single"
+                                                     class="cartnumbers " pluszk="false"
+                                                     unitnum="${productMinEncapsulationNumber}" placeholder="广东仓" defaultwarehouse="sz"
+                                                     data-type="gd" gdstock="${gdWarehouseStockNumber}" value>
+                                                 <div class="unit ">
+                                                     <span class="cur-unit ">个</span>
+ 
+                                                     <i class="xl"></i>
+                                                     <div class="unit-contain" style="display: none;">
+                                                     <div class="unit-type">
+                                                         <span class="unit-one">个</span>
+                                                         <span class="unit-two">${productMinEncapsulationUnit}</span>
+                                                     </div>
+                                                     <i class="sl"></i>
+                                                     </div>
+ 
+                                                 </div>
+                                                 </li>
+                                                 <li class="price-input price-input-js local-input">
+                                                 <input type="text" maxlength="9" unit-type="single"
+                                                     class="cartnumbers " pluszk="false"
+                                                     unitnum="${productMinEncapsulationNumber}" placeholder="江苏仓" defaultwarehouse="sz"
+                                                     data-type="js" jsstock="${jsWarehouseStockNumber}" value>
+                                                 <div class="unit ">
+                                                     <span class="cur-unit ">个</span>
+ 
+                                                     <i class="xl"></i>
+                                                     <div class="unit-contain" style="display: none;">
+                                                     <div class="unit-type">
+                                                         <span class="unit-one">个</span>
+                                                         <span class="unit-two">${productMinEncapsulationUnit}</span>
+                                                     </div>
+                                                     <i class="sl"></i>
+                                                     </div>
+ 
+                                                 </div>
+                                                 </li>
+ 
+                                                 <li class="price-input price-input-hk">
+                                                 <input type="text" maxlength="9" unit-type="single"
+                                                     class="cartnumbers " pluszk="false"
+                                                     unitnum="${productMinEncapsulationNumber}" placeholder="香港仓" data-type="hk"
+                                                     value="${hkConvesionRatio}">
+                                                 <div class="unit ">
+                                                     <span class="cur-unit ">个</span>
+ 
+                                                     <i class="xl"></i>
+                                                     <div class="unit-contain" style="display: none;">
+                                                     <div class="unit-type">
+                                                         <span class="unit-one">个</span>
+                                                         <span class="unit-two">${productMinEncapsulationUnit}</span>
+                                                     </div>
+                                                     <i class="sl"></i>
+                                                     </div>
+ 
+                                                 </div>
+                                                 </li>
+ 
+                                                 <li>${productMinEncapsulationNumber}个/${productMinEncapsulationUnit}</li>
+ 
+                                                 <li class="totalPrice-li">
+                                                 总额:
+ 
+                                                 <span class="goldenrod totalPrice">￥0</span>
+ 
+                                                 <div class="plus_mj">
+                                                     <div class="plus-flag">
+                                                     <span><span class="mj-name"></span>已优惠<span
+                                                         class="mj-money">0</span>元！</span>
+                                                     <s><i></i></s>
+                                                     </div>
+                                                 </div>
+                                                 </li>
+ 
+                                             </ul>
+                                             <ul class="pan">
+                                                 <li class="pan-list">
+ 
+                                                 <button type="button" class="pan-list-btn addCartBtn "
+                                                     kind="cart" local-show="yes"
+                                                     hk-usd-show="no" id="addcart-so" productcode="${lightProductCode}"
+                                                     data-curpage="1"
+                                                     data-mainproductindex="0" param-product-id="${productId}"
+                                                     data-agl-cvt="15"
+                                                     data-trackzone="s_s__&quot;123&quot;">加入购物车</button>
+                                                 <button type="button"
+                                                     class="pan-list-btn addCartBtn display-none"
+                                                     kind="order" local-show="no"
+                                                     hk-usd-show="yes" productcode="${lightProductCode}" data-curpage="1"
+                                                     data-mainproductindex="0"
+                                                     param-product-id="${productId}" data-agl-cvt="15"
+                                                     data-trackzone="s_s__&quot;123&quot;">我要订货</button>
+ 
+                                                 <div class="stocks">
+ 
+                                                     <span>近期成交${recentlySalesCount}单</span>
+ 
+                                                 </div>
+ 
+                                                 <span class="add-cart-tip">
+                                                     <i class="add-cart"></i><span
+                                                     class="c999 cursor-default lh">已加购</span>
+                                                 </span>
+ 
+                                                 <button onclick="commonBuriedPoint(this, 'purchase_plan')"
+                                                     type="button" class="stock-btn"
+                                                     data-productmodel="${productName}"
+                                                     data-brandname="${productGradePlateName}"
+                                                     data-trackzone="s_s__&quot;123&quot;">
+                                                     我要备货
+                                                 </button>
+ 
+                                                 <button type="button" class="pan-list-btn searchTaobao_"
+                                                     style="margin-top: 5px; background: #199fe9;">一键搜淘宝</button>
+                                                 </li>
+                                             </ul>
+                                             </div>
+                                         </div>
+ 
+                                         </div>
+                                     </div>
+                                     </div>
+                                 </td>
+                                 </tr>
+                                 <tr
+                                 class="more-channel-products items-overseas-products display-none hide-tr">
+                                 <td colspan="6" id="overseasList" oldbatchproductlist
+                                     isgroupproduct="false" listlength="30" productid="${productId}">
+                                 </td>
+                                 </tr>
+ 
+                                 <tr class="more-channel-products items-hk-products display-none hide-tr">
+                                 <td colspan="6" id="hkProductList" oldbatchproductlist
+                                     isgroupproduct="false" listlength="30" productid="${productId}">
+                                 </td>
+                                 </tr>
+ 
+                             </tbody>
+                             </table>`;
+                         }).join('');
+                         $('#product-list-box table').remove();
+                         $('#product-list-box').height('75vh');
+                         $('.wait-h2').hide();
+                         $('#product-list-box').append(html);
+                         
+        }
+
+        if($('#product-list-show-btn').length === 0) {
+            $('body').append( `<div id="product-list-show-btn" style="
+                border-radius: 5px;
+                z-index: 10000;
+                position: fixed;
+                right: 45px;
+                bottom: 45px;
+                padding: 5px 20px;
+                color: white;
+                background: #199fe9;
+                border: 2px solid #199fe9;
+                font-size: 20px;
+                cursor: pointer;
+                user-select:none;
+                font-weight: 600;"><p>凑单</p><span style="font-size: 12px;">页面加载慢，请耐心等待！</span></div>`);
+
+                $('#product-list-show-btn').on('click', function() {
+                    $('#product-list-box').fadeToggle();
+                });
+        }
+
+        if($('#product-list-box').length === 0) {
+            // 这里处理前10页的最低购入价的排序
+            $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; height: 30vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
+                <div style="display: flex; justify-content: space-around;height: 60px; position: sticky; top: 0px;z-index: 99999;">
+                    <button id="gd-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
+                    <button id="js-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
+                    <button id="new-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">新人</button>
+                    <button id="unnew-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">非新人</button>
+                </div>
+                <h2 class="wait-h2" style="height: 80%; width: 450px; display: flex;justify-content: center;align-items: center;">等待数据加载中...</h2>
+                            </div>`);
+            // 广东仓过滤
+            $('#gd-filter-btn').on('click', function() {
+                $('#gd-filter-btn').css('background', '#199fe9');
+                $('#js-filter-btn').css('background', '#aaaeb0');
+                jsRules[0] = (item) => parseInt(item.gdWarehouseStockNumber||0) > 0;
+                renderMinPriceSearch();
+            });
+            // 江苏仓过滤
+            $('#js-filter-btn').on('click', function() {
+                $('#js-filter-btn').css('background', '#199fe9')
+                $('#gd-filter-btn').css('background', '#aaaeb0');
+                jsRules[0] = (item) => parseInt(item.jsWarehouseStockNumber||0) > 0;
+                renderMinPriceSearch();
+            });
+            // 新人过滤
+            $('#new-filter-btn').on('click', function() {
+                $('#new-filter-btn').css('background', '#199fe9');
+                $('#unnew-filter-btn').css('background', '#aaaeb0');
+                jsRules[1] = (item) => {
+                    try {
+                        return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === true;
+                    } catch (error) {
+                        return false;
+                    }
+                };
+                renderMinPriceSearch();
+            });
+            // 非新人过滤
+            $('#unnew-filter-btn').on('click', function() {
+                $('#unnew-filter-btn').css('background-color', '#199fe9');
+                $('#new-filter-btn').css('background-color', '#aaaeb0');
+                jsRules[1] = (item) => {
+                    try {
+                        return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === false;
+                    } catch (error) {
+                        return false;
+                    }
+                };;
+                renderMinPriceSearch();
+            });
+        } else if($('#product-list-box').is(':visible')) {
+            // 总页数。默认：30页
+            const totalPage = searchTotalPage() || 30;
+            // 持续请求 && 定时器未初始化 && 未查询到结果的时候
+             if(searchPageNum <= totalPage && searchTimer === null && searchTempList.length === 0) {
+                // 初始化定时器任务
+                searchTimer = setInterval(() => {
+                    // 符合要求的时候，删除定时器任务 并执行渲染任务
+                    // 这里对结果集合限制在1000条数据，差不多是够了。
+                    if(searchPageNum >= totalPage || searchTempList.length > 1000) {
+                        clearInterval(searchTimer);
+                        searchTimer = null;
+                        renderMinPriceSearch();
+                        return;
+                    }
+                    var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
+                    var settings = {
+                        "url": "https://so.szlcsc.com/search",
+                        "method": "POST",
+                        "data": { "pn": searchPageNum, "k": val, "sk": val }
+                    };
+                    $.ajax(settings).done(function (response) {
+                        if(response.code === 200 && response.result != null) {
+                            if (response.result.productRecordList != null) {
+                                searchTempList = [...searchTempList, ...response.result.productRecordList];
+                            }
+                        }
+                        searchPageNum++;
+                     });
+                }, 200);
+            }
+        }
     }
+    
 
     // 排序记录 desc降序，asc升序
 
