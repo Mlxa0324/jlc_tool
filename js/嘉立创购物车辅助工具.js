@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.3
+// @version      2.0.4
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.0.3';
+        const __version = 'Version 2.0.4';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -192,7 +192,7 @@
         // 搜索页需要显示多少条数据  自行修改
         var searchPageRealSize = 100;
         // 搜索页总页数
-        var searchTotalPage = () => (parseInt((searchPageTotalCount() / searchPageSize).toFixed(0)) + 1) || 30;
+        var searchTotalPage = () => Math.min(((parseInt((searchPageTotalCount() / searchPageSize).toFixed(0)) + 1) || 34), 34);
         // 存储动态的function，用做数据处理
         var jsRules = [];
         // 搜索页数据预览定时器
@@ -2926,24 +2926,23 @@
             // 如果广东仓和江苏仓同时没有货的话，那么就属于订货商品，不需要显示
                          // 如果没有价格区间，证明是停售商品
                          var newList = searchTempList.filter(item =>!(parseInt(item.jsWarehouseStockNumber||0) <= 0 && parseInt(item.gdWarehouseStockNumber||0) <= 0) && item.productPriceList.length > 0);
-                         
-                        //  var mp = new Map();
-                        //  for (let index = 0; index < newList.length; index++) {
-                        //     const element = newList[index];
-                        //     mp.set(element.lightProductCode, element);
-                        //  }
-                        //  var uniqueArray = [...mp.values()];
-                         var uniqueArray = newList;
                          // 列表自动正序，方便凑单
-                         uniqueArray.sort((o1, o2) =>{
+                         newList.sort((o1, o2) =>{
                              return (o1.theRatio*o1.productPriceList[0].productPrice).toFixed(6) - (o2.theRatio*o2.productPriceList[0].productPrice).toFixed(6);
                          });
                          // 外部动态js规则组
                          if (jsRules.length > 0) {
-                             jsRules.forEach(jsr => { uniqueArray = uniqueArray.filter(jsr); });
+                             jsRules.forEach(jsr => { newList = newList.filter(jsr); });
+                         }
+                         if(newList == null || newList.length === 0) {
+                            $('.nodata-h2').show();
+                            $('.wait-h2').hide();
+                            return;
+                         } else {
+                            $('.wait-h2,.nodata-h2').hide();
                          }
                          // 只取前默认50个
-                         var html = uniqueArray.slice(0, (searchPageRealSize || 50)).map(item => {
+                         var html = newList.slice(0, (searchPageRealSize || 50)).map(item => {
                              const { 
                                  productId                     ,
                                  lightStandard                 ,
@@ -3325,7 +3324,7 @@
                              </table>`;
                          }).join('');
                          $('#product-list-box table').remove();
-                         $('.wait-h2').hide();
+                         $('.wait-h2').hide(); $('.nodata-h2').hide();
                          $('#product-list-box').append(html);
                          
         }
@@ -3366,7 +3365,9 @@
                     </div>
                 </div>
                 <h2 class="wait-h2" style="height: 200px; width: 500px; display: flex;justify-content: center;align-items: center;">数据正在加载中...</h2>
+                <h2 class="nodata-h2" style="height: 200px; width: 500px; display: flex; justify-content: center;align-items: center;">暂无数据</h2>
                             </div>`);
+            $('.nodata-h2').hide();
             // 广东仓过滤
             $('#gd-filter-btn').on('click', function() {
                 $('button[id*=-filter-btn]').css('background', '#aaaeb0');
@@ -3447,12 +3448,13 @@
                         "method": "POST",
                         "data": { "pn": searchPageNum, "k": val, "sk": val }
                     };
+                    await setAwait(300);
                     await $.ajax(settings).done(function (response) {
                         if(response.code === 200 && response.result != null) {
                             if (response.result.productRecordList != null) {
                                 searchTempList = [...searchTempList, ...response.result.productRecordList];
                             }
-                            $('.wait-h2').text(`数据加载中(共${searchTotalPage()}页，正在加载第${searchPageNum}页)...`);
+                            $('.wait-h2').html(`数据加载中...</br>(共${searchTotalPage()}页，正在加载第${searchPageNum}页。或只查询前1000条记录)...`);
                         }
                         // console.log(searchTempList.length);
                      });
