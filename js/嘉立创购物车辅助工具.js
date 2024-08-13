@@ -2926,16 +2926,24 @@
             // 如果广东仓和江苏仓同时没有货的话，那么就属于订货商品，不需要显示
                          // 如果没有价格区间，证明是停售商品
                          var newList = searchTempList.filter(item =>!(parseInt(item.jsWarehouseStockNumber||0) <= 0 && parseInt(item.gdWarehouseStockNumber||0) <= 0) && item.productPriceList.length > 0);
+                         
+                        //  var mp = new Map();
+                        //  for (let index = 0; index < newList.length; index++) {
+                        //     const element = newList[index];
+                        //     mp.set(element.lightProductCode, element);
+                        //  }
+                        //  var uniqueArray = [...mp.values()];
+                         var uniqueArray = newList;
                          // 列表自动正序，方便凑单
-                         newList.sort((o1, o2) =>{
+                         uniqueArray.sort((o1, o2) =>{
                              return (o1.theRatio*o1.productPriceList[0].productPrice).toFixed(6) - (o2.theRatio*o2.productPriceList[0].productPrice).toFixed(6);
                          });
                          // 外部动态js规则组
                          if (jsRules.length > 0) {
-                             jsRules.forEach(jsr => { newList = newList.filter(jsr); });
+                             jsRules.forEach(jsr => { uniqueArray = uniqueArray.filter(jsr); });
                          }
                          // 只取前默认50个
-                         var html = newList.slice(0, (searchPageRealSize || 50)).map(item => {
+                         var html = uniqueArray.slice(0, (searchPageRealSize || 50)).map(item => {
                              const { 
                                  productId                     ,
                                  lightStandard                 ,
@@ -3348,13 +3356,13 @@
             $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; min-height: 30vh; max-height: 75vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
                 <div style="display: flex; justify-content: space-around;height: 60px; position: sticky; top: 0px;z-index: 99999;">
                     <div style="border: 2px solid #199fe9; display: flex; padding: 5px; width: 100%;">
-                        <button id="gd-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
-                        <button id="js-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
+                        <button id="gd-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 16px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
+                        <button id="js-filter-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 16px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">江苏仓</button>
                     </div>
                     <div style="margin-left: 10px; border: 2px solid #199fe9; display: flex; padding: 5px; width: 100%;">
-                        <button id="new-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">新人券</button>
-                        <button id="unnew-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">非新人券</button>
-                        <button id="other-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 18px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">其他券</button>
+                        <button id="new-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 16px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">新人券</button>
+                        <button id="unnew-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 16px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">非新人券</button>
+                        <button id="other-filter-coupon-btn" style="white-space:nowrap; border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 16px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">其他券</button>
                     </div>
                 </div>
                 <h2 class="wait-h2" style="height: 200px; width: 500px; display: flex;justify-content: center;align-items: center;">数据正在加载中...</h2>
@@ -3420,13 +3428,17 @@
             // 持续请求 && 定时器未初始化 && 未查询到结果的时候
              if(searchPageNum <= totalPage && searchTimer === null && searchTempList.length === 0) {
                 // 初始化定时器任务
-                searchTimer = setInterval(() => {
+                // searchTimer = setInterval(async () => {
+                    for (let index = 1; index <= totalPage; index++) {
                     // 符合要求的时候，删除定时器任务 并执行渲染任务
                     // 这里对结果集合限制在1000条数据，差不多是够了。
                     if(searchPageNum >= totalPage || searchTempList.length > 1000) {
-                        clearInterval(searchTimer);
-                        searchTimer = null;
+                        // clearInterval(searchTimer);
+                        // searchTimer = null;
                         renderMinPriceSearch();
+                        setTimeout(() => {
+                            $('#js-filter-btn').click();
+                        }, 100);
                         return;
                     }
                     var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
@@ -3435,16 +3447,19 @@
                         "method": "POST",
                         "data": { "pn": searchPageNum, "k": val, "sk": val }
                     };
-                    $.ajax(settings).done(function (response) {
+                    await $.ajax(settings).done(function (response) {
                         if(response.code === 200 && response.result != null) {
                             if (response.result.productRecordList != null) {
                                 searchTempList = [...searchTempList, ...response.result.productRecordList];
                             }
                             $('.wait-h2').text(`数据加载中(共${searchTotalPage()}页，正在加载第${searchPageNum}页)...`);
                         }
-                        searchPageNum++;
+                        // console.log(searchTempList.length);
                      });
-                }, 200);
+                     searchPageNum++;
+                    }
+                     // 这个数字可以加快加载速度，但是不能保证所有的数据都可以加载出来。
+                // }, 80);
             }
         }
     }
