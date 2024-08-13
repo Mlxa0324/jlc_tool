@@ -3352,7 +3352,7 @@
                     <button id="new-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">新人</button>
                     <button id="unnew-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">非新人</button>
                 </div>
-                <h2 class="wait-h2" style="height: 80%; width: 400px; display: flex;justify-content: center;align-items: center;">等待数据加载中...</h2>
+                <h2 class="wait-h2" style="height: 80%; width: 450px; display: flex;justify-content: center;align-items: center;">等待数据加载中...</h2>
                             </div>`);
             // 广东仓过滤
             $('#gd-filter-btn').on('click', function() {
