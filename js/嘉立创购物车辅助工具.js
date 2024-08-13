@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.0.2
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -3316,7 +3316,10 @@
                              </table>`;
                          }).join('');
                          $('#product-list-box table').remove();
+                         $('#product-list-box').height('75vh');
+                         $('.wait-h2').hide();
                          $('#product-list-box').append(html);
+                         
         }
 
         if($('#product-list-show-btn').length === 0) {
@@ -3326,14 +3329,14 @@
                 position: fixed;
                 right: 45px;
                 bottom: 45px;
-                padding: 5px 30px;
+                padding: 5px 20px;
                 color: white;
                 background: #199fe9;
                 border: 2px solid #199fe9;
-                font-size: 30px;
+                font-size: 20px;
                 cursor: pointer;
                 user-select:none;
-                font-weight: 600;">凑单</div>`);
+                font-weight: 600;"><p>凑单</p><span style="font-size: 12px;">页面加载慢，请耐心等待！</span></div>`);
 
                 $('#product-list-show-btn').on('click', function() {
                     $('#product-list-box').fadeToggle();
@@ -3342,13 +3345,14 @@
 
         if($('#product-list-box').length === 0) {
             // 这里处理前10页的最低购入价的排序
-            $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 40px; right: 100px; width: min-content; height: 75vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
-                                   <div style="display: flex; justify-content: space-around;height: 80px; position: sticky; top: 0px;z-index: 99999;">
-                                        <button id="gd-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 30px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
-                                        <button id="js-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 30px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
-                                        <button id="new-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 30px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">新人</button>
-                                        <button id="unnew-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 30px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">非新人</button>
-                                   </div>
+            $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; height: 30vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
+                <div style="display: flex; justify-content: space-around;height: 60px; position: sticky; top: 0px;z-index: 99999;">
+                    <button id="gd-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 0px;cursor: pointer;user-select: none;background: #aaaeb0;">广东仓</button>
+                    <button id="js-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">江苏仓</button>
+                    <button id="new-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #aaaeb0;">新人</button>
+                    <button id="unnew-filter-btn" style="border-radius: 4px; display: inline-flex; padding: 3px 8px; color: white; width: 100%; border: none; justify-content: center; align-items: center;font-size: 20px; font-weight: bold;margin-left: 10px;cursor: pointer;user-select: none;background: #199fe9;">非新人</button>
+                </div>
+                <h2 class="wait-h2" style="height: 80%; width: 400px; display: flex;justify-content: center;align-items: center;">等待数据加载中...</h2>
                             </div>`);
             // 广东仓过滤
             $('#gd-filter-btn').on('click', function() {
