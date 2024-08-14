@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.6
+// @version      2.0.7
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.0.6';
+        const __version = 'Version 2.0.7';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -2955,8 +2955,64 @@ const searchStart = async () => {
         }
     }
 
+    /**
+     * 搜索主页的凑单逻辑
+     */
+    const renderMainPageMinPriceSearch = () => {
+        // 持续请求 && 定时器未初始化 && 未查询到结果的时候
+        if(!globalSearchEnd) {
+            // 总页数。默认：30页
+            const totalPage = searchTotalPage();
+            const promiseList = [];
+                for (let index = 1; index <= totalPage; index++) {
+                    var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
+
+                    const data = {};
+                    [...$('form#allProjectFrom>input[type="hidden"]:not([id*=SloganVal]):not([id*=LinkUrlVal])')].forEach(item => {
+                        const name = $(item).attr('name');
+                        const val = $(item).val();
+                        data[name] = val;
+                    });
+                    data.pageNumber = searchPageNum;
+                    data.k = val;
+                    data.sk = val;
+                    data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
+                    data.queryEndPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
+                    data.queryEndPriceTemp = $('input[name="queryEndPriceTemp"]').val() || '';
+
+                    var settings = {
+                        "url": "https://so.szlcsc.com/search",
+                        "method": "POST",
+                        // "data": { "pn": searchPageNum, "k": val, "sk": val }
+                        "data": data
+                    };
+
+                    console.log('品牌搜索页参数：', settings);
+                    promiseList.push($.ajax(settings));
+                }
+
+                globalSearchEnd = true;
+                allWithProgress(promiseList,  ({total, cur, progress}) => {
+                    $('.wait-h2').html(`数据加载中...</br>(共${total}页，正在加载第${cur}页。或只查询前1000条记录)...`);
+                }).then(function (result) {
+                    console.time('搜索首页凑单渲染速度');
+                    result.forEach(data => {
+                    if(data.code === 200 && data.result != null) {
+                        if (data.result.productRecordList != null) {
+                            searchTempList = [...searchTempList, ...data.result.productRecordList];
+                        }
+                    }
+                });
+            }).finally(() => {
+                renderMinPriceSearch();
+                console.timeEnd('搜索首页凑单渲染速度');
+                setTimeout(() => { $('#js-filter-btn').click() }, 100);
+            });
+        }
+    }
+
      /**
-     * html追加到页面中
+     * 品牌搜索主页的凑单逻辑
      */
      const renderBrandPageMinPriceSearch = async () => {
         if (!brandSearchEnd) {
@@ -3432,6 +3488,10 @@ const searchStart = async () => {
             font-weight: 600;"><p>凑单</p><span style="font-size: 12px;">页面加载慢，请耐心等待！</span></div>`);
 
             $('#product-list-show-btn').on('click', function() {
+                if ($('#product-list-box').is(":hidden")) {
+                    globalSearchEnd = false;
+                    searchTempList = [];
+                }
                 $('#product-list-box').fadeToggle();
             });
     }
@@ -3513,58 +3573,7 @@ const searchStart = async () => {
     } else if($('#product-list-box').is(':visible')) {
         // 搜索首页
         if (location.href.includes('so.szlcsc.com/global.html')) {
-            
-            // 持续请求 && 定时器未初始化 && 未查询到结果的时候
-            if(!globalSearchEnd) {
-                // 总页数。默认：30页
-                const totalPage = searchTotalPage();
-                const promiseList = [];
-                    for (let index = 1; index <= totalPage; index++) {
-                        var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
-
-                        const data = {};
-                        [...$('form#allProjectFrom>input[type="hidden"]:not([id*=SloganVal]):not([id*=LinkUrlVal])')].forEach(item => {
-                            const name = $(item).attr('name');
-                            const val = $(item).val();
-                            data[name] = val;
-                        });
-                        data.pageNumber = searchPageNum;
-                        data.k = val;
-                        data.sk = val;
-                        data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
-                        data.queryEndPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
-                        data.queryEndPriceTemp = $('input[name="queryEndPriceTemp"]').val() || '';
-
-                        var settings = {
-                            "url": "https://so.szlcsc.com/search",
-                            "method": "POST",
-                            // "data": { "pn": searchPageNum, "k": val, "sk": val }
-                            "data": data
-                        };
-
-                        console.log('品牌搜索页参数：', settings);
-                        promiseList.push($.ajax(settings));
-                    }
-
-                    globalSearchEnd = true;
-                    allWithProgress(promiseList,  ({total, cur, progress}) => {
-                        $('.wait-h2').html(`数据加载中...</br>(共${total}页，正在加载第${cur}页。或只查询前1000条记录)...`);
-                    }).then(function (result) {
-                        console.time('搜索首页凑单渲染速度');
-                        result.forEach(data => {
-                        if(data.code === 200 && data.result != null) {
-                            if (data.result.productRecordList != null) {
-                                searchTempList = [...searchTempList, ...data.result.productRecordList];
-                            }
-                        }
-                    });
-                }).finally(() => {
-                    renderMinPriceSearch();
-                    console.timeEnd('搜索首页凑单渲染速度');
-                    setTimeout(() => { $('#js-filter-btn').click() }, 100);
-                });
-                
-            }
+            renderMainPageMinPriceSearch();
         }
         // 品牌首页
         else if(location.href.includes('list.szlcsc.com/brand')) {
