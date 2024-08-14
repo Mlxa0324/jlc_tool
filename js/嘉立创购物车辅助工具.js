@@ -3033,7 +3033,9 @@ const searchStart = async () => {
                     data.pageNumber = pageNumber;
                     data.queryProductGradePlateId = brandId;
                     data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
-                    data.queryEndPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
+                    data.queryBeginPrice = $('input[name="queryBeginPrice"]').val() || '';
+                    data.queryEndPrice = $('input[name="queryEndPrice"]').val() || '';
+                    data.queryBeginPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
                     data.queryEndPriceTemp = $('input[name="queryEndPriceTemp"]').val() || '';
 
                     var settings = {
@@ -3078,7 +3080,7 @@ const searchStart = async () => {
                         productPriceList: [...$table.find('li.three-nr-item span.ccd-ppbbz')].map(e => ({
                             "startPurchasedNumber": parseInt($(e).data('startpurchasednumber')),
                             "endPurchasedNumber": parseInt($(e).data('endpurchasednumber')),
-                            "productPrice": parseFloat($(e).data('productprice')),
+                            "productPrice": parseFloat($(e).data('productprice-discount')) || parseFloat($(e).data('orderprice')) || parseFloat($(e).data('productprice')),
                         })),
                         productGradePlateName: $table.data('brandname'),
                         hkConvesionRatio: $table.data('hkconvesionratio'),
@@ -3668,4 +3670,5 @@ setInterval(function () {
         couponGotoHandler()
     }
 }, 500)
+})()00)
 })()
