@@ -1505,7 +1505,7 @@ const cssFactory = () => `
     position: fixed;
     top: 40px;
     right: 440px;
-    z-index: 100;
+    z-index: 9999;
     overflow: auto;
     background-color: white;
     border: 3px solid #3498db;
