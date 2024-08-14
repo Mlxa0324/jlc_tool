@@ -3067,6 +3067,7 @@ const searchStart = async () => {
                 console.time('品牌页凑单渲染速度');
                 searchTempList = dataArray.map(h => {
                     const $table = $(h);
+                  
                     return {
                         productId: $table.data('productid'),
                         lightStandard: $table.data('encapstandard'),
@@ -3670,5 +3671,4 @@ setInterval(function () {
         couponGotoHandler()
     }
 }, 500)
-})()00)
 })()
