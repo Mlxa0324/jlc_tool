@@ -2977,8 +2977,8 @@ const searchStart = async () => {
                     data.k = val;
                     data.sk = val;
                     data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
-                    data.queryEndPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
-                    data.queryEndPriceTemp = $('input[name="queryEndPriceTemp"]').val() || '';
+                    data.bp = $('input[name="bpTemp"]').val() || '';
+                    data.ep = $('input[name="epTemp"]').val() || '';
 
                     var settings = {
                         "url": "https://so.szlcsc.com/search",
