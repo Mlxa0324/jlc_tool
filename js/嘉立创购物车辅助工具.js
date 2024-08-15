@@ -2961,24 +2961,27 @@ const searchStart = async () => {
     const renderMainPageMinPriceSearch = () => {
         // 持续请求 && 定时器未初始化 && 未查询到结果的时候
         if(!globalSearchEnd) {
+            var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
+            if (val == null || val.length === 0) {
+                searchTempList = [];
+                return;
+            }
             // 总页数。默认：30页
             const totalPage = searchTotalPage();
             const promiseList = [];
                 for (let index = 1; index <= totalPage; index++) {
-                    var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
-
                     const data = {};
                     [...$('form#allProjectFrom>input[type="hidden"]:not([id*=SloganVal]):not([id*=LinkUrlVal])')].forEach(item => {
                         const name = $(item).attr('name');
                         const val = $(item).val();
                         data[name] = val;
                     });
-                    data.pageNumber = searchPageNum;
-                    data.k = val;
-                    data.sk = val;
-                    data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
-                    data.bp = $('input[name="bpTemp"]').val() || '';
-                    data.ep = $('input[name="epTemp"]').val() || '';
+                    data['pageNumber'] = searchPageNum;
+                    data['k'] = val;
+                    data['sk'] = val;
+                    data['localQueryKeyword'] = $('input[name="localQueryKeyword"]').val() || '';
+                    data['bp'] = $('input[name="bpTemp"]').val() || '';
+                    data['ep'] = $('input[name="epTemp"]').val() || '';
 
                     var settings = {
                         "url": "https://so.szlcsc.com/search",
@@ -3030,13 +3033,13 @@ const searchStart = async () => {
                         data[name] = val;
                     });
 
-                    data.pageNumber = pageNumber;
-                    data.queryProductGradePlateId = brandId;
-                    data.localQueryKeyword = $('input[name="localQueryKeyword"]').val() || '';
-                    data.queryBeginPrice = $('input[name="queryBeginPrice"]').val() || '';
-                    data.queryEndPrice = $('input[name="queryEndPrice"]').val() || '';
-                    data.queryBeginPriceTemp = $('input[name="queryBeginPriceTemp"]').val() || '';
-                    data.queryEndPriceTemp = $('input[name="queryEndPriceTemp"]').val() || '';
+                    data['pageNumber'] = pageNumber;
+                    data['queryProductGradePlateId'] = brandId;
+                    data['localQueryKeyword'] = $('input[name="localQueryKeyword"]').val() || '';
+                    data['queryBeginPrice'] = $('input[name="queryBeginPrice"]').val() || '';
+                    data['queryEndPrice'] = $('input[name="queryEndPrice"]').val() || '';
+                    data['queryBeginPriceTemp'] = $('input[name="queryBeginPriceTemp"]').val() || '';
+                    data['queryEndPriceTemp'] = $('input[name="queryEndPriceTemp"]').val() || '';
 
                     var settings = {
                         "url": `https://list.szlcsc.com/brand_page/${brandId}.html`,
