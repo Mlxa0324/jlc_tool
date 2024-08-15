@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.7
+// @version      2.0.8
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.0.7';
+        const __version = 'Version 2.0.8';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -2931,7 +2931,7 @@ const searchStart = async () => {
                     width: fit-content;
                     padding: 2px 3px;
                     font-weight: 600;
-                    color: #0094e7;">最低购入价： ${(minMum * orderPrice).toFixed(6)}</p>
+                    color: #0094e7;">最低购入价： ${parseFloat((minMum * orderPrice).toFixed(6))}</p>
             `)
         })
     }
@@ -3067,7 +3067,6 @@ const searchStart = async () => {
                 console.time('品牌页凑单渲染速度');
                 searchTempList = dataArray.map(h => {
                     const $table = $(h);
-                  
                     return {
                         productId: $table.data('productid'),
                         lightStandard: $table.data('encapstandard'),
@@ -3081,8 +3080,9 @@ const searchStart = async () => {
                         productPriceList: [...$table.find('li.three-nr-item span.ccd-ppbbz')].map(e => ({
                             "startPurchasedNumber": parseInt($(e).data('startpurchasednumber')),
                             "endPurchasedNumber": parseInt($(e).data('endpurchasednumber')),
-                            "productPrice": parseFloat($(e).data('productprice-discount')) || parseFloat($(e).data('orderprice')) || parseFloat($(e).data('productprice')),
+                            "productPrice": parseFloat($(e).data('productprice'))
                         })),
+                        listProductDiscount: $table.find('div.three-box-top ul.three-nr > li.three-nr-01').find('span:eq(0)').text().replace(/[ 折\n]+/g, '') || null,
                         productGradePlateName: $table.data('brandname'),
                         hkConvesionRatio: $table.data('hkconvesionratio'),
                         convesionRatio: $table.data('convesionratio'),
@@ -3124,6 +3124,12 @@ const searchStart = async () => {
         // 如果广东仓和江苏仓同时没有货的话，那么就属于订货商品，不需要显示
                      // 如果没有价格区间，证明是停售商品
                      var newList = searchTempList.filter(item =>!(parseInt(item.jsWarehouseStockNumber||0) <= 0 && parseInt(item.gdWarehouseStockNumber||0) <= 0) && item.productPriceList.length > 0);
+                     // 去重
+                     const map = new Map();
+                     newList.forEach(item => {
+                        map.set(item.productId, item);
+                     });
+                     newList = [...map.values()];
                      // 列表自动正序，方便凑单
                      newList.sort((o1, o2) =>{
                          return (o1.theRatio*o1.productPriceList[0].productPrice).toFixed(6) - (o2.theRatio*o2.productPriceList[0].productPrice).toFixed(6);
@@ -3146,6 +3152,7 @@ const searchStart = async () => {
                              lightProductModel             ,
                              productGradePlateId           ,
                              productPriceList              ,
+                             listProductDiscount           ,
                              productGradePlateName         ,
                              hkConvesionRatio              ,
                              convesionRatio                ,
@@ -3186,7 +3193,7 @@ const searchStart = async () => {
                          data-isguideprice="${isGuidePrice}" data-ispresent="${isPresent}" data-brandid="${productGradePlateId}"
                          data-brandname="${productGradePlateName}"
                          data-productmodel-unlight="${lightProductModel}" data-istiprovider data-isptoc
-                         data-firstprice="${productPriceList[0].productPrice}" data-minbuynumber="${minBuyNumber}"
+                         data-firstprice="${productPriceList[0].discountPrice || productPriceList[0].productPrice}" data-minbuynumber="${minBuyNumber}"
                          data-provider data-reposition data-productid="${productId}">
                          <tbody>
                              <tr class="no-tj-tr add-cart-tr" data-inventory-type="local" pid="${productId}">
@@ -3299,29 +3306,61 @@ const searchStart = async () => {
                                      <div class="three-box-top">
                                          <div class="three">
                                          <ul class="three-nr">
+                                         ${listProductDiscount != null && listProductDiscount < 10 ? `
+                                         <li class="three-nr-01">
+                                         <span>${listProductDiscount}折</span>
+                                           <span class="show-discount-icon">
+                                             <div class="common-float-dialog">
+                                               <div class="common-float-content">
+                                                 <ul class="cel-item num-cel">
+                                                   <li></li>
+                                                   ${productPriceList.map(item => {
+                                                        return `<li>${item.startPurchasedNumber * theRatio}+:&nbsp;</li>`;
+                                                    }).join('')}
+                                                 </ul>
+                                                 <ul class="cel-item mr5">
+                                                   <li class="text-align-center">折后价</li>
+                                                   ${productPriceList.map(item => {
+                                                        return `<li>￥${parseFloat((item.productPrice * (listProductDiscount || 10) / 10).toFixed(6))}</li>`;
+                                                    }).join('')}
+                                                 </ul>
+                                                 <ul class="cel-item not-plus-o-price-cel">
+                                                   <li class="text-align-center">原价</li>
+                                                     ${productPriceList.map(item => {
+                                                        return `<li class="o-price">￥${item.productPrice}</li>`;
+                                                    }).join('')}
+                                                 </ul>
+                                               </div>
+                                               <s class="f-s"><i class="f-i"></i></s>
+                                             </div>
+                                           </span>
+                                       </li>
+                                         `:''}
                                              <p class="minBuyMoney_" style="
                                                  width: fit-content;
                                                  padding: 2px 3px;
                                                  font-weight: 600;
-                                                 color: #0094e7;">最低购入价： ${(theRatio*productPriceList[0].productPrice).toFixed(6)}</p>
-                                                 ${productPriceList.map(item => {
-                                                     return `<li class="three-nr-item">
-                                                                 <div class="price-warp price-warp-local">
-                                                                     <p class="ppbbz-p no-special " minordernum="${item.startPurchasedNumber * theRatio}"
-                                                                     originalprice="${item.productPrice}" discountprice
-                                                                     orderprice="${item.productPrice}">
-                                                                     ${item.startPurchasedNumber * theRatio}+:&nbsp;
-                                                                     </p>
-                                                                     <span class="ccd ccd-ppbbz show-price-span"
-                                                                     minordernum="${item.startPurchasedNumber * theRatio}" data-endpurchasednumber="${item.endPurchasedNumber}"
-                                                                     data-productprice="${item.productPrice}" data-productprice-discount
-                                                                     orderprice="${item.productPrice}"
-                                                                     data-startpurchasednumber="${item.startPurchasedNumber}">
-                                                                     ￥${item.productPrice}
-                                                                     </span>
-                                                                 </div>
-                                                             </li>`;
-                                                 }).join('')}
+                                                 color: #0094e7;">最低购入价： ${parseFloat((theRatio * productPriceList[0].productPrice * (listProductDiscount || 10) / 10).toFixed(6))}</p>
+                                                 ${
+                                                    productPriceList.map(item => {
+                                                        const discountPrice = parseFloat((item.productPrice * (listProductDiscount || 10) / 10).toFixed(6));
+                                                        return `<li class="three-nr-item">
+                                                                    <div class="price-warp price-warp-local">
+                                                                        <p class="ppbbz-p no-special " minordernum="${item.startPurchasedNumber * theRatio}"
+                                                                        originalprice="${item.productPrice}" discountprice="${discountPrice}"
+                                                                        orderprice="${discountPrice}">
+                                                                        ${item.startPurchasedNumber * theRatio}+:&nbsp;
+                                                                        </p>
+                                                                        <span class="ccd ccd-ppbbz show-price-span"
+                                                                        minordernum="${item.startPurchasedNumber * theRatio}" data-endpurchasednumber="${item.endPurchasedNumber}"
+                                                                        data-productprice="${item.productPrice}" data-productprice-discount
+                                                                        orderprice="${item.productPrice}"
+                                                                        data-startpurchasednumber="${item.startPurchasedNumber}">
+                                                                        ￥${discountPrice}
+                                                                        </span>
+                                                                    </div>
+                                                                </li>`;
+                                                    }).join('')}
                                          </ul>
                                          </div>
                                          <div class="three three-hk">
