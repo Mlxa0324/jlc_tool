@@ -3515,8 +3515,10 @@ const searchStart = async () => {
 
     }
 
+    // 哪些需要显示凑单按钮
+    const productListIsShowBool = location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand');
     // 在搜索首页
-    if($('#product-list-show-btn').length === 0) {
+    if(productListIsShowBool && $('#product-list-show-btn').length === 0) {
         $('body').append( `<div id="product-list-show-btn" style="
             border-radius: 5px;
             z-index: 10000;
@@ -3541,7 +3543,7 @@ const searchStart = async () => {
             });
     }
 
-    if($('#product-list-box').length === 0) {
+    if(productListIsShowBool && $('#product-list-box').length === 0) {
         // 这里处理前10页的最低购入价的排序
         $('body').append(`<div id='product-list-box' style="display: none; position: fixed; bottom: 35px; right: 100px; width: min-content; min-height: 30vh; max-height: 75vh; overflow: auto; border: 2px solid #199fe9; z-index: 9999; padding: 5px; background: white;">
                             <div style="display: flex; justify-content: space-around;height: 60px; position: sticky; top: 0px;z-index: 99999;">
