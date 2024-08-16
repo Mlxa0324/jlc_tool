@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.0.8
+// @version      2.0.9
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -27,7 +27,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.0.8';
+        const __version = 'Version 2.0.9';
 
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
@@ -183,8 +183,6 @@
         const all16_15CouponMp = new Map()
             // 自动领券的定时器
         let couponTimer = null;
-        // 搜索页页码
-        var searchPageNum = 1;
         // 搜索页总条数
         var searchPageTotalCount = () => parseInt($('div.g01 span:eq(1)').text()) || parseInt($('#by-channel-total b').text());
         // 搜索页单页条数
@@ -2955,13 +2953,62 @@ const searchStart = async () => {
         }
     }
 
+
+    /**
+     * 分类搜索页的凑单逻辑
+     */
+    const renderCatalogPageMinPriceSearch = () => {
+        // 持续请求 && 定时器未初始化 && 未查询到结果的时候
+        if(!globalSearchEnd) {
+            // 总页数。默认：30页
+            const totalPage = searchTotalPage();
+            const promiseList = [];
+            var searchData_ = null;
+
+            // 取一遍值  如果没有定义，则取默认值
+            try {
+                searchData_ = searchData;
+            } catch (error) {
+                searchData_ = {
+                    catalogNodeId: /\d+/g.exec(location.pathname)[0],
+                    pageNumber: 1,
+                    querySortBySign: 0,
+                    showOutSockProduct: 1,
+                    showDiscountProduct: 1
+                }
+            }
+            for (let pn = 1; pn <= totalPage; pn++) {
+                searchData_['pageNumber'] = pn;
+                var settings = {
+                    "url": "https://list.szlcsc.com/products/list",
+                    "method": "POST",
+                    "data": searchData_ 
+                };
+                promiseList.push($.ajax(settings));
+            }
+            globalSearchEnd = true;
+            allWithProgress(promiseList,  ({total, cur, progress}) => {
+                $('.wait-h2').html(`数据加载中...</br>(共${total}页，正在加载第${cur}页。或只查询前1000条记录)...`);
+            }).then(function (result) {
+                result.forEach(data => {
+                if(data.success === true && data.productRecordList) {
+                    searchTempList = [...searchTempList, ...data.productRecordList];
+                }
+            });
+        }).finally(() => {
+            renderMinPriceSearch();
+            setTimeout(() => { $('#js-filter-btn').click() }, 100);
+        });    
+        }
+    }
+
     /**
      * 搜索主页的凑单逻辑
      */
     const renderMainPageMinPriceSearch = () => {
         // 持续请求 && 定时器未初始化 && 未查询到结果的时候
         if(!globalSearchEnd) {
-            var val = $('#search-input').val() || getBrandNameByRegex($('h1.brand-info-name').text());
+            var val = $('#search-input').val();
             if (val == null || val.length === 0) {
                 searchTempList = [];
                 return;
@@ -2969,14 +3016,14 @@ const searchStart = async () => {
             // 总页数。默认：30页
             const totalPage = searchTotalPage();
             const promiseList = [];
-                for (let index = 1; index <= totalPage; index++) {
+                for (let pn = 1; pn <= totalPage; pn++) {
                     const data = {};
                     [...$('form#allProjectFrom>input[type="hidden"]:not([id*=SloganVal]):not([id*=LinkUrlVal])')].forEach(item => {
                         const name = $(item).attr('name');
                         const val = $(item).val();
                         data[name] = val;
                     });
-                    data['pageNumber'] = searchPageNum;
+                    data['pageNumber'] = pn;
                     data['k'] = val;
                     data['sk'] = val;
                     data['localQueryKeyword'] = $('input[name="localQueryKeyword"]').val() || '';
@@ -2990,7 +3037,7 @@ const searchStart = async () => {
                         "data": data
                     };
 
-                    console.log('品牌搜索页参数：', settings);
+                    // console.log('品牌搜索页参数：', settings);
                     promiseList.push($.ajax(settings));
                 }
 
@@ -3022,7 +3069,7 @@ const searchStart = async () => {
             const totalPage = searchTotalPage();
             // 延迟任务集合
             const promiseList = [];
-            for (let pageNumber = 1; pageNumber <= totalPage; pageNumber++) {
+            for (let pn = 1; pn <= totalPage; pn++) {
                 // 取品牌id
                 const brandId = /\d+/g.exec(location.href)[0];
                 if (brandId != null) {
@@ -3033,7 +3080,7 @@ const searchStart = async () => {
                         data[name] = val;
                     });
 
-                    data['pageNumber'] = pageNumber;
+                    data['pageNumber'] = pn;
                     data['queryProductGradePlateId'] = brandId;
                     data['localQueryKeyword'] = $('input[name="localQueryKeyword"]').val() || '';
                     data['queryBeginPrice'] = $('input[name="queryBeginPrice"]').val() || '';
@@ -3046,7 +3093,7 @@ const searchStart = async () => {
                         "method": "POST",
                         "data": data
                     }
-                    console.log('搜索首页参数：', settings);
+                    // console.log('搜索首页参数：', settings);
                     promiseList.push($.ajax(settings));
                 }
             }
@@ -3516,7 +3563,7 @@ const searchStart = async () => {
     }
 
     // 哪些需要显示凑单按钮
-    const productListIsShowBool = location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand');
+    const productListIsShowBool = location.href.includes('so.szlcsc.com/global.html') || location.href.includes('list.szlcsc.com/brand') || location.href.includes('list.szlcsc.com/catalog');
     // 在搜索首页
     if(productListIsShowBool && $('#product-list-show-btn').length === 0) {
         $('body').append( `<div id="product-list-show-btn" style="
@@ -3625,6 +3672,10 @@ const searchStart = async () => {
         // 品牌首页
         else if(location.href.includes('list.szlcsc.com/brand')) {
             renderBrandPageMinPriceSearch();
+        }
+        // 分类搜索
+        else if(location.href.includes('list.szlcsc.com/catalog')) {
+            renderCatalogPageMinPriceSearch();
         }
     }
 }
