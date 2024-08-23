@@ -1,11 +1,11 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
+// @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.9/layui.min.js
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=taobao.com
 // @grant        none

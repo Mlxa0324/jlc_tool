@@ -1,12 +1,12 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.0.10
+// @version      1.1.2
 // @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
-// @require      https://cdn.bootcdn.net/ajax/libs/jquery/3.6.0/jquery.min.js
+// @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.9/layui.min.js
 // @resource layuiCSS https://cdnjs.cloudflare.com/ajax/libs/layui/2.9.9/css/layui.css
 // @grant        GM_openInTab
@@ -213,8 +213,7 @@
         $tdEles.each(function () {
             const $parents = $(this).parents('tr')
             const $targetAppendTarget = $parents.find(`td:eq(${targetAppendIndex})`)
-            const searchTargets = searchIndexs.map(searchIndex => $parents.find(`td:eq(${searchIndex})`))
-
+            const searchTargets = searchIndexs.filter(e=>e != e.length > 0 && e[0]).map(searchIndex => $parents.find(`td:eq(${searchIndex})`))
             const keyword = $(this).text().trim()
             const searchTbText = $parents.find(`td:eq(${searchTbIndex})`).text().trim()
             const footprintText = $parents.find(`td:eq(${footprintIndex})`).text().trim()
