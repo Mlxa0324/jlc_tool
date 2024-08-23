@@ -27,7 +27,7 @@ const awaitTime = (time) => {
 
 /**
  * 捕获异常，不影响后续执行
- * JS是单线程，点击类的脚本其实是不允许报错的，否则影响后续的逻辑执行
+ * 点击类的脚本其实是不允许报错的，否则影响后续的逻辑执行
  * @param func
  */
 const runIgnoreError = (func) => {
