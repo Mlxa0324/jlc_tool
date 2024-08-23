@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.1.3
+// @version      1.1.4
 // @description  PCB网页下单懒人助手
 // @author       Lx
-// @match        https://www.jlc.com/newOrder/**
+// @match        https://www.jlc.com/newOrder**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=jlc.com
 // @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
 // @grant none
@@ -58,23 +58,22 @@ const timerFunc = (taskFunc, successBoolFunc, timeout = 1000) => {
 
 const start = async () => {
 
-    await awaitTime(1000 * 5)
-    // runIgnoreError(() => {
-    //     // 长宽为空的话,重新加载页面
-    //     if (!$('#pcbLengthInput').val().length) {
-    //         window.location.reload()
-    //     }
-    // })
-   
-    if (!location.href.includes('edaUUID')) {
+     runIgnoreError(() => {
+        // 长宽为空的话,重新加载页面
+        timerFunc(() => {
+            debugger
+            $('#pcbLengthInput').val('10');
+            $('#pcbWidthInput').val('10');
+        }, () => $('#pcbLengthInput').val() > 0, 1000);
+    })
+
+    if (location.href.indexOf('https://www.jlc.com/newOrder/#/pcb/pcbPlaceOrder') === 0 && !location.href.includes('edaUUID')) {
         window.location.replace(`${location.href}&edaUUID=55611fd7b14e48a18c37865f6b372d1d&from=eda-pro`);
     }
 
     runIgnoreError(() => {
         // 确认生产稿
-        if (!$('#confirmProductionFile_no').hasClass('checked')) {
-            $('#confirmProductionFile_no').click()
-        }
+        timerFunc(() => $('#confirmProductionFile_no').click(), () => $('#confirmProductionFile_no').hasClass('checked'), 1000);
     })
 
     runIgnoreError(async () => {
@@ -127,11 +126,12 @@ const start = async () => {
     })
 
 
-    runIgnoreError(() => {
+    runIgnoreError(async () => {
         // 个人/普通电子发票
         if (!$('#isinvoiceFlag_no_8').hasClass('checked')) {
             $('#isinvoiceFlag_no_8').click()
         }
+        await awaitTime(1000 * 0.5)
         // 这里是发票选择人
         if (!$('span:contains(选择开票资料)').hasClass('checked')) {
             $('span:contains(选择开票资料)').click()
@@ -141,22 +141,18 @@ const start = async () => {
 
     runIgnoreError(() => {
         // 手动确认订单
-        if (!$('#isConfirmStatus_no').hasClass('checked')) {
-            $('#isConfirmStatus_no').click()
-        }
+        timerFunc(() => $('#isConfirmStatus_no').click(), () => $('#isConfirmStatus_no').hasClass('checked'), 1000);
     })
 
 
     runIgnoreError(() => {
         // 不同交期订单一起发货(省运费)
-        if (!$('#bingdDelivery_2').hasClass('checked')) {
-            $('#bingdDelivery_2').click()
-        }
+        timerFunc(() => $('#bingdDelivery_2').click(), () => $('#bingdDelivery_2').hasClass('checked'), 1000);
     })
 
 
     runIgnoreError(() => {
-        // 京东特惠快递
+        // 快递
         if (!$('#express_yufu_0').hasClass('checked')) {
             $('#express_yufu_0').click()
         }
