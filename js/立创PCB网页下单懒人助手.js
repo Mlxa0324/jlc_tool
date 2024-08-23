@@ -1,8 +1,8 @@
 // ==UserScript==
-// @name         立创PCB网页下单懒人工具
+// @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
 // @version      1.0.3
-// @description  PCB网页下单懒人工具
+// @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=jlc.com
