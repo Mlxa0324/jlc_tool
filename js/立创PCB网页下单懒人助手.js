@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder/**
@@ -39,6 +39,23 @@ const runIgnoreError = (func) => {
     }
 }
 
+/**
+ * 定时任务封装
+ * @param {*} taskFunc 任务函数
+ * @param {*} successBoolFunc  成功条件（返回true/false 成功则移除定时任务）
+ * @param {*} timeout  任务间隔时长（毫秒）
+ */
+const timerFunc = (taskFunc, successBoolFunc, timeout = 1000) => {
+    var _timer_ = setInterval(() => {
+        if (successBoolFunc()) {
+            clearInterval(_timer_);
+            _timer_ = null;
+        } else {
+            taskFunc && taskFunc();
+        }
+    }, timeout);
+}
+
 const start = async () => {
 
     await awaitTime(1000 * 5)
@@ -61,38 +78,35 @@ const start = async () => {
     })
 
     runIgnoreError(async () => {
-        await awaitTime(1000 * 2)
-        // 数量选择
-        if ($('#pcbNumberModal').length === 0) {
-            $('#pcbNumber input[placeholder="数量"]').click();
-            await awaitTime(1000 * 0.5)
-            $('#pcbNumberModal li.numItem button:not([class*=checked]').each(function(){
-                if ($(this).text().replace(/[ \n]/g, '') === "5") {
-                    $(this).click()
-                }
-            })
-        }
+        timerFunc(async () => {
+            // 数量选择
+            if ($('#pcbNumberModal').length === 0) {
+                $('#pcbNumber input[placeholder="数量"]').click();
+                await awaitTime(1000 * 0.5)
+                $('#pcbNumberModal li.numItem button:not([class*=checked]').each(function(){
+                    if ($(this).text().replace(/[ \n]/g, '') === "5") {
+                        $(this).click()
+                    }
+                })
+            }
+        }, () => $('#pcbNumber input[placeholder="数量"]').val() > 0, 1000);
     })
 
 
     runIgnoreError(async () => {
-        // 包装
-        await awaitTime(1000 * 1)
-        $('#packType_white').click()
+        // 包装 空白盒子
+        timerFunc(() => $('#packType_white').click(), () => $('#packType_white').hasClass('checked'), 1000);
     })
 
 
     runIgnoreError(async () => {
-        // 单片资料单片出货
-        await awaitTime(1000 * 4)
-        if (!$('#stencilType_one').hasClass('checked')) {
-            $('#stencilType_one').click()
-        }
+        // 出货方式 单片资料单片出货
+        timerFunc(() => $('#stencilType_one').click(), () => $('#stencilType_one').hasClass('checked'), 1000);
     })
 
 
     runIgnoreError(() => {
-        // 默认 哑黑色
+        // 默认 哑黑色 颜色
         if (!$('#adornColor_black').hasClass('checked')) {
             $('#adornColor_black').click()
         }
@@ -101,9 +115,7 @@ const start = async () => {
 
     runIgnoreError(() => {
         // 是否SMT贴片 不需要
-        if (!$('#isNeedOrderSMT_no').hasClass('checked')) {
-            $('#isNeedOrderSMT_no').click()
-        }
+        timerFunc(() => $('#isNeedOrderSMT_no').click(), () => $('#isNeedOrderSMT_no').hasClass('checked'), 2500);
     })
 
 
@@ -161,14 +173,15 @@ const start = async () => {
 
 
     runIgnoreError(async () => {
-        await awaitTime(1000 * 0.5)
-        $('div#banshangjiabiaozhi_1:contains("加嘉立创客编") button').click();
-        await awaitTime(1000 * 0.5)
-        $("div#biaozhiweizhi_1 button").click();
-        await awaitTime(1000 * 0.5)
-        $('div.el-dialog.jlc-modal[role="dialog"][aria-label="加客编"] button.jlc-button:contains("确定")').click();
-        await awaitTime(1000 * 0.5)
-        $('div.el-dialog[role="dialog"][aria-label="温馨提示"] button[type="button"]:contains("不确认生产稿")').click();
+        timerFunc(async () => {
+            $('div#banshangjiabiaozhi_1:contains("加嘉立创客编") button').click();
+            await awaitTime(1000 * 0.5)
+            $("div#biaozhiweizhi_1 button").click();
+            await awaitTime(1000 * 0.5)
+            $('div.el-dialog.jlc-modal[role="dialog"][aria-label="加客编"] button.jlc-button:contains("确定")').click();
+            await awaitTime(1000 * 0.5)
+            $('div.el-dialog[role="dialog"][aria-label="温馨提示"] button[type="button"]:contains("不确认生产稿")').click();
+        }, () => $('div#banshangjiabiaozhi_1:contains("加嘉立创客编") button').hasClass('checked'), 1000);
     })
 
 
@@ -187,15 +200,16 @@ const start = async () => {
     })
 
     runIgnoreError(async () => {
-        // 选择优惠券按钮
-        await awaitTime(1000 * 5)
-        $('.selectCoupon').click()
-        // 默认选择第一张优惠券
-        await awaitTime(1000 * 0.5)
-        $('#collarCouponId_0').click()
-        // 提交优惠券
-        await awaitTime(1000 * 0.5)
-        $("button:contains(使用优惠券):eq(1)").click();
+        timerFunc(async () => {
+            // 选择优惠券按钮
+            $('.selectCoupon').click()
+            // 默认选择第一张优惠券
+            await awaitTime(1000 * 0.5)
+            $('#collarCouponId_0').click()
+            // 提交优惠券
+            await awaitTime(1000 * 0.5)
+            $("button:contains(使用优惠券):eq(1)").click();
+        }, () => $('div#useCollarCoupon:contains("已选择")').length > 0, 2000);
     })
 
     runIgnoreError(() => {
