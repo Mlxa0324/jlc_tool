@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.0.3
+// @version      1.1.2
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder/**
@@ -42,14 +42,16 @@ const runIgnoreError = (func) => {
 const start = async () => {
 
     await awaitTime(1000 * 5)
-    runIgnoreError(() => {
-        // 长宽为空的话,重新加载页面
-        if (!$('#pcbLengthInput').val().length) {
-            window.location.reload()
-        }
-    })
-
-    
+    // runIgnoreError(() => {
+    //     // 长宽为空的话,重新加载页面
+    //     if (!$('#pcbLengthInput').val().length) {
+    //         window.location.reload()
+    //     }
+    // })
+   
+    if (!location.href.includes('edaUUID')) {
+        window.location.replace(`${location.href}&edaUUID=55611fd7b14e48a18c37865f6b372d1d&from=eda-pro`);
+    }
 
     runIgnoreError(() => {
         // 确认生产稿
