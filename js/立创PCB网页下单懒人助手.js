@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder**
@@ -192,16 +192,33 @@ const start = async() => {
     })
 
     runIgnoreError(async() => {
+        // 获取优惠券数量
+        var getCouponCount = () => {
+            try {
+                return parseInt(/\d+/g.exec($('#useCollarCoupon span.selectCoupon span:contains("张可用优惠券)")').text())[0]);
+            } catch (error) {
+                return -1;
+            }
+        };
         timerFunc(async() => {
             // 选择优惠券按钮
-            $('.selectCoupon').click()
-                // 默认选择第一张优惠券
-            await awaitTime(1000 * 0.5)
-            $('#collarCouponId_0').click()
-                // 提交优惠券
-            await awaitTime(1000 * 0.5)
-            $("button:contains(使用优惠券):eq(1)").click();
-        }, () => $('div#useCollarCoupon:contains("已选择")').length > 0, 2000);
+            $('.selectCoupon').click();
+            // 兜底判断
+            if ($('div.el-dialog div.couponBox:contains("不可用")').length > 0) {
+                await awaitTime(1000 * 0.5)
+                    // 提交优惠券
+                $("div.el-dialog button:contains(不使用优惠券)").click();
+            } else {
+                await awaitTime(1000 * 0.5)
+                    // 默认选择第一张优惠券
+                $('#collarCouponId_0').click()
+                await awaitTime(1000 * 0.5)
+                    // 提交优惠券
+                $("div.el-dialog button:contains(使用优惠券):eq(1)").click();
+            }
+        }, () => {
+            return $('div#useCollarCoupon:contains("已选择")').length > 0 || getCouponCount() === 0;
+        }, 2000);
     })
 
     runIgnoreError(() => {
