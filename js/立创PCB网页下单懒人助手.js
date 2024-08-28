@@ -224,7 +224,7 @@ const start = async() => {
             ++tryCount;
         }, () => {
             return $('div#useCollarCoupon:contains("已选择")').length > 0 || getCouponCount() === 0 || tryCount === retryMaxCount || !isAllNotUse();
-        }, 2000);
+        }, 2500);
     })
 
     runIgnoreError(() => {
