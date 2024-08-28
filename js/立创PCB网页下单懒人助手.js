@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.1.6
+// @version      1.2.1
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder**
@@ -192,6 +192,8 @@ const start = async() => {
     })
 
     runIgnoreError(async() => {
+        var tryCount = 0;
+        const retryMaxCount = 3;
         // 获取优惠券数量
         var getCouponCount = () => {
             try {
@@ -200,6 +202,9 @@ const start = async() => {
                 return -1;
             }
         };
+
+        // 是否优惠券都不可用
+        const isAllNotUse = () => $('div.el-dialog div.couponBox div[id*=collarCouponId_]').length === $('div.el-dialog div.couponBox div[id*=collarCouponId_]:contains("不可用")').length;
         timerFunc(async() => {
             // 选择优惠券按钮
             $('.selectCoupon').click();
@@ -216,8 +221,9 @@ const start = async() => {
                     // 提交优惠券
                 $("div.el-dialog button:contains(使用优惠券):eq(1)").click();
             }
+            ++tryCount;
         }, () => {
-            return $('div#useCollarCoupon:contains("已选择")').length > 0 || getCouponCount() === 0;
+            return $('div#useCollarCoupon:contains("已选择")').length > 0 || getCouponCount() === 0 || tryCount === retryMaxCount || !isAllNotUse();
         }, 2000);
     })
 
