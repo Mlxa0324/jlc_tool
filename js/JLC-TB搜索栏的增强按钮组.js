@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.2.2
+// @version      1.2.1
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -155,7 +155,7 @@
     // 控制显示隐藏，不遮盖官方
     setInterval(() => {
         let isHide = [...$('div[class*="headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
-        || $('div.search-suggest-popup').css('display') === 'block';
+        || $('div.search-suggest-popup[style*="display: block;"]').length > 0;
 
         if (isHide) {
             $('#my-tool-box').hide()
@@ -163,7 +163,7 @@
             $('#my-tool-box').show()
             buildHtml()
         }
-    }, 100);
+    }, 120);
 
     setTimeout(() => {
         $('#button').on('click', function() {
