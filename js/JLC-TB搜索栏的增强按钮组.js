@@ -154,7 +154,8 @@
 
     // 控制显示隐藏，不遮盖官方
     setInterval(() => {
-        let isHide = [...$('div[class*="headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0;
+        let isHide = [...$('div[class*="headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
+        || $('div.search-suggest-popup').css('display') !== 'none';
 
         if (isHide) {
             $('#my-tool-box').hide()
