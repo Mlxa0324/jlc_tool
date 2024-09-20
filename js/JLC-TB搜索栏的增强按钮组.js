@@ -175,6 +175,9 @@
         $('div.search-suggest-menu-item').off('click').on('click', function() {
             $('#my-tool-box').remove()
         })
+        $('div.search-suggest-menu-history-item').off('click').on('click', function() {
+            $('#my-tool-box').remove()
+        })
     }, 200);
 })();
 
