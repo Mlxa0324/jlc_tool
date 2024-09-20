@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.2.3
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
