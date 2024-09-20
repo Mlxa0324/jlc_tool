@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.1.4
+// @version      1.2.1
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -112,50 +112,68 @@
         }
     })
 
-    let html_start = `<div style="display: flex; margin-top: 8px;" id="my-tool-box">`;
-    let html_content = ``;
-    let html_end = `</div>`;
-
-    let funcs_res = {}, funcs = [];
-    const storeConf = getConfig().storeConf;
-    for (let storeName of Object.keys(storeConf)) {
-        const entity = storeConf[storeName];
-        // 取值
-        const { attr, url } = entity;
-        // 标签属性
-        const attr_res = Object.keys(attr).map(a => `${a}="${attr[a]}"`).join(' ');
-        // 生成淘宝店铺搜索的链接
-        const storeSearchPath = url.length ? `${url}/search.htm?keyword=${$('#q').val().replace(/[\ \u4e00-\u9fa5]+/g, '')}` : '';
-
-        console.log(storeSearchPath)
-        html_content += `<button class="btn-search" data-url="${storeSearchPath}" data-target="_blank" ${attr_res} type="button">${storeName}</button>`;
-        // 只取function的正文
-        const funcContent = entity['func'].toString().replace(/\$OBJECT_KEY\$/g, storeName).replace(/}$/g, '').replace(/(function|\(\) {|\(\){)/g, '')
-        funcs.push({ [entity.attr['lay-on']]: new Function(funcContent) })
-    }
-
-    funcs.forEach(item => {
-        funcs_res = {
-            ...funcs_res,
-            ...item,
+    function buildHtml() {
+        if ($('#my-tool-box').length > 0) {
+            return;
         }
-    })
-    $('#J_Search form').append(html_start + html_content + html_end)
+        let html_start = `<div style="display: flex; margin-top: 8px;" id="my-tool-box">`;
+        let html_content = ``;
+        let html_end = `</div>`;
 
-    layui.use(function () {
-        layui.util.on('lay-on', funcs_res);
-    });
+        let funcs_res = {}, funcs = [];
+        const storeConf = getConfig().storeConf;
+        for (let storeName of Object.keys(storeConf)) {
+            const entity = storeConf[storeName];
+            // 取值
+            const { attr, url } = entity;
+            // 标签属性
+            const attr_res = Object.keys(attr).map(a => `${a}="${attr[a]}"`).join(' ');
+            // 生成淘宝店铺搜索的链接
+            const storeSearchPath = url.length ? `${url}/search.htm?keyword=${$('#q').val().replace(/[\ \u4e00-\u9fa5]+/g, '')}` : '';
+
+            console.log(storeSearchPath)
+            html_content += `<button class="btn-search" data-url="${storeSearchPath}" data-target="_blank" ${attr_res} type="button">${storeName}</button>`;
+            // 只取function的正文
+            const funcContent = entity['func'].toString().replace(/\$OBJECT_KEY\$/g, storeName).replace(/}$/g, '').replace(/(function|\(\) {|\(\){)/g, '')
+            funcs.push({ [entity.attr['lay-on']]: new Function(funcContent) })
+        }
+
+        funcs.forEach(item => {
+            funcs_res = {
+                ...funcs_res,
+                ...item,
+            }
+        })
+        $('#J_Search form').append(html_start + html_content + html_end)
+
+        layui.use(function () {
+            layui.util.on('lay-on', funcs_res);
+        });
+    }
 
 
     // 控制显示隐藏，不遮盖官方
     setInterval(() => {
-        let isHide = [...$('div[class*="PageHeader--headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
-            || $('.search-suggest-popup').is(':visible');
+        let isHide = [...$('div[class*="headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0;
 
         if (isHide) {
             $('#my-tool-box').hide()
         } else {
             $('#my-tool-box').show()
+            buildHtml()
         }
-    }, 100);
+    }, 120);
+
+    setTimeout(() => {
+        $('#button').on('click', function() {
+            $('#my-tool-box').remove()
+        })
+    }, 2000);
+
+    setInterval(() => {
+        $('div.search-suggest-menu-item').off('click').on('click', function() {
+            $('#my-tool-box').remove()
+        })
+    }, 200);
 })();
+
