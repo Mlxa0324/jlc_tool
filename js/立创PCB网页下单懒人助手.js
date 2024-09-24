@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.2.1
+// @version      1.3.2
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder**
@@ -159,9 +159,9 @@ const start = async() => {
         timerFunc(async() => {
             $('div#banshangjiabiaozhi_1:contains("加嘉立创客编") button').click();
             await awaitTime(1000 * 1)
-            $("div#biaozhiweizhi_1 button").click();
+            $("div[id*=biaozhiweizhi_]:last button").click();
             await awaitTime(1000 * 1)
-            $('div.el-dialog.jlc-modal[role="dialog"][aria-label="加客编"] button.jlc-button:contains("确定")').click();
+            $('div.el-dialog.jlc-modal[role="dialog"][aria-label="加客编"] button.confirm-btn:contains("确认")').click();
             await awaitTime(1000 * 1)
             $('div.el-dialog[role="dialog"][aria-label="温馨提示"] button[type="button"]:contains("不确认生产稿")').click();
         }, () => $('div#banshangjiabiaozhi_1:contains("加嘉立创客编") button').hasClass('checked') && $('div.selectItemMaxWidth span:contains("指定位置添加")').length > 0, 1000);
