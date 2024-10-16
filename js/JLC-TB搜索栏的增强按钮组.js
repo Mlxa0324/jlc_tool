@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.2.3
+// @version      1.2.4
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -116,7 +116,7 @@
         if ($('#my-tool-box').length > 0) {
             return;
         }
-        let html_start = `<div style="display: flex; margin-top: 8px;" id="my-tool-box">`;
+        let html_start = `<div style="display: flex; margin-top: 8px;position: absolute;top: 45px;" id="my-tool-box">`;
         let html_content = ``;
         let html_end = `</div>`;
 
@@ -144,7 +144,7 @@
                 ...item,
             }
         })
-        $('#J_Search form').append(html_start + html_content + html_end)
+        $('#J_Search form').css('position', 'relative').append(html_start + html_content + html_end)
 
         layui.use(function () {
             layui.util.on('lay-on', funcs_res);
