@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.1.2
+// @version      2.2.1
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -28,7 +28,7 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.1.2';
+    const __version = 'Version 2.2.1';
 
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
@@ -105,6 +105,20 @@
 
         }
         return res
+    }
+
+    /**
+     * 正则获取品牌名称，优惠券的标题
+     * @param {*} text
+     * @returns
+     */
+    const getBrandNameByRegexInCouponTitle = (text) => {
+        try {
+            text = text.replaceAll(/.+元|品牌优惠/g, '')
+        } catch (e) {
+
+        }
+        return text
     }
 
     /**
@@ -2393,6 +2407,16 @@ $('.showBtn,.hideBtn').click(function (target) {
 })
 }
 
+let couponCategoryBool = false;
+const couponCategoryHandler = () => {
+
+    if (couponCategoryBool === false) {
+        
+
+        couponCategoryBool = true;
+    }
+}
+
 /**
 * 优惠券快速入口
 */
@@ -2406,6 +2430,7 @@ if ($('#conponCss_').length === 0)
     $('body').append(`
     <style id="conponCss_">
         .coupon-item-goto {
+            user-select:none;
             right: 6% !important;
             left: unset !important;
             width: 43% !important;
@@ -2423,37 +2448,97 @@ if ($('#conponCss_').length === 0)
             border-radius: 4px;
             background: #53a3d6;
         }
-        .coupon-item-goto:hover
+        .watch-category-btn:hover,.coupon-item-goto:hover
         {
-            background-color: #53a3d6 !important;
+            opacity: 0.9;
             color: white !important;
             cursor: pointer;
         }
         .coupon-item-btn {
             width: 43% !important;
         }
+        .watch-category-btn {
+            user-select:none;
+            right: 13px !important;
+            top: 10px !important;
+            width: 33% !important;
+            position: absolute;
+            margin-left: -96px;
+            box-sizing: border-box;
+            height: 30px;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 400;
+            color: #fff;
+            line-height: 30px;
+            cursor: pointer;
+            border-radius: 4px;
+            background: #e9a719;
+        }
+        .qmsg.qmsg-wrapper {
+            z-index: 1000000 !important;
+        }
     </style>
     `)
 
-const append_ = `
-<a class='coupon-item-goto' href="" target="_blank">
- 快速入口
-</a>
-`
-$('.coupon-item').each(function () {
-    const $this = $(this)
-    const btnBackgound = $this.hasClass('coupon-item-plus') ? '#61679e' : ($this.hasClass('receive') ? 'linear-gradient(90deg,#f4e6d6,#ffd9a8)' : '#199fe9')
+    const append_ = `<a class='coupon-item-goto' href="" target="_blank">快速入口</a>`;
+    $('.coupon-item').each(function () {
+        const $this = $(this)
+        const btnBackgound = $this.hasClass('coupon-item-plus') ? '#61679e' : ($this.hasClass('receive') ? 'linear-gradient(90deg,#f4e6d6,#ffd9a8)' : '#199fe9')
 
-    $this.append(append_)
+        $this.append(append_)
 
-    if ($this.hasClass('receive')) {
-        $this.find('.coupon-item-goto').css({ color: 'unset' })
+        const dataUrl = $this.find('div.coupon-item-btn').data('url');
+        const dataName = $this.find('div.coupon-item-btn').data('name');
+        if (dataUrl.includes('/brand')) {
+            $this.append(`<p class='watch-category-btn' data-name="${dataName}">查看类目</p>`)
+        }
+        if ($this.hasClass('receive')) {
+            $this.find('.coupon-item-goto').css({ color: 'unset' })
+        }
+
+        $this.find('.coupon-item-goto').css({ background: btnBackgound })
+        $this.find('.coupon-item-goto').attr('href', $this.find('div[data-id]').data('url'))
+    });
+
+    $(`p.watch-category-btn`).off('click').on('click', function() {
+        const brandNameTitle = $(this).data('name');
+        const brandName = getBrandNameByRegexInCouponTitle(brandNameTitle);
+        searchGlobalBOM(brandName, brandNameTitle);
+    });
+}
+
+const searchGlobalBOM = async (k, title) => {
+    const url = `https://bom.szlcsc.com/global?k=${k}&pageSize=1&pageNumber=1`;
+    const res = await getAjax(url);
+
+    const resJsonObject = JSON.parse(res)
+
+    if(resJsonObject.code === 200) {
+        console.log(resJsonObject.result.catalogGroupJson);
+        const renderCatelogHtml = JSON.parse(resJsonObject.result.catalogGroupJson)
+        .map(e => `<span style="border: 1px solid black;padding: 5px 10px;margin-left: 10px; margin-bottom: 10px; height: min-content;">${e.label}(${e.count})</span>`).join(``);
+        Qmsg.info({
+            content: `
+            <h1 style="padding: 20px 10px 10px; color: #199fe9db;">${title}</h1>
+            <div style="color: black;flex-flow: wrap; padding: 20px 0;
+                width: 46vw;flex-flow: wrap;
+                display: flex;
+                max-height: 55vh;
+                overflow-y: auto;
+                align-content: flex-start;
+                ">
+                ${renderCatelogHtml}
+            </div>
+            `,
+            autoClose: false,
+            html: true,
+        });
+
+        $('.qmsg.qmsg-wrapper').css('top', '18%');
+        $('i.qmsg-icon:not(.qmsg-icon-close)').remove();
+        $('i.qmsg-icon-close').css('zoom', '200%');
     }
-
-    $this.find('.coupon-item-goto').css({ background: btnBackgound })
-    $this.find('.coupon-item-goto').attr('href', $this.find('div[data-id]').data('url'))
-
-})
 }
 
 /**
@@ -3764,6 +3849,7 @@ if (isBomPage()) {
 }
 
 if (isCouponPage()) {
+    couponCategoryHandler()
     couponGotoHandler()
 }
 }, 500)
