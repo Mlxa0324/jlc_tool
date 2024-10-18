@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.2.1
+// @version      2.2.3
 // @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
 // @match        https://cart.szlcsc.com/cart/display.html**
@@ -28,7 +28,7 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.2.1';
+    const __version = 'Version 2.2.3';
 
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
@@ -2407,16 +2407,6 @@ $('.showBtn,.hideBtn').click(function (target) {
 })
 }
 
-let couponCategoryBool = false;
-const couponCategoryHandler = () => {
-
-    if (couponCategoryBool === false) {
-        
-
-        couponCategoryBool = true;
-    }
-}
-
 /**
 * 优惠券快速入口
 */
@@ -2452,6 +2442,12 @@ if ($('#conponCss_').length === 0)
         {
             opacity: 0.9;
             color: white !important;
+            cursor: pointer;
+        }
+        .open-tab-search:hover
+        {
+            opacity: 0.9;
+            background-color: #e0e0e0;
             cursor: pointer;
         }
         .coupon-item-btn {
@@ -2491,7 +2487,7 @@ if ($('#conponCss_').length === 0)
         const dataUrl = $this.find('div.coupon-item-btn').data('url');
         const dataName = $this.find('div.coupon-item-btn').data('name');
         if (dataUrl.includes('/brand')) {
-            $this.append(`<p class='watch-category-btn' data-name="${dataName}">查看类目</p>`)
+            $this.append(`<p class='watch-category-btn' data-url="${dataUrl}" data-name="${dataName}">查看类目</p>`)
         }
         if ($this.hasClass('receive')) {
             $this.find('.coupon-item-goto').css({ color: 'unset' })
@@ -2503,21 +2499,24 @@ if ($('#conponCss_').length === 0)
 
     $(`p.watch-category-btn`).off('click').on('click', function() {
         const brandNameTitle = $(this).data('name');
+        const brandDataUrl = $(this).data('url');
         const brandName = getBrandNameByRegexInCouponTitle(brandNameTitle);
-        searchGlobalBOM(brandName, brandNameTitle);
+        searchGlobalBOM(brandName, brandNameTitle, brandDataUrl);
     });
 }
 
-const searchGlobalBOM = async (k, title) => {
+const searchGlobalBOM = async (k, title, brandDataUrl) => {
+    const brandId = brandDataUrl.replaceAll(/[^\d]+/g, '');
     const url = `https://bom.szlcsc.com/global?k=${k}&pageSize=1&pageNumber=1`;
     const res = await getAjax(url);
 
     const resJsonObject = JSON.parse(res)
 
     if(resJsonObject.code === 200) {
-        console.log(resJsonObject.result.catalogGroupJson);
         const renderCatelogHtml = JSON.parse(resJsonObject.result.catalogGroupJson)
-        .map(e => `<span style="border: 1px solid black;padding: 5px 10px;margin-left: 10px; margin-bottom: 10px; height: min-content;">${e.label}(${e.count})</span>`).join(``);
+        .map(e => `<span data-search-k="${e.label}" data-brand-id="${brandId}" 
+                    class="open-tab-search" style="cursor: pointer; border: 1px solid black;padding: 5px 10px;margin-left: 10px; margin-bottom: 10px; height: min-content;">
+                        ${e.label}(${e.count})</span>`).join(``);
         Qmsg.info({
             content: `
             <h1 style="padding: 20px 10px 10px; color: #199fe9db;">${title}</h1>
@@ -2538,6 +2537,13 @@ const searchGlobalBOM = async (k, title) => {
         $('.qmsg.qmsg-wrapper').css('top', '18%');
         $('i.qmsg-icon:not(.qmsg-icon-close)').remove();
         $('i.qmsg-icon-close').css('zoom', '200%');
+
+        // 跳转到对应的分类下查询
+        $('span.open-tab-search').off('click').on('click', function() {
+            const searchK = $(this).data('search-k');
+            const brandId = $(this).data('brand-id');
+            GM_openInTab(`${webSiteShareData.lcscSearchUrl}/global.html?k=${searchK}&gp=${brandId||''}`, { active: true, insert: true, setParent: true })
+        });
     }
 }
 
@@ -3849,7 +3855,6 @@ if (isBomPage()) {
 }
 
 if (isCouponPage()) {
-    couponCategoryHandler()
     couponGotoHandler()
 }
 }, 500)
