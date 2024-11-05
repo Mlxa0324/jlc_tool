@@ -1,9 +1,10 @@
 // ==UserScript==
-// @name         立创商城辅助工具
+// @name         嘉立创购物车辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.3.1
-// @description  立创商城辅助增强工具
+// @version      2.2.3
+// @description  嘉立创购物车辅助增强工具 包含：手动领券、自动领券、小窗显示优惠券领取状态、一键分享BOM、一键锁定/释放商品、一键换仓、一键选仓、搜索页优惠券新老用户高亮。
 // @author       Lx
+// @match        https://cart.szlcsc.com/cart/display.html**
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @match        https://bom.szlcsc.com/member/bom/upload/**.html
@@ -27,17 +28,11 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.1';
+    const __version = 'Version 2.2.3';
 
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)
-
-    const webSiteShareData = {
-        lcscCartUrl: "https://cart.szlcsc.com",
-        lcscWwwUrl: "https://www.szlcsc.com", 
-        lcscSearchUrl: "https://so.szlcsc.com",
-    };
 
     /**
      * rgb颜色随机
@@ -3847,9 +3842,9 @@ let isCouponPage = () => location.href.includes('www.szlcsc.com/huodong.html');
 
 setInterval(function () {
 
-// if (isCartPage()) {
-//     cartStart()
-// }
+if (isCartPage()) {
+    cartStart()
+}
 
 if (isSearchPage()) {
     searchStart()

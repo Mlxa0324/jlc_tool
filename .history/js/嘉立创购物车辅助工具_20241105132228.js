@@ -2,7 +2,7 @@
 // @name         立创商城辅助工具
 // @namespace    http://tampermonkey.net/
 // @version      2.3.1
-// @description  立创商城辅助增强工具
+// @description  立创商城辅助工具
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
