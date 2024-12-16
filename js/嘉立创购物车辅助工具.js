@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创商城辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.3.2
+// @version      2.3.3
 // @description  立创商城辅助增强工具
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -24,7 +24,7 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.2';
+    const __version = 'Version 2.3.3';
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)
@@ -101,16 +101,26 @@
         return res
     }
     /**
-     * 正则获取品牌名称，优惠券的标题
-     * @param {*} text
-     * @returns
+     * 只获取品牌名称
+     * @param text
      */
     const getBrandNameByRegexInCouponTitle = (text) => {
+        let replaceText = '';
         try {
-            text = text.replaceAll(/.+元|品牌优惠/g, '')
-        } catch (e) {
+            const t = /<.+>/g.exec(text)
+            if(t != null) {
+                replaceText = t[0].replace(/<|>/g,'')
+                if(replaceText === '新人专享') {
+                    replaceText = /[^(\d+元)|(品牌.+)|(<新人专享>)]+/g.exec(text)[0]
+                }
+            } else {
+                replaceText = /[^(\d+元)|(品牌.+)|(<新人专享>)]+/g.exec(text)[0]
+            }
+        }catch (e) {
+            console.error(e)
+        }finally {
+            return replaceText
         }
-        return text
     }
     /**
      * 等待
@@ -2181,8 +2191,9 @@ const searchGlobalBOM = async (k, title, brandDataUrl) => {
     const res = await getAjax(url);
     const resJsonObject = JSON.parse(res)
     if(resJsonObject.code === 200) {
-        const renderCatelogHtml = JSON.parse(resJsonObject.result.catalogGroupJson)
-        .map(e => `<span data-search-k="${e.label}" data-brand-id="${brandId}" 
+        const catalogGroup = resJsonObject.result.searchResult.catalogGroup
+        const renderCatelogHtml = catalogGroup
+        .map(e => `<span data-catalog-id="${e.value}" data-search-k="${e.label}" data-brand-id="${brandId}" 
                     class="open-tab-search" style="cursor: pointer; border: 1px solid black;padding: 5px 10px;margin-left: 10px; margin-bottom: 10px; height: min-content;">
                         ${e.label}(${e.count})</span>`).join(``);
         Qmsg.info({
@@ -2208,7 +2219,10 @@ const searchGlobalBOM = async (k, title, brandDataUrl) => {
         $('span.open-tab-search').off('click').on('click', function() {
             const searchK = $(this).data('search-k');
             const brandId = $(this).data('brand-id');
-            GM_openInTab(`${webSiteShareData.lcscSearchUrl}/global.html?k=${searchK}&gp=${brandId||''}`, { active: true, insert: true, setParent: true })
+            const catalogId = $(this).data('catalog-id');
+            // 跳转地址
+            const url = `https://list.szlcsc.com/brand_page/${brandId}.html?queryProductTypeCode=${catalogId}&pageNumber=1`;
+            GM_openInTab(url, { active: true, insert: true, setParent: true })
         });
     }
 }
