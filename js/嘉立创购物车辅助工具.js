@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创商城辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.3.1
+// @version      2.3.2
 // @description  立创商城辅助增强工具
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -24,13 +24,13 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.1';
+    const __version = 'Version 2.3.2';
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)
     const webSiteShareData = {
         lcscCartUrl: "https://cart.szlcsc.com",
-        lcscWwwUrl: "https://www.szlcsc.com", 
+        lcscWwwUrl: "https://www.szlcsc.com",
         lcscSearchUrl: "https://so.szlcsc.com",
     };
     /**
@@ -2950,7 +2950,7 @@ const renderMinPriceSearch = () => {
                                          target="_blank"
                                          data-trackzone="s_s__&quot;123&quot;"
                                          onclick="goItemDetailBuriedPoint('${productId}', this, 'name', 's_s__&quot;${$("#search-input").val()}&quot;', null, '0')">
-                                         ${productName}</a>
+                                          ${lightProductModel}</a>
                                      </li>
                                      <li class="band li-ellipsis"
                                          onclick="commonBuriedPoint(this, 'go_brand')">
