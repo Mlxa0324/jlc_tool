@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创商城辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.3.3
+// @version      2.3.4
 // @description  立创商城辅助增强工具
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -19,12 +19,13 @@
 // @grant        GM_setClipboard
 // @grant        GM_addStyle
 // @grant        GM_getResourceText
+// @connect      szlcsc.com
 // @license      MIT
 // ==/UserScript==
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.3';
+    const __version = 'Version 2.3.4';
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)

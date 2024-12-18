@@ -1,13 +1,14 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.3.2
+// @version      1.3.3
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=jlc.com
 // @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
 // @grant none
+// @connect      jlc.com
 // @license      MIT
 // ==/UserScript==
 

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         嘉立创开源广场辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      1.1.2
+// @version      1.1.3
 // @description  嘉立创开源广场BOM列表一键搜索淘宝，一键搜索优信，支持配置自定义店铺
 // @author       Lx
 // @match        https://oshwhub.com/**
@@ -14,6 +14,7 @@
 // @grant        GM_getResourceText
 // @grant        GM_xmlhttpRequest
 // @license      MIT
+// @connect      oshwhub.com
 // @downloadURL https://update.greasyfork.org/scripts/492654/%E5%98%89%E7%AB%8B%E5%88%9B%E5%BC%80%E6%BA%90%E5%B9%BF%E5%9C%BA%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.user.js
 // @updateURL https://update.greasyfork.org/scripts/492654/%E5%98%89%E7%AB%8B%E5%88%9B%E5%BC%80%E6%BA%90%E5%B9%BF%E5%9C%BA%E8%BE%85%E5%8A%A9%E5%B7%A5%E5%85%B7.meta.js
 // ==/UserScript==
@@ -197,7 +198,7 @@
             })
         })
         }
-        
+
 
         // const $tdEles = $(`div.table-box .table tr`).find(`td:eq(${targetAppendIndex})`).css({
         //     "display": "flex",
@@ -305,7 +306,7 @@
                     // 搜索淘宝
                     // searchTb: async function () {
                     //     let html_ = await getAjax(`https://www.baidu.com`)
-    
+
                     //     const $html_ = $(html_).find('.water-container')
                     //     console.log($html_);
                     //     layer.open({

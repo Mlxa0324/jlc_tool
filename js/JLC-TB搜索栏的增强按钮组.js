@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC-TB搜索栏的增强按钮组
 // @namespace    http://tampermonkey.net/
-// @version      1.2.4
+// @version      1.2.6
 // @description  TB搜索栏的增强按钮组，为了不误解评论大佬的意思，故改个插件名字，留给有需要的人
 // @author       You
 // @match        https://s.taobao.com/search?**
@@ -10,6 +10,9 @@
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=taobao.com
 // @grant        none
 // @license      MIT
+// @connect      taobao.com
+// @downloadURL https://update.greasyfork.org/scripts/495269/JLC-TB%E6%90%9C%E7%B4%A2%E6%A0%8F%E7%9A%84%E5%A2%9E%E5%BC%BA%E6%8C%89%E9%92%AE%E7%BB%84.user.js
+// @updateURL https://update.greasyfork.org/scripts/495269/JLC-TB%E6%90%9C%E7%B4%A2%E6%A0%8F%E7%9A%84%E5%A2%9E%E5%BC%BA%E6%8C%89%E9%92%AE%E7%BB%84.meta.js
 // ==/UserScript==
 
 (function () {
@@ -65,9 +68,9 @@
     }
 
     /**
-  * 深色 随机色
-  * @returns
-  */
+     * 深色 随机色
+     * @returns
+     */
     const srdmRgbColor = () => {
         //随机生成RGB颜色
         let arr = [];
@@ -154,8 +157,8 @@
 
     // 控制显示隐藏，不遮盖官方
     setInterval(() => {
-        let isHide = [...$('div[class*="headerWrap--"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
-        || $('div.search-suggest-popup[style*="display: block;"]').length > 0;
+        let isHide = [...$('div[class*="headerWrap"]')].filter(item => item.outerHTML.indexOf('fixed') >= 0).length > 0
+            || $('div.search-suggest-popup[style*="display: block;"]').length > 0;
 
         if (isHide) {
             $('#my-tool-box').hide()
