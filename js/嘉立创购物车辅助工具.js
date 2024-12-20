@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创商城辅助工具
 // @namespace    http://tampermonkey.net/
-// @version      2.3.4
+// @version      2.3.5
 // @description  立创商城辅助增强工具
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -25,7 +25,7 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.4';
+    const __version = 'Version 2.3.5';
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)
@@ -89,33 +89,31 @@
         return color;
     }
     /**
-     * 正则获取品牌名称，需要传入xxxx(品牌名称) 这样的字符
-     * @param {*} text
-     * @returns
-     */
-    const getBrandNameByRegex = (text) => {
-        let res = text
-        try {
-            res = /\(.+\)/g.exec(text)[0].replace(/\((.*?)\)/, '$1')
-        } catch (e) {
-        }
-        return res
-    }
-    /**
-     * 只获取品牌名称
+     * 获取品牌名称
+     * 支持列表：
+     * 1、XUNDA(讯答)
+     * 2、立创开发板
+     * 3、50元德立品牌优惠
+     * 4、<新人专享>15元芯声品牌优惠
      * @param text
      */
-    const getBrandNameByRegexInCouponTitle = (text) => {
-        let replaceText = '';
+    const brandNameProcess = (text) => {
+        let replaceText = text;
         try {
-            const t = /<.+>/g.exec(text)
-            if(t != null) {
-                replaceText = t[0].replace(/<|>/g,'')
-                if(replaceText === '新人专享') {
-                    replaceText = /[^(\d+元)|(品牌.+)|(<新人专享>)]+/g.exec(text)[0]
+            // 取括号里的品牌名称 如：ICEY(冰禹)
+            if (replaceText.includes("(")) {
+                const t = replaceText.split(/\(|\)/g).filter((e => e));
+                replaceText = (1 === t.length ? t[0] : t.length > 1 ? t[t.length - 1] : name)
+            }else {
+                const t = /<.+>/g.exec(text)
+                if(t != null) {
+                    replaceText = t[0].replace(/<|>/g,'')
+                    if(replaceText === '新人专享') {
+                        replaceText = text.replace(/^.[^元]*元(.*)品牌.*$/, '$1')
+                    }
+                } else {
+                    replaceText = text.replace(/^.[^元]*元(.*)品牌.*$/, '$1')
                 }
-            } else {
-                replaceText = /[^(\d+元)|(品牌.+)|(<新人专享>)]+/g.exec(text)[0]
             }
         }catch (e) {
             console.error(e)
@@ -123,6 +121,7 @@
             return replaceText
         }
     }
+
     /**
      * 等待
      * @param {*} timeout
@@ -1138,7 +1137,7 @@ var ckMap = new Map();
      // 品牌名称
     let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim();
     // 查找到品牌名称
-    brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim());
+    brandName = brandNameProcess(brandName.split('\n')[brandName.split('\n').length - 1].trim());
     // 处理特殊字符
     brandName = brandNameDataProcess(brandName);
     var $checkedEle = $this.find('input.check-box');
@@ -1803,7 +1802,7 @@ $('.product-img:not([class*=click_do_])').addClass('click_do_')
 // 购物车列表 点击品牌跳转到该品牌下的商品
 $('.product-item li.cart-li-pro-info:not(:has([class*=open_do_]))').find('div:eq(2)')
     .css({ cursor: 'pointer' }).addClass('open_do_').click(function () {
-        GM_openInTab(`${webSiteShareData.lcscSearchUrl}/global.html?k=${getBrandNameByRegex(this.innerText)}`, { active: true, insert: true, setParent: true })
+        GM_openInTab(`${webSiteShareData.lcscSearchUrl}/global.html?k=${brandNameProcess(this.innerText)}`, { active: true, insert: true, setParent: true })
     })
 }
 /**
@@ -1818,7 +1817,7 @@ getHavedCheckedLineInfo().each(function (i) {
     // 品牌名称
     let brandName = $this.find('.cart-li-pro-info div:eq(2)').text().trim()
     // 查找到品牌名称
-    brandName = getBrandNameByRegex(brandName.split('\n')[brandName.split('\n').length - 1].trim())
+    brandName = brandNameProcess(brandName.split('\n')[brandName.split('\n').length - 1].trim())
     // if ($this.find('input:checked').length === 0) {
     //     return
     // }
@@ -1907,7 +1906,7 @@ return $('.product-list .product-list-dl:eq(0) .product-item')
 const getHavedLineInfoByBrandNameList = (brandNameList) => {
 return $(
     [...getHavedLineInfo()].filter(item => {
-        const brandName = getBrandNameByRegex($(item).find(`.cart-li:eq(2) div:eq(2)`).text().trim())
+        const brandName = brandNameProcess($(item).find(`.cart-li:eq(2) div:eq(2)`).text().trim())
         return brandNameList.includes(brandName)
     })
 )
@@ -2182,7 +2181,7 @@ if ($('#conponCss_').length === 0)
     $(`p.watch-category-btn`).off('click').on('click', function() {
         const brandNameTitle = $(this).data('name');
         const brandDataUrl = $(this).data('url');
-        const brandName = getBrandNameByRegexInCouponTitle(brandNameTitle);
+        const brandName = brandNameProcess(brandNameTitle);
         searchGlobalBOM(brandName, brandNameTitle, brandDataUrl);
     });
 }
@@ -2508,7 +2507,7 @@ const _renderFilterBrandColor = async () => {
         const text = $(this).text().trim()
         let findBrandName = text
         if (text.includes('(')) {
-            findBrandName = getBrandNameByRegex(text)
+            findBrandName = brandNameProcess(text)
         }
         if (all16_15CouponMp.has(findBrandName)) {
             if (all16_15CouponMp.get(findBrandName).isNew) {
@@ -2530,7 +2529,7 @@ const _renderMulitFilterBrandColor = async () => {
         const text = $(this).find('label').attr('title').trim()
         let findBrandName = text
         if (text.includes('(')) {
-            findBrandName = getBrandNameByRegex(text)
+            findBrandName = brandNameProcess(text)
         }
         if (all16_15CouponMp.has(findBrandName)) {
             if (all16_15CouponMp.get(findBrandName).isNew) {
@@ -2556,7 +2555,7 @@ const multiFilterBrand = async (isNew) => {
         const text = $labelEle.attr('title').trim()
         let findBrandName = text
         if (text.includes('(')) {
-            findBrandName = getBrandNameByRegex(text)
+            findBrandName = brandNameProcess(text)
         }
         if (all16_15CouponMp.has(findBrandName)) {
             if (all16_15CouponMp.get(findBrandName).isNew === isNew) {
@@ -3308,7 +3307,7 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
         $('#new-filter-coupon-btn').css('background', '#199fe9');
         jsRules[1] = (item) => {
             try {
-                return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === true;
+                return all16_15CouponMp.get(brandNameProcess(item.productGradePlateName)).isNew === true;
             } catch (error) {
                 return false;
             }
@@ -3321,7 +3320,7 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
         $('#unnew-filter-coupon-btn').css('background-color', '#199fe9');
         jsRules[1] = (item) => {
             try {
-                return all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew === false;
+                return all16_15CouponMp.get(brandNameProcess(item.productGradePlateName)).isNew === false;
             } catch (error) {
                 return false;
             }
@@ -3335,7 +3334,7 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
         jsRules[1] = (item) => {
             try {
                 // 这里不返回，就看领券中心有没有这个品牌的券，不太准确反正
-                all16_15CouponMp.get(getBrandNameByRegex(item.productGradePlateName)).isNew;
+                all16_15CouponMp.get(brandNameProcess(item.productGradePlateName)).isNew;
             } catch (error) {
                 // 不在领券中心的商品
                 return true;
