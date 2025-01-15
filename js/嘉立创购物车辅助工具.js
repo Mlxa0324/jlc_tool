@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_TOOL
 // @namespace    http://tampermonkey.net/
-// @version      2.4.1
+// @version      2.4.2
 // @description  JLC_SHOP_TOOL_1.0
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -26,7 +26,7 @@
 (async function() {
     'use strict';
     // 软件版本
-    const __version = 'Version 2.3.5';
+    const __version = 'Version 2.4.2';
     // 引入message的css文件并加入html中
     const css = GM_getResourceText("customCSS")
     GM_addStyle(css)
@@ -2003,61 +2003,136 @@ $(".check-box,.check-box-checked-all").change(() => {
     setTimeout(refresh, 1000);
 })
 }
-/**
-* 获取优惠券列表信息，并暂存在变量集合中
-*/
-const getCouponHTML = async () => {
-// http获取优惠券信息
-let couponHTML = await getAjax(`${webSiteShareData.activityWwwUrl}/huodong.html`)
-// 遍历优惠券
-$(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function () {
-    // 获取当前元素
-    let $this = $(this);
-    // 优惠券id
-    let couponId = $this.data('id');
-    // 是否已经领取
-    let isHaved = $this.find(':contains(立即使用)').length > 0;
-    // 优惠券名称
-    let couponName = $this.data('name');
-    // 对应的品牌主页地址
-    let brandIndexHref = $this.data('href');
-    // 优惠券金额
-    let couponPrice = couponName.replace(/^.*?\>(.*?)元.*$/, '$1');
-    // 品牌名称
-    let brandName = couponName.replace(/^.*?元(.*?)品牌.*$/, '$1');
-    // 是否新人优惠券
-    let isNew = couponName.split('新人专享').length >= 2;
-    // 是否已经使用过
-    let isUsed = $this.find(':contains(已使用)').length > 0;
-    // 一些优惠券特殊处理
-    if(brandName === 'MDD') {
-        // 存到变量Map中
-        all16_15CouponMp.set('辰达半导体', {
-            couponName, // 优惠券名称
-            isNew, // 是否新人专享
-            couponPrice, //优惠券金额减免
-            brandName: '辰达半导体', // 品牌名称
-            couponId, // 优惠券id
-            isHaved, // 是否已经领取
-            isUsed, // 是否已经使用过
-            brandIndexHref, // 对应的品牌主页地址
-            couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
-        });
+// /**
+// * 获取优惠券列表信息，并暂存在变量集合中
+// */
+// const getCouponHTML = async () => {
+// // http获取优惠券信息
+// let couponHTML = await getAjax(`${webSiteShareData.activityWwwUrl}/huodong.html`)
+// // 遍历优惠券
+// $(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function () {
+//     // 获取当前元素
+//     let $this = $(this);
+//     // 优惠券id
+//     let couponId = $this.data('id');
+//     // 是否已经领取
+//     let isHaved = $this.find(':contains(立即使用)').length > 0;
+//     // 优惠券名称
+//     let couponName = $this.data('name');
+//     // 对应的品牌主页地址
+//     let brandIndexHref = $this.data('href');
+//     // 优惠券金额
+//     let couponPrice = couponName.replace(/^.*?\>(.*?)元.*$/, '$1');
+//     // 品牌名称
+//     let brandName = couponName.replace(/^.*?元(.*?)品牌.*$/, '$1');
+//     // 是否新人优惠券
+//     let isNew = couponName.split('新人专享').length >= 2;
+//     // 是否已经使用过
+//     let isUsed = $this.find(':contains(已使用)').length > 0;
+//     // 一些优惠券特殊处理
+//     if(brandName === 'MDD') {
+//         // 存到变量Map中
+//         all16_15CouponMp.set('辰达半导体', {
+//             couponName, // 优惠券名称
+//             isNew, // 是否新人专享
+//             couponPrice, //优惠券金额减免
+//             brandName: '辰达半导体', // 品牌名称
+//             couponId, // 优惠券id
+//             isHaved, // 是否已经领取
+//             isUsed, // 是否已经使用过
+//             brandIndexHref, // 对应的品牌主页地址
+//             couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
+//         });
+//     }
+//     // 存到变量Map中
+//     all16_15CouponMp.set(brandName, {
+//         couponName, // 优惠券名称
+//         isNew, // 是否新人专享
+//         couponPrice, //优惠券金额减免
+//         brandName, // 品牌名称
+//         couponId, // 优惠券id
+//         isHaved, // 是否已经领取
+//         isUsed, // 是否已经使用过
+//         brandIndexHref, // 对应的品牌主页地址
+//         couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
+//     });
+// });
+// }
+
+    const someCouponMapping = {
+        "MDD": "辰达半导体",
     }
-    // 存到变量Map中
-    all16_15CouponMp.set(brandName, {
-        couponName, // 优惠券名称
-        isNew, // 是否新人专享
-        couponPrice, //优惠券金额减免
-        brandName, // 品牌名称
-        couponId, // 优惠券id
-        isHaved, // 是否已经领取
-        isUsed, // 是否已经使用过
-        brandIndexHref, // 对应的品牌主页地址
-        couponLink: `${webSiteShareData.lcscWwwUrl}/getCoupon/${couponId}`, // 领券接口地址
-    });
-});
-}
+    /**
+     * 获取优惠券列表信息，并暂存在变量集合中
+     * 只获取16-15的优惠券
+     */
+    const getCouponHTML = async () => {
+        // 处理单个优惠券
+        const processItem = (couponItem, referenceMap, someCouponMapping) => {
+            // 一些优惠券特殊处理
+            for (let key in someCouponMapping) {
+                if (couponItem.couponTypeName == key) {
+                    const newBrandName = someCouponMapping[key]
+                    // 存到变量Map中
+                    referenceMap.set(newBrandName, {
+                        couponName: couponItem.couponName, // 优惠券名称
+                        isNew: couponItem.couponName.includes("<新人专享>"), // 是否新人专享
+                        couponPrice: couponItem.couponAmount, //优惠券金额减免
+                        minOrderMoney: couponItem.minOrderMoney, //要求最低金额
+                        brandName: newBrandName, // 品牌名称
+                        couponId: couponItem.uuid, // 优惠券id
+                        isHaved: couponItem.isReceive, // 是否已经领取
+                        isUsed: couponItem.isUse, // 是否已经使用过
+                        brandIndexHref: couponItem.targetUrl, // 对应的品牌主页地址
+                        couponLink: `https://www.szlcsc.com/getCoupon/${couponItem.uuid}`, // 领券接口地址
+                    });
+                }
+            }
+            // 存到变量Map中
+            referenceMap.set(couponItem.couponTypeName, {
+                couponName: couponItem.couponName, // 优惠券名称
+                isNew: couponItem.couponName.includes("<新人专享>"), // 是否新人专享
+                couponPrice: couponItem.couponAmount, //优惠券金额减免
+                minOrderMoney: couponItem.minOrderMoney, //要求最低金额
+                brandName: couponItem.couponTypeName, // 品牌名称
+                couponId: couponItem.uuid, // 优惠券id
+                isHaved: couponItem.isReceive, // 是否已经领取
+                isUsed: couponItem.isUse, // 是否已经使用过
+                brandIndexHref: couponItem.targetUrl, // 对应的品牌主页地址
+                couponLink: `https://www.szlcsc.com/getCoupon/${couponItem.uuid}`, // 领券接口地址
+            });
+        }
+        // 优惠券简单封装
+        const processCouponList = (couponList, someCouponMapping) => {
+            // 遍历
+            for (let couponItem of couponList) {
+                // 取变量
+                // const {
+                //   uuid, isReceive, isUse, couponName, targetUrl,
+                //   couponAmount, couponTypeName, minOrderMoney
+                // } = couponItem;
+
+                const {couponAmount, minOrderMoney} = couponItem;
+                // 1元购
+                if ((minOrderMoney - couponAmount) === 1) {
+                    processItem(couponItem, all16_15CouponMp, someCouponMapping)
+                }
+            }
+        }
+
+        // http获取优惠券信息
+        let json = await getAjax(`https://activity.szlcsc.com/activity/coupon`)
+        json = JSON.parse(json)
+        if (json.code === 200) {
+            // 取数据
+            const {1: 精选专区, 2: 类目专区, 3: 新人专区, plus: PLUS专区, 5: MRO专区} = json.result.couponModelVOListMap
+            // 合并所有类型的优惠券
+            const allCouponNotNew = [...精选专区, ...类目专区, ...PLUS专区, ...MRO专区, ...新人专区]
+            // 优惠券处理
+            processCouponList(allCouponNotNew, someCouponMapping)
+            console.log(all16_15CouponMp)
+        }
+    }
 /**
 * 优惠券领取按钮的绑定事件
 */
