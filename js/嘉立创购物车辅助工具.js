@@ -1,13 +1,14 @@
 // ==UserScript==
-// @name         立创商城辅助工具
+// @name         JLC_SHOP_TOOL
 // @namespace    http://tampermonkey.net/
-// @version      2.3.5
-// @description  立创商城辅助增强工具
+// @version      2.4.1
+// @description  JLC_SHOP_TOOL_1.0
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://bom.szlcsc.com/member/eda/search.html?**
 // @match        https://bom.szlcsc.com/member/bom/upload/**.html
 // @match        https://www.szlcsc.com/huodong.html?**
+// @match        https://activity.szlcsc.com/huodong.html**
 // @match        https://list.szlcsc.com/brand**
 // @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
@@ -32,6 +33,7 @@
     const webSiteShareData = {
         lcscCartUrl: "https://cart.szlcsc.com",
         lcscWwwUrl: "https://www.szlcsc.com",
+        activityWwwUrl: "https://activity.szlcsc.com",
         lcscSearchUrl: "https://so.szlcsc.com",
     };
     /**
@@ -950,7 +952,7 @@
         }
         //上锁, 防止这次还没处理完， 下次定时任务就已经就绪了。
         lookCouponLock = true;
-        let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`);
+        let couponHTML = await getAjax(`${webSiteShareData.activityWwwUrl}/huodong.html`);
         const $couponHTML = $(couponHTML);
         let $cssLink = [...$couponHTML].filter(item => item.localName == 'link' && item.href.includes('/public/css/page/activity/couponAllCoupons'))[0].outerHTML;
         let $jsLink = [...$couponHTML].filter(item => item.localName == 'script' && item.src.includes('/public/js/chunk/page/activity/couponAllCoupons'))[0].outerHTML;
@@ -2006,7 +2008,7 @@ $(".check-box,.check-box-checked-all").change(() => {
 */
 const getCouponHTML = async () => {
 // http获取优惠券信息
-let couponHTML = await getAjax(`${webSiteShareData.lcscWwwUrl}/huodong.html`)
+let couponHTML = await getAjax(`${webSiteShareData.activityWwwUrl}/huodong.html`)
 // 遍历优惠券
 $(couponHTML).find('.coupon-item:contains(满16可用) div[data-id]').each(function () {
     // 获取当前元素
@@ -3418,7 +3420,7 @@ let isCartPage = () => location.href.includes('cart.szlcsc.com/cart/display.html
 // BOM配单页
 let isBomPage = () => location.href.includes('bom.szlcsc.com/member/eda/search.html') || location.href.includes('bom.szlcsc.com/member/bom/upload/');
 // 优惠券页
-let isCouponPage = () => location.href.includes('www.szlcsc.com/huodong.html');
+let isCouponPage = () => location.href.includes(`${webSiteShareData.activityWwwUrl}/huodong.html`);
 setInterval(function () {
 // if (isCartPage()) {
 //     cartStart()
