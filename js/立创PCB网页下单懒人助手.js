@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         立创PCB网页下单懒人助手
 // @namespace    http://tampermonkey.net/
-// @version      1.3.3
+// @version      1.3.4
 // @description  PCB网页下单懒人助手
 // @author       Lx
 // @match        https://www.jlc.com/newOrder**
@@ -12,6 +12,28 @@
 // @license      MIT
 // ==/UserScript==
 
+
+
+/**
+ * 获取get query里面的参数
+ */
+function getQueryParamByName(name) {
+    const search = location.search.substring(1); // 去掉开头的 "?"
+    const params = {};
+    if (search) {
+        const pairs = search.split('&');
+        for (const pair of pairs) {
+            const [keyEncoded, valueEncoded] = pair.split('=');
+            const key = decodeURIComponent(keyEncoded || '');
+            const value = decodeURIComponent(valueEncoded || '');
+            params[key] = value;
+        }
+    }
+    if (name && Object.keys(params).length > 0) {
+        return params[name];
+    }
+    return null;
+}
 
 /**
  * 延迟方法
@@ -62,13 +84,21 @@ const start = async() => {
     runIgnoreError(() => {
         // 长宽为空的话,重新加载页面
         timerFunc(() => {
-            $('#pcbLengthInput').val('10');
-            $('#pcbWidthInput').val('10');
-        }, () => $('#pcbLengthInput').val() > 0, 1000);
+            // pcbLength=2.43&pcbWidth=4.05
+            const length = getQueryParamByName('pcbLength');
+            const width = getQueryParamByName('pcbWidth');
+            if (length && width) {
+                $('#pcbLengthInput').val(length);
+                $('#pcbWidthInput').val(width);
+            }
+        }, () => $('#pcbLengthInput').val() != '9.7', 2000);
     })
 
-    if (location.href.indexOf('https://www.jlc.com/newOrder/#/pcb/pcbPlaceOrder') === 0 && !location.href.includes('edaUUID')) {
+    if (location.href.includes('https://www.jlc.com/newOrder/#/pcb/pcbPlaceOrder') && !location.href.includes('edaUUID')) {
         window.location.replace(`${location.href}&edaUUID=55611fd7b14e48a18c37865f6b372d1d&from=eda-pro`);
+    } else if (location.href.includes('https://www.jlc.com/newOrder/?') && !location.href.includes('edaUUID')) {
+        const newUrl = location.href.replace('newOrder/?', 'newOrder/?edaUUID=55611fd7b14e48a18c37865f6b372d1d&from=eda-pro&')
+        window.location.replace(newUrl);
     }
 
     runIgnoreError(() => {
@@ -76,20 +106,20 @@ const start = async() => {
         timerFunc(() => $('#confirmProductionFile_no').click(), () => $('#confirmProductionFile_no').hasClass('checked'), 1000);
     })
 
-    runIgnoreError(async() => {
-        timerFunc(async() => {
-            // 数量选择
-            if ($('#pcbNumberModal').length === 0) {
-                $('#pcbNumber input[placeholder="数量"]').click();
-                await awaitTime(1000 * 0.5)
-                $('#pcbNumberModal li.numItem button:not([class*=checked]').each(function() {
-                    if ($(this).text().replace(/[ \n]/g, '') === "5") {
-                        $(this).click()
-                    }
-                })
-            }
-        }, () => $('#pcbNumber input[placeholder="数量"]').val() > 0, 1000);
-    })
+    // runIgnoreError(async() => {
+    //     timerFunc(async() => {
+    //         // 数量选择
+    //         if ($('#pcbNumberModal').length === 0) {
+    //             $('#pcbNumber input[placeholder="数量"]').click();
+    //             await awaitTime(1000 * 0.5)
+    //             $('#pcbNumberModal li.numItem button:not([class*=checked]').each(function() {
+    //                 if ($(this).text().replace(/[ \n]/g, '') === "5") {
+    //                     $(this).click()
+    //                 }
+    //             })
+    //         }
+    //     }, () => $('#pcbNumber input[placeholder="数量"]').val() > 0, 2000);
+    // })
 
     runIgnoreError(async() => {
         // 包装 空白盒子
