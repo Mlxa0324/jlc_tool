@@ -1,20 +1,23 @@
 // ==UserScript==
 // @name         JLC_CJ_TK_LocalData
 // @namespace    http://tampermonkey.net/
-// @version      1.1.5
+// @version      1.1.6
 // @description  TK 离线
 // @author       123
-// @require      https://cdn.bootcss.com/blueimp-md5/2.12.0/js/md5.min.js
+// @require      https://update.greasyfork.org/scripts/470305/1216506/md5-func.js
 // @require      https://update.greasyfork.org/scripts/497006/1388537/JLCMD5TK.js
 // @match        https://exam.kaoshixing.com/exam/exam_start/**
 // @license      MIT
+// @downloadURL https://update.greasyfork.org/scripts/496919/JLC_CJ_TK_LocalData.user.js
+// @updateURL https://update.greasyfork.org/scripts/496919/JLC_CJ_TK_LocalData.meta.js
 // ==/UserScript==
 
 (function () {
     'use strict';
 
     const repalceText = (text) => {
-        text = text.replace(/[\n\r\ ]+/g, '')
+        //text = text.replace(/[\n\r  ]+/g, '')
+        text = text.replace(/[\n\r ]+/g, '')
         return text.replace(/^([A-Z]\.)*/g, '')
     }
 
@@ -31,6 +34,7 @@
         const md5DataList = getMD5DataList();
 
         $('.question-content').find('.question-name .pre-wrap').each(function () {
+            debugger
             // 题干
             let questionName = repalceText($(this).text());
             let questionObject = md5DataList.filter(questionMd5 => questionMd5.split(':::')[0] === md5(questionName));
@@ -46,7 +50,7 @@
 
             // 选项MD5
             $(this).parents('.question-content').find('.answers .select').each(function () {
-                let text = $(this).text().replace(/[\r\n\ ]+/g, '');
+                let text = $(this).text().replace(/[\n\r ]+/g, '');
                 let answerMD5 = md5(repalceText(text));
 
                 // 判断题
