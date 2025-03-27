@@ -2151,7 +2151,7 @@ $(".check-box,.check-box-checked-all").change(() => {
             }
             // 优惠券处理
             processCouponList(allCouponNotNew, someCouponMapping)
-            console.log(all16_15CouponMp)
+            // console.log(all16_15CouponMp)
         }
     }
 /**
@@ -3462,7 +3462,10 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
 
     // https://list.szlcsc.com/catalog/*.html 快捷筛选-品牌
     setInterval(async () => {
-        if ($('.newFilter__, .notNewFilter__').length == 0) {
+        if($('.parameter-menu.active[title="品牌"]').length == 0 && $('.newFilter__, .notNewFilter__').length) {
+            $('.newFilter__, .notNewFilter__').remove();
+            $('span[data-isnew]').css('background', 'unset').removeAttr('data-isnew');
+        }else if ($('.parameter-menu.active[title="品牌"]').length && $('.newFilter__, .notNewFilter__').length == 0) {
             $('.search-wrap section.right').css('display', 'flex');
             $('.checkbox-wrap').css('width', 'unset');
             $('.search-wrap div.button.reset').before(`
@@ -3506,7 +3509,7 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
                     .siblings('span');
                 sibs[actionName]();
 
-                await sleep(600);
+                await sleep(300);
                 if (sibs && sibs.length === 0) {
                     return;
                 }
