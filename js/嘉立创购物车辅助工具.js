@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_TOOL
 // @namespace    http://tampermonkey.net/
-// @version      2.4.3
+// @version      2.4.4
 // @description  JLC_SHOP_TOOL_1.0
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -26,7 +26,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.4.3';
+        const __version = 'Version 2.4.4';
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
         GM_addStyle(css)
@@ -129,7 +129,7 @@
          * @param {*} timeout
          * @returns
          */
-        const setAwait = (timeout) => {
+        const sleep = (timeout) => {
                 return new Promise((resolve, reject) => {
                     setTimeout(() => {
                         resolve(true)
@@ -141,7 +141,7 @@
              * @param {*} timeout
              * @returns
              */
-        const setAwaitFunc = (timeout, func) => {
+        const sleepFunc = (timeout, func) => {
                 return new Promise((resolve, reject) => {
                     setTimeout(() => {
                         func && func()
@@ -1962,7 +1962,7 @@ $('.click-hv .sort_').on('dblclick', function () {
     const $brandNotCheckedEle = $(`.product-item:contains("${brandName}") li.cart-li .check-box:not(:checked)`)
     // 当前品牌全选
     if ($brandCheckedEle.length != $brandEle.length) {
-        setAwaitFunc(10, function () {
+        sleepFunc(10, function () {
             $brandNotCheckedEle.click();
         })
         return;
@@ -1983,13 +1983,13 @@ $('.click-hv .sort_').on('dblclick', function () {
     const isNckOtherPdtsBool = _filterNotSelf($havedEles, brandName, `li.cart-li:eq(2):not(:contains(${brandName}))`).length > 0
     if (isNckOtherPdtsBool) {
         // 获取现货
-        setAwaitFunc(10, function () {
+        sleepFunc(10, function () {
             _filterNotSelf($havedEles, brandName, `li.cart-li .check-box:checked`).click()
         })
     }
     else {
         // 全选
-        setAwaitFunc(10, function () {
+        sleepFunc(10, function () {
             _filterNotSelf(getHavedNotCheckedLineInfo(), brandName, `li.cart-li .check-box:not(:checked)`).click()
         })
     }
@@ -2365,7 +2365,7 @@ checkStatusChangeHandler()
 onChangeCountHandler()
 autoGetCouponTimerHandler()
 lookCouponListModal()
-// await setAwait(1000)
+// await sleep(1000)
 // onLoadSet()
 }
 /**
@@ -2413,15 +2413,20 @@ const searchStart = async () => {
 const catalogListRenderBrandColor = () => {
     for (let [brandName, brandDetail] of all16_15CouponMp) {
         // 获取页面元素
+        // 这里会给https://list.szlcsc.com/catalog/**.html 页面的类目上色。主要通过span[title*="${brandName}"]:not([style*=background-color])
+        // 给点击跳转品牌首页的按钮上色 a.brand-name[title*="${brandName}"]:not([style*=background-color])
         const $brandEle = $(`li[title*="${brandName}"]:not([style*=background-color]),span[title*="${brandName}"]:not([style*=background-color]),a.brand-name[title*="${brandName}"]:not([style*=background-color])`);
         // && $brandEle.css('background-color') === "rgba(0, 0, 0, 0)"
         if ($brandEle.length > 0) {
             $brandEle.css({
-                "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
+                "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8',
+            }).attr({
+                "data-isnew": brandDetail.isNew,
             })
         }
     }
 }
+
 catalogListRenderBrandColor()
 // 回到顶部  嘉立创的返回顶部，在展开客服里。
 // if ($('div.logo-wrap').hasClass('active')) {
@@ -2600,7 +2605,7 @@ const _setMultiCssByBrandName = (brandName, bgColor = '#00bfffb8') => {
  * 筛选条件：单选品牌-颜色
  */
 const _renderFilterBrandColor = async () => {
-    await setAwait(200)
+    await sleep(200)
     $(`#brandList div`).find(`span:eq(0)`).each(function () {
         const text = $(this).text().trim()
         let findBrandName = text
@@ -2622,7 +2627,7 @@ const _renderFilterBrandColor = async () => {
 * 筛选条件：单选品牌-颜色
 */
 const _renderMulitFilterBrandColor = async () => {
-    await setAwait(200)
+    await sleep(200)
     $(`.pick-txt.det-screen1 div`).each(function () {
         const text = $(this).find('label').attr('title').trim()
         let findBrandName = text
@@ -3454,6 +3459,68 @@ if(productListIsShowBool && $('#product-list-box').length === 0) {
         renderCatalogPageMinPriceSearch();
     }
 }
+
+    // https://list.szlcsc.com/catalog/*.html 快捷筛选-品牌
+    setInterval(async () => {
+        if ($('.newFilter__, .notNewFilter__').length == 0) {
+            $('.search-wrap section.right').css('display', 'flex');
+            $('.checkbox-wrap').css('width', 'unset');
+            $('.search-wrap div.button.reset').before(`
+                <div class="button newFilter__" 
+                style="
+                    width: 100px;
+                    text-align: center;
+                    height: 30px;
+                    line-height: 30px;
+                    font-size: 12px;
+                    border-radius: 3px;
+                    margin-left: 10px;
+                    background: #0095ee;
+                    color: #fff;
+                    border: 1px solid #0095ee;
+                    vertical-align: top;
+                "
+                >筛选新人券</div>
+                <div class="button notNewFilter__"
+                style="
+                    width: 100px;
+                    text-align: center;
+                    height: 30px;
+                    line-height: 30px;
+                    font-size: 12px;
+                    border-radius: 3px;
+                    margin-left: 10px;
+                    background: #4fbe55;
+                    color: #fff;
+                    border: 1px solid #4fbe55;
+                    vertical-align: top;
+                "
+                >筛选非新人券</div>
+            `);
+
+            // 查找第一个符合条件的元素
+            const findElementHandler = async (element, bol, actionName) => {
+                const sibs = $(element).parents('div.quick-filter-content')
+                    .find(`div.useful-checkbox-wrap [data-isnew="${bol}"]`)
+                    .siblings('input[type="checkbox"]:not(:checked)')
+                    .siblings('span');
+                sibs[actionName]();
+
+                await sleep(600);
+                if (sibs && sibs.length === 0) {
+                    return;
+                }
+                await findElementHandler(element, bol, actionName);
+            };
+
+            $('.newFilter__').off('click').on('click', function () {
+                findElementHandler(this, true, "click");
+            });
+            $('.notNewFilter__').off('click').on('click', function () {
+                findElementHandler(this, false, "click");
+            });
+        }
+    }, 2000);
 }
 // 排序记录 desc降序，asc升序
 /**
