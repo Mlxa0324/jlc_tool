@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_TOOL
 // @namespace    http://tampermonkey.net/
-// @version      2.4.4
+// @version      2.4.5
 // @description  JLC_SHOP_TOOL_1.0
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -12,7 +12,7 @@
 // @match        https://list.szlcsc.com/brand**
 // @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
-// @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
+// @require      https://update.greasyfork.org/scripts/494892/1376206/jquery-351.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
 // @resource customCSS https://gitee.com/snwjas/message.js/raw/master/dist/message.min.css
 // @grant        GM_openInTab
@@ -26,7 +26,7 @@
 (async function() {
         'use strict';
         // 软件版本
-        const __version = 'Version 2.4.4';
+        const __version = 'Version 2.4.5';
         // 引入message的css文件并加入html中
         const css = GM_getResourceText("customCSS")
         GM_addStyle(css)
