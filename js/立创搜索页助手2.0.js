@@ -310,7 +310,7 @@
                 }
             }
         })
-        await sleep(1000);
+        await sleep(1500);
         $('button[data-need-query*="lcsc_vid="][data-spm-reset]:contains("确定")').click();
     }
 
