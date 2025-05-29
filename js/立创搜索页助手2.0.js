@@ -298,7 +298,7 @@
      */
     const multiFilterBrand = async(isNew) => {
         $('li:contains("品牌"):contains("多选") div:contains("多选")').last().click();
-        await sleep(100);
+        await sleep(300);
         const elementStr = isNew ? 'isNew' : 'isNotNew';
         $(`.${elementStr}`).each(function() {
             // 品牌名称
@@ -310,7 +310,7 @@
                 }
             }
         })
-        await sleep(300);
+        await sleep(1000);
         $('button[data-need-query*="lcsc_vid="][data-spm-reset]:contains("确定")').click();
     }
 
@@ -359,9 +359,9 @@
         </style>
         `)
             // 多选新人券
-        $('.get_new_coupon').click(async() => await multiFilterBrand(true))
+        $('.get_new_coupon').click(() => multiFilterBrand(true))
             // 多选非新人券
-        $('.get_notnew_coupon').click(async() => await multiFilterBrand(false))
+        $('.get_notnew_coupon').click(() => multiFilterBrand(false))
     }
 
 })()
