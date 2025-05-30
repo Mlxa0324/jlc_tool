@@ -2527,6 +2527,7 @@ if ($('span[class*=select-spec-]').length === 0) {
     // 查询规格快捷按钮
     selectSpecHandler()
 }
+
 if ($('.searchTaobao_').length === 0) {
     // 预售拼团 不处理，其他的都追加按钮
     $('.line-box:not(:contains("预售拼团")) li.pan-list').append(`
