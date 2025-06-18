@@ -789,54 +789,93 @@
             /**
              * 搜索主页的凑单逻辑
              */
-            renderMainPageMinPriceSearch() {
-                // 持续请求 && 定时器未初始化 && 未查询到结果的时候
-                if (!this.globalSearchEnd) {
-                    var val = $('#search-input').val();
-                    if (val == null || val.length === 0) {
-                        searchTempList = [];
-                        return;
-                    }
-                    // 总页数。默认：30页
+            async renderMainPageMinPriceSearch() {
+                // 避免重复执行
+                if (this.globalSearchEnd) return;
+
+                const searchInput = $('#search-input');
+                const searchValue = searchInput.val();
+
+                // 输入为空时清空缓存并返回
+                if (!searchValue ? .trim()) {
+                    searchTempList = [];
+                    return;
+                }
+
+                this.globalSearchEnd = true;
+
+                try {
+                    // 获取总页数
                     const totalPage = searchTotalPage();
-                    const promiseList = [];
-                    for (let pn = 1; pn <= totalPage; pn++) {
-                        const data = {};
-                        [...$('form#allProjectFrom>input[type="hidden"]:not([id*=SloganVal]):not([id*=LinkUrlVal])')].forEach(item => {
+
+                    // 收集表单数据
+                    const formData = Array.from($('form#allProjectFrom > input[type="hidden"]'))
+                        .filter(item => !$(item).attr('id') ? .includes('SloganVal') &&
+                            !$(item).attr('id') ? .includes('LinkUrlVal'))
+                        .reduce((acc, item) => {
                             const name = $(item).attr('name');
-                            const val = $(item).val();
-                            data[name] = val;
-                        });
-                        data['pageNumber'] = pn;
-                        data['k'] = val;
-                        data['sk'] = val;
-                        data['localQueryKeyword'] = '';
-                        var settings = {
-                            "url": "https://so.szlcsc.com/search",
-                            "method": "POST",
-                            // "data": { "pn": searchPageNum, "k": val, "sk": val }
-                            "data": data
+                            acc[name] = $(item).val();
+                            return acc;
+                        }, {});
+
+                    // 创建并发请求队列（限制并发数为3）
+                    const requestQueue = [];
+                    for (let pn = 1; pn <= totalPage && pn <= 30; pn++) {
+                        const data = {
+                            ...formData,
+                            pageNumber: pn,
+                            k: searchValue,
+                            sk: searchValue,
+                            localQueryKeyword: ''
                         };
-                        // console.log('品牌搜索页参数：', settings);
-                        promiseList.push($.ajax(settings));
+
+                        requestQueue.push(
+                            $.ajax({
+                                url: "https://so.szlcsc.com/search",
+                                method: "POST",
+                                data: data,
+                                timeout: 10000 // 添加超时限制
+                            })
+                        );
                     }
-                    this.globalSearchEnd = true;
-                    allWithProgress(promiseList, ({ total, cur, progress }) => {
-                        $('.wait-h2').html(`数据加载中...</br>(共${total}页，正在加载第${cur}页。或只查询前1000条记录)...`);
-                    }).then(function(result) {
-                        console.time('搜索首页凑单渲染速度');
-                        result.forEach(data => {
-                            if (data.code === 200 && data.result != null) {
-                                if (data.result.productRecordList != null) {
-                                    searchTempList = [...searchTempList, ...data.result.productRecordList];
-                                }
-                            }
-                        });
-                    }).finally(() => {
-                        renderMinPriceSearch();
-                        console.timeEnd('搜索首页凑单渲染速度');
-                        setTimeout(() => { $('#js-filter-btn').click() }, 100);
+
+                    // 显示加载进度
+                    const progressContainer = $('.wait-h2');
+                    progressContainer.html(`数据加载中...</br>(共${Math.min(totalPage, 30)}页，正在加载第1页...`);
+
+                    // 并发执行请求并跟踪进度
+                    const results = await allWithProgress(requestQueue, ({ total, cur }) => {
+                        progressContainer.html(`数据加载中...</br>(共${total}页，正在加载第${cur}页... ${Math.round((cur/total)*100)}%)`);
                     });
+
+                    // 处理响应数据（过滤无效响应）
+                    const validResults = results.filter(
+                        res => res ? .code === 200 && res.result ? .productRecordList ? .length > 0
+                    );
+
+                    // 合并搜索结果（使用Set去重）
+                    searchTempList = [...new Set([
+                        ...searchTempList,
+                        ...validResults.flatMap(res => res.result.productRecordList)
+                    ])];
+
+                    // 渲染结果
+                    renderMinPriceSearch();
+
+                    // 延迟触发筛选事件（使用MutationObserver替代setTimeout）
+                    const observer = new MutationObserver(() => {
+                        $('#js-filter-btn').trigger('click');
+                        observer.disconnect();
+                    });
+
+                    observer.observe(document.body, { childList: true, subtree: true });
+
+                    console.timeEnd('搜索首页凑单渲染速度');
+
+                } catch (error) {
+                    console.error('搜索请求失败:', error);
+                    $('.wait-h2').html('搜索加载失败，请重试');
+                    this.globalSearchEnd = false;
                 }
             }
 
