@@ -12,6 +12,7 @@
 // @resource searchCSS https://gitee.com/mlx6_admin/public_resource_lc/raw/master/search.css
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
+// @grant        GM_openInTab
 // @grant        GM_addStyle
 // @connect      szlcsc.com
 // @license      MIT
@@ -1411,6 +1412,7 @@
                 $('head').prepend(`<style>
                 .floating-button {
                   position: fixed;
+                  border-radius: 5px;
                   right: 30px;
                   bottom: 30px;
                   z-index: 9999;
@@ -1440,6 +1442,7 @@
                 .floating-card {
                     display: none; 
                     position: fixed;
+                    border-radius: 10px;
                     width: 1220px;
                     right: 30px;
                     bottom: 90px;
@@ -2071,12 +2074,13 @@
             });
 
             $('.addCartBtn').off('click').on('click', function () {
-                const num = [...Base.getParentRowWithFind(this, '.cartnumbers')]
+                let num = [...Base.getParentRowWithFind(this, '.cartnumbers')]
                     .reduce((a,b)=> a + (parseInt($(b).val()) || 0), 0);
 
                 if (!num) {
-                    window.$message.error("请输入数量！", 3000);
-                    return;
+                    const newNum = parseInt($(this).data('theratio'));
+                    window.$message.error(`数量为空，已为您修正数量为：${newNum}！`, 3000);
+                    num = newNum;
                 }
 
                 Util.postFormAjax(`https://cart.szlcsc.com/cart/quick`, {
