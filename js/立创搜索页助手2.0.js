@@ -9,13 +9,17 @@
 // @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
+// @resource searchCSS https://gitee.com/mlx6_admin/public_resource_lc/raw/master/search.css
 // @grant        GM_xmlhttpRequest
-// @grant        GM_openInTab
+// @grant        GM_addStyle
 // @connect      szlcsc.com
 // @license      MIT
 // ==/UserScript==
 (async function () {
     'use strict';
+
+    const searchCSS = GM_getResourceText("searchCSS")
+    GM_addStyle(searchCSS)
 
     const Util = {
         /**
