@@ -16,11 +16,529 @@
 // @connect      szlcsc.com
 // @license      MIT
 // ==/UserScript==
+/**
+ * Message 全局消息通知组件
+ * 使用方式：
+ * window.$message.success('操作成功')
+ * window.$message.error('操作失败')
+ * window.$message.warning('警告信息')
+ * window.$message.info('普通信息')
+ */
+(function(window) {
+    // 样式定义
+    const style = `
+    .message-container {
+      position: fixed;
+      top: 20px;
+      left: 0;
+      right: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+      z-index: 1000000000000000000;
+    }
+    .message-item {
+      min-width: 300px;
+      max-width: 600px;
+      padding: 8px 20px;
+      margin-bottom: 10px;
+      border-radius: 4px;
+      box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+      background: #fff;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      pointer-events: auto;
+      overflow: hidden;
+    }
+    .message-item.success {
+      background-color: #f0f9eb;
+      color: #67c23a;
+      border: 1px solid #e1f3d8;
+    }
+    .message-item.error {
+      background-color: #fef0f0;
+      color: #f56c6c;
+      border: 1px solid #fde2e2;
+    }
+    .message-item.warning {
+      background-color: #fdf6ec;
+      color: #e6a23c;
+      border: 1px solid #faecd8;
+    }
+    .message-item.info {
+      background-color: #edf2fc;
+      color: #909399;
+      border: 1px solid #ebeeef;
+    }
+    .message-icon {
+      margin-right: 10px;
+      font-size: 18px;
+    }
+    .message-content {
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .message-close {
+      margin-left: 15px;
+      color: #c0c4cc;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .message-close:hover {
+      color: #909399;
+    }
+    .message-fade-enter-active, .message-fade-leave-active {
+      transition: all 0.3s;
+    }
+    .message-fade-enter, .message-fade-leave-to {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  `;
+
+    // 添加样式到head
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = style;
+    document.head.appendChild(styleElement);
+
+    // 消息队列
+    let messages = [];
+    let container = null;
+
+    // 创建消息容器
+    function createContainer() {
+        if (!container) {
+            container = document.createElement('div');
+            container.className = 'message-container';
+            document.body.appendChild(container);
+        }
+        return container;
+    }
+
+    // 创建消息元素
+    function createMessage(type, message, duration = 3000) {
+        const container = createContainer();
+        const messageId = Date.now() + Math.random().toString(36).substr(2, 9);
+
+        const messageEl = document.createElement('div');
+        messageEl.className = `message-item ${type}`;
+        messageEl.dataset.id = messageId;
+
+        // 图标
+        const iconMap = {
+            success: '✓',
+            error: '✕',
+            warning: '⚠',
+            info: 'ℹ'
+        };
+
+        const iconEl = document.createElement('span');
+        iconEl.className = 'message-icon';
+        iconEl.textContent = iconMap[type] || '';
+
+        // 内容
+        const contentEl = document.createElement('span');
+        contentEl.className = 'message-content';
+        contentEl.textContent = message;
+
+        // 关闭按钮
+        const closeEl = document.createElement('span');
+        closeEl.className = 'message-close';
+        closeEl.innerHTML = '&times;';
+        closeEl.onclick = () => removeMessage(messageId);
+
+        messageEl.appendChild(iconEl);
+        messageEl.appendChild(contentEl);
+        messageEl.appendChild(closeEl);
+
+        // 添加到DOM
+        container.appendChild(messageEl);
+
+        // 触发动画
+        setTimeout(() => {
+            messageEl.style.opacity = '1';
+            messageEl.style.transform = 'translateY(0)';
+        }, 10);
+
+        // 自动关闭
+        if (duration > 0) {
+            setTimeout(() => {
+                removeMessage(messageId);
+            }, duration);
+        }
+
+        // 添加到消息队列
+        messages.push({
+            id: messageId,
+            element: messageEl
+        });
+
+        return messageId;
+    }
+
+    // 移除消息
+    function removeMessage(id) {
+        const index = messages.findIndex(msg => msg.id === id);
+        if (index === -1) return;
+
+        const { element } = messages[index];
+
+        // 触发离开动画
+        element.style.opacity = '0';
+        element.style.transform = 'translateY(-20px)';
+
+        // 动画结束后移除
+        setTimeout(() => {
+            if (element.parentNode) {
+                element.parentNode.removeChild(element);
+            }
+
+            // 从队列中移除
+            messages.splice(index, 1);
+
+            // 如果没有消息了，移除容器
+            if (messages.length === 0 && container) {
+                document.body.removeChild(container);
+                container = null;
+            }
+        }, 300);
+    }
+
+    // 清除所有消息
+    function clearAll() {
+        messages.forEach(msg => {
+            if (msg.element.parentNode) {
+                msg.element.parentNode.removeChild(msg.element);
+            }
+        });
+        messages = [];
+
+        if (container) {
+            document.body.removeChild(container);
+            container = null;
+        }
+    }
+
+    // 导出到全局
+    window.$message = {
+        success: (message, duration) => createMessage('success', message, duration),
+        error: (message, duration) => createMessage('error', message, duration),
+        warning: (message, duration) => createMessage('warning', message, duration),
+        info: (message, duration) => createMessage('info', message, duration),
+        closeAll: clearAll
+    };
+
+})(window);
+
 (async function () {
     'use strict';
 
     const searchCSS = GM_getResourceText("searchCSS")
     GM_addStyle(searchCSS)
+
+    /**
+     * 空列表占位组件
+     * @class EmptyState
+     */
+    class EmptyState {
+        /**
+         * 构造函数
+         * @param {string} selector 容器选择器
+         * @param {object} options 配置选项
+         */
+        constructor(selector, options = {}) {
+            // 默认配置
+            const defaults = {
+                icon: 'fa fa-inbox',      // 图标类名（推荐使用Font Awesome）
+                iconSize: 48,            // 图标尺寸
+                title: '暂无数据',        // 主标题
+                description: '',          // 描述文本
+                showAction: false,       // 是否显示操作按钮
+                actionText: '刷新',       // 按钮文字
+                actionClass: 'btn btn-primary', // 按钮样式类
+                onAction: null           // 按钮点击回调
+            };
+
+            // 合并配置
+            this.settings = $.extend({}, defaults, options);
+
+            // 容器元素
+            this.$container = $(selector);
+            if (this.$container.length === 0) {
+                console.error('EmptyState: 容器元素未找到');
+                return;
+            }
+
+            // 初始化
+            this._init();
+        }
+
+        /**
+         * 初始化组件
+         * @private
+         */
+        _init() {
+            // 创建占位元素
+            this.$element = $(`
+      <div class="empty-state" style="display: none;">
+        <div class="empty-state-icon">
+          <i class="${this.settings.icon}"></i>
+        </div>
+        <div class="empty-state-content">
+          <h3 class="empty-state-title">${this.settings.title}</h3>
+          ${this.settings.description ?
+                `<p class="empty-state-desc">${this.settings.description}</p>` : ''}
+        </div>
+        ${this.settings.showAction ? `
+        <div class="empty-state-actions">
+          <button class="${this.settings.actionClass}">${this.settings.actionText}</button>
+        </div>
+        ` : ''}
+      </div>
+    `);
+
+            // 设置图标尺寸
+            this.$element.find('.empty-state-icon i').css({
+                'font-size': `${this.settings.iconSize}px`,
+                'width': `${this.settings.iconSize}px`,
+                'height': `${this.settings.iconSize}px`
+            });
+
+            // 添加到容器
+            this.$container.append(this.$element);
+
+            // 绑定事件
+            if (this.settings.showAction && this.settings.onAction) {
+                this.$element.find('button').on('click', this.settings.onAction);
+            }
+
+            // 确保样式存在
+            this._ensureStyles();
+        }
+
+        /**
+         * 确保样式存在
+         * @private
+         */
+        _ensureStyles() {
+            if ($('#empty-state-styles').length === 0) {
+                $('<style id="empty-state-styles">')
+                    .text(`
+          .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            text-align: center;
+            color: #6c757d;
+          }
+          .empty-state-icon {
+            margin-bottom: 20px;
+            color: #adb5bd;
+          }
+          .empty-state-icon i {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+          }
+          .empty-state-content {
+            max-width: 500px;
+          }
+          .empty-state-title {
+            margin: 0 0 10px;
+            font-size: 18px;
+            font-weight: 500;
+            color: #343a40;
+          }
+          .empty-state-desc {
+            margin: 0;
+            font-size: 14px;
+            line-height: 1.5;
+          }
+          .empty-state-actions {
+            margin-top: 20px;
+          }
+          .btn {
+            display: inline-block;
+            font-weight: 400;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: middle;
+            user-select: none;
+            border: 1px solid transparent;
+            padding: 0.375rem 0.75rem;
+            font-size: 1rem;
+            line-height: 1.5;
+            border-radius: 0.25rem;
+            transition: all 0.15s ease-in-out;
+            cursor: pointer;
+          }
+          .btn-primary {
+            color: #fff;
+            background-color: #007bff;
+            border-color: #007bff;
+          }
+          .btn-primary:hover {
+            background-color: #0069d9;
+            border-color: #0062cc;
+          }
+        `)
+                    .appendTo('head');
+            }
+        }
+
+        /**
+         * 显示空状态
+         * @public
+         */
+        show() {
+            // 隐藏容器内其他内容
+            this.$container.children().not(this.$element).hide();
+            // 显示占位
+            this.$element.show();
+            return this;
+        }
+
+        /**
+         * 隐藏空状态
+         * @public
+         */
+        hide() {
+            this.$element.hide();
+            // 显示容器内其他内容
+            this.$container.children().show();
+            return this;
+        }
+
+        /**
+         * 切换显示状态
+         * @param {boolean} [state] 显示/隐藏
+         * @public
+         */
+        toggle(state) {
+            if (typeof state === 'undefined') {
+                state = !this.$element.is(':visible');
+            }
+            return state ? this.show() : this.hide();
+        }
+
+        /**
+         * 更新配置
+         * @param {object} newSettings 新配置
+         * @public
+         */
+        update(newSettings) {
+            // 合并新配置
+            this.settings = $.extend({}, this.settings, newSettings);
+
+            // 更新图标
+            if (newSettings.icon) {
+                const $icon = this.$element.find('.empty-state-icon i');
+                $icon.attr('class', newSettings.icon);
+                if (newSettings.iconSize) {
+                    $icon.css({
+                        'font-size': `${newSettings.iconSize}px`,
+                        'width': `${newSettings.iconSize}px`,
+                        'height': `${newSettings.iconSize}px`
+                    });
+                }
+            }
+
+            // 更新标题
+            if (newSettings.title) {
+                this.$element.find('.empty-state-title').text(newSettings.title);
+            }
+
+            // 更新描述
+            if (newSettings.description !== undefined) {
+                const $desc = this.$element.find('.empty-state-desc');
+                if (newSettings.description) {
+                    if ($desc.length) {
+                        $desc.text(newSettings.description);
+                    } else {
+                        this.$element.find('.empty-state-content').append(
+                            `<p class="empty-state-desc">${newSettings.description}</p>`
+                        );
+                    }
+                } else if ($desc.length) {
+                    $desc.remove();
+                }
+            }
+
+            // 更新操作按钮
+            if (newSettings.showAction !== undefined ||
+                newSettings.actionText ||
+                newSettings.actionClass ||
+                newSettings.onAction) {
+
+                const $actions = this.$element.find('.empty-state-actions');
+
+                if (this.settings.showAction) {
+                    if ($actions.length) {
+                        $actions.html(`<button class="${this.settings.actionClass}">${this.settings.actionText}</button>`);
+                    } else {
+                        this.$element.append(`
+            <div class="empty-state-actions">
+              <button class="${this.settings.actionClass}">${this.settings.actionText}</button>
+            </div>
+          `);
+                    }
+
+                    if (this.settings.onAction) {
+                        this.$element.find('button').off('click').on('click', this.settings.onAction);
+                    }
+                } else if ($actions.length) {
+                    $actions.remove();
+                }
+            }
+
+            return this;
+        }
+
+        /**
+         * 销毁组件
+         * @public
+         */
+        destroy() {
+            this.$element.remove();
+            this.$element = null;
+            this.$container = null;
+        }
+    }
+
+// 使用示例
+// $(function() {
+//   // 初始化
+//   const emptyState = new EmptyState('#list-container', {
+//     icon: 'fa fa-search',
+//     title: '没有找到结果',
+//     description: '请尝试其他搜索条件',
+//     showAction: true,
+//     actionText: '重新加载',
+//     onAction: function() {
+//       console.log('执行刷新操作');
+//     }
+//   });
+//
+//   // 显示空状态
+//   emptyState.show();
+//
+//   // 更新内容
+//   // emptyState.update({
+//   //   title: '新的标题',
+//   //   description: '新的描述信息'
+//   // });
+//
+//   // 隐藏空状态
+//   // emptyState.hide();
+//
+//   // 销毁实例
+//   // emptyState.destroy();
+// });
 
     class PriceCalculator {
         /**
@@ -432,7 +950,9 @@
             return rows;
         },
         // 获取顶级的行元素
-        getParentRow: (that) => $(that).closest('.line-box')
+        getParentRow: (that) => $(that).closest('.line-box'),
+        // 获取顶级的行元素并查找
+        getParentRowWithFind: (that, selector) => Base.getParentRow(that).find(selector)
     }
 
 
@@ -499,27 +1019,7 @@
          */
         async multiFilterBrand(isNew) {
             $('li:contains("品牌"):contains("多选") div:contains("多选")').last().click();
-            await Util.sleep(2000);
-            // 使用示例
-            // 1. 使用Promise方式
-            const waiter = new ConditionalWaiter({maxWaitTime: 5000, checkInterval: 200});
-            // 等待元素出现
-            await waiter.waitUntil(
-                () => $('.isNew,.isNotNew').length > 0,
-                async (err, success) => {
-                    if (err) console.error('等待失败:', err);
-                    else {
-                        console.log('元素已找到!');
-                        await Util.sleep(200);
-                    }
-
-                }
-            ).then(() => {
-                console.log('等待完成');
-            }).catch(err => {
-                console.error('等待出错:', err);
-            });
-
+            await Util.sleep(3000);
             const elementStr = isNew ? 'isNew' : 'isNotNew';
             $(`.${elementStr}`).each(function () {
                 // 品牌名称
@@ -531,7 +1031,7 @@
                     }
                 }
             })
-            await Util.sleep(600);
+            await Util.sleep(800);
             $('button[data-need-query*="lcsc_vid="][data-spm-reset]:contains("确定")').click();
         }
 
@@ -914,15 +1414,12 @@
                   right: 30px;
                   bottom: 30px;
                   z-index: 9999;
-            
-                  width: 80px;
-                  height: 40px;
                   background-color: #409EFF; /* Element UI 主色 */
                   color: white;
-                  font-size: 16px;
+                  padding: 15px 20px;
+                  font-size: 15px;
                   font-weight: bold;
                   text-align: center;
-                  line-height: 40px;
                   box-shadow: 0 8px 12px rgba(0, 0, 0, 0.1);
                   transition: all 0.3s ease;
                   cursor: pointer;
@@ -939,17 +1436,16 @@
                 .floating-button:active {
                   transform: scale(0.95); /* 点击反馈 */
                 }
-
                
                 .floating-card {
                     display: none; 
-                   position: fixed;
+                    position: fixed;
+                    width: 1220px;
                     right: 30px;
-                    bottom: 80px;
-                    width: min-content; 
+                    bottom: 90px;
                     min-height: 30vh; 
                     max-height: 75vh; 
-                    overflow: auto; 
+                    overflow: hidden; 
                     border: 2px solid #199fe9; 
                     z-index: 10000000;
                     padding: 5px; 
@@ -1014,6 +1510,7 @@
                 font-weight: bold;
                 }
                 .card-body {
+                    overflow-x: hidden;
                     overflow-y: scroll;
                     height: 65vh;
                 }
@@ -1021,7 +1518,8 @@
                     width: 185px !important;
                 }
               </style>`);
-                $('body').prepend(`<button id="searchListButton" class="floating-button">凑</button>
+                $('body').prepend(`
+                    <button id="searchListButton" class="floating-button">排序列表</button>
                     <!-- 卡片容器 -->
                     <div id="cardContainer" class="floating-card">
                         <!-- 卡片头部，包含 Tab 切换 -->
@@ -1040,15 +1538,29 @@
                         </div>
                         <div class="card-body" id="listContainer">
                         <!-- 列表项将动态插入到这里 -->
+                        
                         </div>
                     </div>
                     `);
 
+
+
                 // 使用 jQuery 为按钮绑定点击事件
-                $('#searchListButton').on('click', () => {
-                    if ($('#cardContainer').toggle() && !cardContainer.classList.contains('hidden') && listContainer.children.length === 0) {
-                        this.renderListItems();
-                    }
+                $('#searchListButton').on('click', async () => {
+                    $('#cardContainer').toggle();
+                    // 初始化
+                    const emptyState = new EmptyState('#listContainer', {
+                        icon: 'fa fa-search',
+                        title: '没有找到结果 或 正在请求数据，请稍等。。',
+                        showAction: false,
+                        onAction: function() {
+                            console.log('执行刷新操作');
+                        }
+                    });
+                    // 显示空状态
+                    emptyState.show();
+                    await this.renderListItems();
+                    emptyState.hide();
                 });
 
                 // 点击 Tab 按钮
@@ -1213,6 +1725,7 @@
                     productId,
                     lightStandard,
                     lightProductCode,
+                    productCode,
                     productMinEncapsulationNumber,
                     productMinEncapsulationUnit,
                     productName,
@@ -1255,7 +1768,7 @@
                             cellspacing="0" cellpadding="0" data-curpage="1" data-mainproductindex="0"
                             pid="${productId}" psid
                             data-batchstocklimit="${batchStockLimit}" data-encapstandard="${lightStandard}"
-                            data-hassamplerule="${hasSampleRule}" data-productcode="${lightProductCode}"
+                            data-hassamplerule="${hasSampleRule}" data-productcode="${productCode}"
                             data-productminencapsulationnumber="${productMinEncapsulationNumber}"
                             data-productminencapsulationunit="${productMinEncapsulationUnit}" data-productmodel="${productModel}"
                             data-productname="${productName}"
@@ -1489,23 +2002,6 @@
                                                     </div>
                                                 </div>
                                                 </li>
-                                                <li class="price-input price-input-hk">
-                                                <input type="text" maxlength="9" unit-type="single"
-                                                    class="cartnumbers " pluszk="false"
-                                                    unitnum="${productMinEncapsulationNumber}" placeholder="香港仓" data-type="hk"
-                                                    value="${hkConvesionRatio}">
-                                                <div class="unit ">
-                                                    <span class="cur-unit ">个</span>
-                                                    <i class="xl"></i>
-                                                    <div class="unit-contain" style="display: none;">
-                                                    <div class="unit-type">
-                                                        <span class="unit-one">个</span>
-                                                        <span class="unit-two">${productMinEncapsulationUnit}</span>
-                                                    </div>
-                                                    <i class="sl"></i>
-                                                    </div>
-                                                </div>
-                                                </li>
                                                 <li class="totalPrice-li">
                                                 ${productMinEncapsulationNumber}个/${productMinEncapsulationUnit}
                                                 &nbsp;总额:<span class="goldenrod totalPrice">￥0</span>
@@ -1526,7 +2022,9 @@
                                                 border-radius: 2px;
                                                 background: #ff7800;
                                                 color: #fff;
-                                                " class="pan-list-btn addCartBtn " kind="cart" local-show="yes" hk-usd-show="no" id="addcart-so" productcode="C3011166" data-curpage="1" data-mainproductindex="0" param-product-id="3514057" data-agl-cvt="15" data-trackzone="s_s__&quot;123&quot;" data-need-query="lcsc_vid=RQBbA11WQlNWUFcCTlkNBAFST1NXVV1SQFZbUVBRQFUxVlNTR1RfUVxWRlNdXjsOAxUeFF5JWBYZEEoVDQ0NFAdIFA4DSA%3D%3D" data-spm-reset="">加入购物车</button>
+                                                " class="pan-list-btn addCartBtn" 
+                                                data-theratio="${theRatio}" 
+                                                data-productcode="${productCode}">加入购物车</button>
                                             <ul class="pan">
                                                 <li class="pan-list">
                                                 <div class="stocks">
@@ -1558,9 +2056,11 @@
             $('#listContainer').html(html);
 
             $('.cartnumbers').off('change').on('change', function () {
-                const val = $(this).val();
+                let val = $(this).val();
                 if (!val) { return ; }
                 const theratio = $(this).data("theratio");
+                val = Math.max(parseInt(val / theratio) * theratio, theratio);
+                $(this).val(val);
                 const productPriceList = $(this).data("productpricelist");
                 const priceDiscount = $(this).data("pricediscount");
                 const result = PriceCalculator.calculatePrice(val, theratio, productPriceList, priceDiscount);
@@ -1568,6 +2068,25 @@
                 console.log(val)
                 console.log('计算结果:', result);
                 Base.getParentRow(this).find('.totalPrice').text('￥' + result.discountTotalPrice.toFixed(2));
+            });
+
+            $('.addCartBtn').off('click').on('click', function () {
+                const num = [...Base.getParentRowWithFind(this, '.cartnumbers')]
+                    .reduce((a,b)=> a + (parseInt($(b).val()) || 0), 0);
+
+                if (!num) {
+                    window.$message.error("请输入数量！", 3000);
+                    return;
+                }
+
+                Util.postFormAjax(`https://cart.szlcsc.com/cart/quick`, {
+                    productCode: $(this).data('productcode'),
+                    productNumber: num
+                }).then(e => {
+                    if(JSON.parse(e).code === 200) {
+                        window.$message.success('加入购物车成功！', 3000);
+                    }
+                });
             });
         }
 
