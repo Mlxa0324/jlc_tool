@@ -2159,8 +2159,8 @@
     function searchStart() {
         // 每行追加到按钮组
         const searchPageHelper = new SearchPageHelper();
-        // searchPageHelper.appendLeftRowBtns();
-        // searchPageHelper.appendSearchTbBtn();
+        searchPageHelper.appendLeftRowBtns();
+        searchPageHelper.appendSearchTbBtn();
         // 优惠券信息获取
         searchPageHelper.getAllCoupon();
         // // 搜索页按钮组渲染
