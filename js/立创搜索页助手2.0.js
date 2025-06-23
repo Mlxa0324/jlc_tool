@@ -1382,9 +1382,9 @@
             SearchListHelper.instance = this;
         }
 
-        static async start(brandsNameOrSearchText, brandsId, maxCount, stock) {
+        static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
             SearchListHelper.fetchStatus = false;
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock);
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
@@ -1404,7 +1404,7 @@
         renderListItems() {
             const stock = 'js';
             const searchValue = $('#global-seach-input').val();
-            SearchListHelper.start(searchValue, null, 200, stock);
+            SearchListHelper.start(searchValue, null, 300, stock, true);
         }
 
         render() {
@@ -1447,7 +1447,7 @@
                     right: 30px;
                     bottom: 90px;
                     min-height: 30vh; 
-                    max-height: 75vh; 
+                    max-height: 85vh; 
                     overflow: hidden; 
                     border: 2px solid #199fe9; 
                     z-index: 10000000;
@@ -1459,9 +1459,9 @@
                     display: flex;
                     justify-content: space-between;
                     align-items: center;
-                    padding: 0;
+                    padding: 5px 10px 8px 10px;
                     border-bottom: 1px solid #ebeef5;
-                    background-color: #f0f2f5;
+                    /*background-color: #f0f2f5;*/
                 }
 
                 /* Tab 按钮 */
@@ -2102,7 +2102,7 @@
          * @param stock 仓库，js/gd
          * @returns {Promise<unknown>}
          */
-        static getBrandsProducts(brandsNameOrSearchText, brandsId = null, maxCount = null, stock = 'js') {
+        static getBrandsProducts_old(brandsNameOrSearchText, brandsId = null, maxCount = null, stock = 'js') {
             return new Promise((resolve, reject) => {
                 const url = 'https://so.szlcsc.com/search';
                 let products = [];
@@ -2153,6 +2153,123 @@
                 }
                 getData(1);
             })
+        }
+
+        /**
+         * 获取品牌商品列表（支持并行或单线程）
+         * @param brandsNameOrSearchText 品牌名称或者搜索框内容
+         * @param brandsId 品牌id，可为空，不为空时提高搜索准确率
+         * @param maxCount 最大商品数量，为空时返回所有商品
+         * @param stock 仓库，js/gd
+         * @param parallel 是否并行执行请求，默认为false（单线程）
+         * @returns {Promise<unknown>}
+         */
+        static getBrandsProducts(brandsNameOrSearchText, brandsId = null, maxCount = null, stock = 'js', parallel = false) {
+            return new Promise((resolve, reject) => {
+                const url = 'https://so.szlcsc.com/search';
+                let products = [];
+                let counts = 0;
+
+                // 获取单页数据
+                const getPageData = (page) => {
+                    let data = {
+                        os: '',
+                        dp: '',
+                        sb: 1,
+                        queryPlaceProduction: '',
+                        pn: page,
+                        c: '',
+                        k: brandsNameOrSearchText,
+                        tc: 0,
+                        pds: 0,
+                        pa: 0,
+                        pt: 0,
+                        gp: 0,
+                        queryProductDiscount: '',
+                        st: '',
+                        sk: brandsNameOrSearchText,
+                        searchSource: '',
+                        bp: '',
+                        ep: '',
+                        bpTemp: '',
+                        epTemp: '',
+                        stock: stock,
+                        needChooseCusType: '',
+                        'link-phone': '',
+                        companyName: '',
+                        taxpayerIdNum: '',
+                        realityName: '',
+                    };
+
+                    if (brandsId) data.queryProductGradePlateId = brandsId;
+
+                    return Util.postFormAjax(url, data)
+                        .then(res => {
+                            if (!res) throw new Error('获取品牌商品列表失败');
+                            res = typeof res === 'object' ? res : JSON.parse(res);
+                            if (!res.code || res.code !== 200) throw new Error(res.msg || '获取品牌商品列表失败');
+                            return res.result.productRecordList || [];
+                        });
+                };
+
+                // 单线程模式（顺序执行）
+                const executeSequentially = (page) => {
+                    getPageData(page)
+                        .then(pageProducts => {
+                            if (pageProducts.length === 0) return resolve(products);
+
+                            products = products.concat(pageProducts);
+                            counts += pageProducts.length;
+
+                            if (maxCount && counts >= maxCount) {
+                                return resolve(products.slice(0, maxCount));
+                            }
+
+                            executeSequentially(page + 1);
+                        })
+                        .catch(err => reject(err));
+                };
+
+                // 并行模式（不考虑顺序）
+                const executeInParallel = () => {
+                    // 先获取第一页，确定总页数
+                    getPageData(1)
+                        .then(firstPageProducts => {
+                            if (firstPageProducts.length === 0) return resolve([]);
+
+                            // 假设每页数量相同，计算总页数
+                            const estimatedTotalPages = maxCount
+                                ? Math.ceil(maxCount / firstPageProducts.length)
+                                : 10; // 默认最多10页（防止无限请求）
+
+                            // 生成所有页面的请求数组
+                            const pageRequests = [];
+                            for (let i = 1; i <= estimatedTotalPages; i++) {
+                                pageRequests.push(getPageData(i));
+                            }
+
+                            // 并行执行所有请求
+                            Promise.all(pageRequests)
+                                .then(allPages => {
+                                    const allProducts = allPages.flat();
+                                    if (maxCount) {
+                                        resolve(allProducts.slice(0, maxCount));
+                                    } else {
+                                        resolve(allProducts);
+                                    }
+                                })
+                                .catch(err => reject(err));
+                        })
+                        .catch(err => reject(err));
+                };
+
+                // 根据 parallel 参数选择执行模式
+                if (parallel) {
+                    executeInParallel();
+                } else {
+                    executeSequentially(1);
+                }
+            });
         }
     }
 
