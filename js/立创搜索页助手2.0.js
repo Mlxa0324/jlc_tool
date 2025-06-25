@@ -234,56 +234,56 @@
 
 })(window);
 
-(async function () {
-    'use strict';
+(async function() {
+        'use strict';
 
-    const searchCSS = GM_getResourceText("searchCSS")
-    GM_addStyle(searchCSS)
+        const searchCSS = GM_getResourceText("searchCSS")
+        GM_addStyle(searchCSS)
 
-    /**
-     * 空列表占位组件
-     * @class EmptyState
-     */
-    class EmptyState {
         /**
-         * 构造函数
-         * @param {string} selector 容器选择器
-         * @param {object} options 配置选项
+         * 空列表占位组件
+         * @class EmptyState
          */
-        constructor(selector, options = {}) {
-            // 默认配置
-            const defaults = {
-                icon: 'fa fa-inbox',      // 图标类名（推荐使用Font Awesome）
-                iconSize: 48,            // 图标尺寸
-                title: '暂无数据',        // 主标题
-                description: '',          // 描述文本
-                showAction: false,       // 是否显示操作按钮
-                actionText: '刷新',       // 按钮文字
-                actionClass: 'btn btn-primary', // 按钮样式类
-                onAction: null           // 按钮点击回调
-            };
+        class EmptyState {
+            /**
+             * 构造函数
+             * @param {string} selector 容器选择器
+             * @param {object} options 配置选项
+             */
+            constructor(selector, options = {}) {
+                // 默认配置
+                const defaults = {
+                    icon: 'fa fa-inbox', // 图标类名（推荐使用Font Awesome）
+                    iconSize: 48, // 图标尺寸
+                    title: '暂无数据', // 主标题
+                    description: '', // 描述文本
+                    showAction: false, // 是否显示操作按钮
+                    actionText: '刷新', // 按钮文字
+                    actionClass: 'btn btn-primary', // 按钮样式类
+                    onAction: null // 按钮点击回调
+                };
 
-            // 合并配置
-            this.settings = $.extend({}, defaults, options);
+                // 合并配置
+                this.settings = $.extend({}, defaults, options);
 
-            // 容器元素
-            this.$container = $(selector);
-            if (this.$container.length === 0) {
-                console.error('EmptyState: 容器元素未找到');
-                return;
+                // 容器元素
+                this.$container = $(selector);
+                if (this.$container.length === 0) {
+                    console.error('EmptyState: 容器元素未找到');
+                    return;
+                }
+
+                // 初始化
+                this._init();
             }
 
-            // 初始化
-            this._init();
-        }
-
-        /**
-         * 初始化组件
-         * @private
-         */
-        _init() {
-            // 创建占位元素
-            this.$element = $(`
+            /**
+             * 初始化组件
+             * @private
+             */
+            _init() {
+                    // 创建占位元素
+                    this.$element = $(`
       <div class="empty-state" style="display: none;">
         <div class="empty-state-icon">
           <i class="${this.settings.icon}"></i>
@@ -1384,7 +1384,7 @@
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
             SearchListHelper.fetchStatus = false;
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
@@ -2183,7 +2183,7 @@
                 const url = 'https://list.szlcsc.com/brand/product?';
                 let products = [];
                 let counts = 0;
-                const sortNumber = brandsId.length == 0 ? 0 : (stock == 'js' ? 1 : 2);
+                const sortNumber = !brandsId || brandsId.length == 0 ? 0 : (stock == 'js' ? 1 : 2);
                 const getData = (page) => {
                     let data = {
                         "currentPage": page,
