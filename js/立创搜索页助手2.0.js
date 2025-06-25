@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_SEARCH_TOOL_2.0
 // @namespace    http://tampermonkey.net/
-// @version      2.1.1
+// @version      2.1.2
 // @description  JLC_SHOP_SEARCH_TOOL_2.0.
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -1384,7 +1384,7 @@
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
             SearchListHelper.fetchStatus = false;
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
@@ -1403,8 +1403,12 @@
         // 渲染页面
         renderListItems() {
             const stock = 'js';
-            const searchValue = $('#global-seach-input').val();
-            SearchListHelper.start(searchValue, null, 300, stock, true);
+            const searchValue = $('#global-seach-input').val() || '';
+            let brandId = null;
+            if (location.pathname.indexOf('brand') >= 0) {
+                brandId = /\d+/.exec(location.pathname)[0] || null;
+            }
+            SearchListHelper.start(searchValue, brandId, 300, stock, false);
         }
 
         render() {
@@ -1522,7 +1526,7 @@
                 }
               </style>`);
                 $('body').prepend(`
-                    <button id="searchListButton" class="floating-button">排序列表</button>
+                    <button id="searchListButton" show="false" class="floating-button">排序列表</button>
                     <!-- 卡片容器 -->
                     <div id="cardContainer" class="floating-card">
                         <!-- 卡片头部，包含 Tab 切换 -->
@@ -1551,6 +1555,7 @@
                 // 使用 jQuery 为按钮绑定点击事件
                 $('#searchListButton').on('click', async () => {
                     $('#cardContainer').toggle();
+                    $(this).attr('show', !$(this).attr('show'));
                     // 初始化
                     const emptyState = new EmptyState('#listContainer', {
                         icon: 'fa fa-search',
@@ -1562,8 +1567,11 @@
                     });
                     // 显示空状态
                     emptyState.show();
-                    await this.renderListItems();
+                    if ($(this).attr('show')) {
+                        await this.renderListItems();
+                    }
                     emptyState.hide();
+                    emptyState.destroy();
                 });
 
                 // 点击 Tab 按钮
@@ -2120,7 +2128,7 @@
                         pds: 0,
                         pa: 0,
                         pt: 0,
-                        gp: 0,
+                        gp: 0, /*品牌id*/
                         queryProductDiscount: '',
                         st: '',
                         sk: brandsNameOrSearchText,
@@ -2137,7 +2145,10 @@
                         realityName: '',
                     }
 
-                    if (brandsId) data.queryProductGradePlateId = brandsId
+                    if (brandsId) {
+                        // data.queryProductGradePlateId = brandsId
+                        data.gp = brandsId
+                    }
                     Util.postFormAjax(url, data).then(res => {
                         if (!res) return reject('获取品牌商品列表失败')
                         res = typeof res === 'object' ? res : JSON.parse(res)
@@ -2156,6 +2167,65 @@
         }
 
         /**
+         * 获取品牌商品列表
+         * @param brandsName 品牌名称
+         * @param brandsId 品牌id，可为空，不为空时提高搜索准确率
+         * @param maxCount 最大商品数量，为空时返回所有商品
+         * @param stock 仓库，js/gd
+         * @returns {Promise<unknown>}
+         */
+        static getBrandsProducts_new(brandsName, brandsId = null, maxCount = null, stock = 'js') {
+
+            // sortNumber 10 广东有货排序
+            // sortNumber 12 江苏有货排序
+            // sortNumber 6  销量排序
+            return new Promise((resolve, reject) => {
+                const url = 'https://list.szlcsc.com/brand/product?';
+                let products = [];
+                let counts = 0;
+                const sortNumber = brandsId.length == 0 ? 0 : (stock == 'js' ? 1 : 2);
+                const getData = (page) => {
+                    let data = {
+                        "currentPage": page,
+                        "pageSize": 30,
+                        "catalogIdFilter": "",
+                        "brandIdFilter": brandsId + "",
+                        "standardFilter": "",
+                        "arrangeFilter": "",
+                        "labelFilter": "",
+                        "keyword": brandsName,
+                        "sortNumber": 6,
+                        "satisfyStockType": "",
+                        "startPrice": "",
+                        "endPrice": "",
+                        "demandNumber": "",
+                        "spotFilter": 1,
+                        "discountFilter": 1,
+                        "hasDataFile": false,
+                        "brandPlaceFilter": "",
+                        "secondKeyword": "",
+                        "queryParameterValue": "",
+                        "lastParamName": ""
+                    }
+                    Util.getAjax(url + Util.jsonToUrlParam(data)).then(res => {
+                        if (!res) return reject('获取品牌商品列表失败')
+                        res = typeof res === 'object'? res : JSON.parse(res)
+                        if (!res.code || res.code !== 200) return reject(res.msg || '获取品牌商品列表失败')
+                        const list = res?.result?.searchResult?.productRecordList;
+                        if (!list || list.length === 0) return resolve(products)
+                        products = products.concat(list)
+                        counts += list.length
+                        if (maxCount && counts >= maxCount) return resolve(products)
+                        getData(page + 1)
+                    }).catch(err => {
+                        reject(err)
+                    })
+                }
+                getData(1)
+            })
+        }
+
+        /**
          * 获取品牌商品列表（支持并行或单线程）
          * @param brandsNameOrSearchText 品牌名称或者搜索框内容
          * @param brandsId 品牌id，可为空，不为空时提高搜索准确率
@@ -2169,6 +2239,34 @@
                 const url = 'https://so.szlcsc.com/search';
                 let products = [];
                 let counts = 0;
+
+                const getPageDataByNewApi = (page) => {
+                    let data = {
+                        currentPage: 1,
+                        pageSize: 30,
+                        catalogIdFilter:526,
+                        brandIdFilter:15352,
+                        standardFilter: '',
+                        brandPlaceFilter: '',
+                        labelFilter: '',
+                        arrangeFilter: '',
+                        smtLabelFilter: '',
+                        spotFilter:1,
+                        discountFilter: 1,
+                        startPrice: '',
+                        endPrice: '',
+                        sortNumber: 0,
+                        queryParameterValue: '',
+                        lastParamName: '',
+                        keyword: '',
+                        secondKeyword: '',
+                        hasDataFile:false,
+                        demandNumber: '',
+                        satisfyStockType: ''
+                    }
+
+
+                }
 
                 // 获取单页数据
                 const getPageData = (page) => {
@@ -2184,7 +2282,7 @@
                         pds: 0,
                         pa: 0,
                         pt: 0,
-                        gp: 0,
+                        gp: 0, /*品牌id*/
                         queryProductDiscount: '',
                         st: '',
                         sk: brandsNameOrSearchText,
@@ -2201,7 +2299,10 @@
                         realityName: '',
                     };
 
-                    if (brandsId) data.queryProductGradePlateId = brandsId;
+                    if (brandsId) {
+                        // data.queryProductGradePlateId = brandsId;
+                        data.gp = brandsId;
+                    }
 
                     return Util.postFormAjax(url, data)
                         .then(res => {
