@@ -1384,7 +1384,7 @@
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
             SearchListHelper.fetchStatus = false;
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
