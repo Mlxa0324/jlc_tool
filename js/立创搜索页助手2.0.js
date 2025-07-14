@@ -5,10 +5,10 @@
 // @description  JLC_SHOP_SEARCH_TOOL_2.0.
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
-// @match        https://list.szlcsc.com/brand**
+// @match        https://list.szlcsc.com/brand/**
 // @match        https://list.szlcsc.com/catalog**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
-// @require      https://update.greasyfork.org/scripts/446666/1389793/jQuery%20Core%20minified.js
+// @require      https://gitee.com/mlx6_admin/public_resource_lc/raw/master/public/jquery-351.js
 // @resource searchCSS https://gitee.com/mlx6_admin/public_resource_lc/raw/master/search.css
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getResourceText
@@ -1521,7 +1521,7 @@
                     overflow-y: scroll;
                     height: 65vh;
                 }
-                .inside-page.list-items .line-box .one img {
+                .inside-page1.list-items .line-box .one img {
                     width: 185px !important;
                 }
               </style>`);
@@ -1773,7 +1773,7 @@
                     show,
                 } = item;
 
-                return `<table class="inside inside-page tab-data no-one-hk list-items" 
+                return `<table class="inside inside-page1 tab-data no-one-hk list-items" 
                                             style="${show ? 'display: block;' : 'display: none;'}"
                             id="product-tbody-line-${productId}" width="100%" border="0"
                             cellspacing="0" cellpadding="0" data-curpage="1" data-mainproductindex="0"
@@ -2399,7 +2399,7 @@
 
     // 搜索页判断
     let isSearchPage = () => location.href.includes('so.szlcsc.com/global.html') ||
-        location.href.includes('list.szlcsc.com/brand') ||
+        location.href.includes('list.szlcsc.com/brand/') ||
         location.href.includes('list.szlcsc.com/catalog');
 
     setInterval(function () {

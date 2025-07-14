@@ -4,13 +4,7 @@
 // @version      2.4.5
 // @description  JLC_SHOP_TOOL_1.0
 // @author       Lx
-// @match        https://so.szlcsc.com/global.html**
-// @match        https://bom.szlcsc.com/member/eda/search.html?**
-// @match        https://bom.szlcsc.com/member/bom/upload/**.html
-// @match        https://www.szlcsc.com/huodong.html?**
-// @match        https://activity.szlcsc.com/huodong.html**
-// @match        https://list.szlcsc.com/brand**
-// @match        https://list.szlcsc.com/catalog**
+// @match        https://list.szlcsc.com/brand_page/**
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://update.greasyfork.org/scripts/494892/1376206/jquery-351.js
 // @require      https://update.greasyfork.org/scripts/455576/1122361/Qmsg.js
