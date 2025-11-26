@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_SEARCH_TOOL_2.0
 // @namespace    http://tampermonkey.net/
-// @version      2.1.2
+// @version      2.1.3
 // @description  JLC_SHOP_SEARCH_TOOL_2.0.
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -1098,16 +1098,9 @@
                 if (json.code === 200) {
                     // 取数据
                     const resultMap = json.result.couponModelVOListMap;
-                    const datas = ['1', '2', '3', '4', '5'];
-                    let allCouponNotNew = [];
-                    for (const key of datas) {
-                        // 合并所有类型的优惠券
-                        if (resultMap[key]) {
-                            allCouponNotNew = [...allCouponNotNew, ...resultMap[key]];
-                        }
-                        // 优惠券处理
-                        processCouponList(allCouponNotNew, this.someCouponMapping);
-                    }
+                    const allCouponNotNew = Object.values(resultMap).flat();
+                    // 优惠券处理
+                    processCouponList(allCouponNotNew, this.someCouponMapping);
                     console.log('allOneCouponMap: ', Base.allOneCouponMap);
                     console.log('isNewCouponMap: ', Base.isNewCouponMap);
                 }
