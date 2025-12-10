@@ -7,7 +7,6 @@
 // @match        https://so.szlcsc.com/global.html**
 // @match        https://list.szlcsc.com/brand/**
 // @match        https://list.szlcsc.com/catalog**
-// @icon         https://www.google.com/s2/favicons?sz=64&domain=szlcsc.com
 // @require      https://gitee.com/mlx6_admin/public_resource_lc/raw/master/public/jquery-351.js
 // @resource searchCSS https://gitee.com/mlx6_admin/public_resource_lc/raw/master/search.css
 // @grant        GM_xmlhttpRequest
