@@ -2,7 +2,7 @@
 // @name         JLC_CJ_TK_LocalData
 // @namespace    http://tampermonkey.net/
 // @version      1.2.1
-// @description  TK 离线
+// @description  领券答题辅助工具
 // @author       123
 // @match        https://exam.kaoshixing.com/exam/exam_start/**
 // @license      MIT
