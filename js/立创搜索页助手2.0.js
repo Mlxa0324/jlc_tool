@@ -1395,14 +1395,14 @@
         }
 
         // 渲染页面
-        renderListItems() {
+        async renderListItems() {
             const stock = 'js';
             const searchValue = $('#global-seach-input').val() || '';
             let brandId = null;
             if (location.pathname.indexOf('brand') >= 0) {
                 brandId = /\d+/.exec(location.pathname)[0] || null;
             }
-            SearchListHelper.start(searchValue, brandId, 300, stock, false);
+            await SearchListHelper.start(searchValue, brandId, 300, stock, false);
         }
 
         render() {
@@ -1547,7 +1547,7 @@
 
 
                 // 使用 jQuery 为按钮绑定点击事件
-                $('#searchListButton').on('click', async () => {
+$('#searchListButton').on('click', async () => {
                     $('#cardContainer').toggle();
                     $(this).attr('show', !$(this).attr('show'));
                     // 初始化
