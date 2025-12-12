@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_SEARCH_TOOL_2.0
 // @namespace    http://tampermonkey.net/
-// @version      2.1.3
+// @version      2.1.4
 // @description  JLC_SHOP_SEARCH_TOOL_2.0.
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
@@ -993,11 +993,12 @@
 
                 for (; index < end; index++) {
                     const [brandName, brandDetail] = brands[index];
-                    const $brandEle = $(`li[title*="${brandName}"], span[title*="${brandName}"], a.brand-name[title*="${brandName}"]`)
+                    const $brandEle = $(`div[title*="${brandName}"], li[title*="${brandName}"], span[title*="${brandName}"], a.brand-name[title*="${brandName}"]`)
                         .not('[style*="background-color"]')
                         .not('.isNew, .isNotNew');
 
                     if ($brandEle.length > 0) {
+                        $brandEle.prop('title', $brandEle.prop('title') + `（${brandDetail.isNew ? '新人券' : '非新人券'}）`);
                         $brandEle.css({
                             "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
                         }).addClass(brandDetail.isNew ? 'isNew' : 'isNotNew');
