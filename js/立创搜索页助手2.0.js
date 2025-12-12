@@ -1377,7 +1377,8 @@
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
             SearchListHelper.fetchStatus = false;
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts(brandsNameOrSearchText, brandsId, maxCount, stock, parallel);
+            // TODO: 新接口添加并发功能
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
@@ -1394,14 +1395,14 @@
         }
 
         // 渲染页面
-        renderListItems() {
+        async renderListItems() {
             const stock = 'js';
             const searchValue = $('#global-seach-input').val() || '';
             let brandId = null;
             if (location.pathname.indexOf('brand') >= 0) {
                 brandId = /\d+/.exec(location.pathname)[0] || null;
             }
-            SearchListHelper.start(searchValue, brandId, 300, stock, false);
+            await SearchListHelper.start(searchValue, brandId, 300, stock, false);
         }
 
         render() {
@@ -1546,7 +1547,7 @@
 
 
                 // 使用 jQuery 为按钮绑定点击事件
-                $('#searchListButton').on('click', async () => {
+$('#searchListButton').on('click', async () => {
                     $('#cardContainer').toggle();
                     $(this).attr('show', !$(this).attr('show'));
                     // 初始化
@@ -1689,6 +1690,27 @@
          * 搜索页-查找最低价 列表渲染方法
          */
         static renderMinPriceSearch() {
+             // 修复不同接口productPriceList的层级关系
+             SearchListHelper.listData.forEach(item => {
+                 // 1. 安全地将 item 的 productVO 属性作为回退源
+                //    如果 item.productVO 不存在，则使用空对象 {}
+                const fallbackVO = item.productVO || {};
+
+                // 2. 将 item 的属性（排除 productVO 自身）与 fallbackVO 合并。
+                //    此步骤是关键：
+                //    - {...fallbackVO} 提供 productVO 中的所有值作为默认值。
+                //    - {...item} 覆盖 productVO 中与 item 重名的值，确保 item 自身的值是高优先级的。
+                const { productVO, ...itemProps } = item; // 暂时排除 productVO 属性
+
+                const finalSource = {
+                    ...fallbackVO, // 优先级低：提供来自 productVO 的回退值
+                    ...itemProps   // 优先级高：覆盖所有来自 item 的值
+                };
+                // 3. 从最终合并的 finalSource 对象中解构所有变量
+                //    现在解构出来的变量，如果 item 中有，就是 item 的值；如果 item 中没有，就是 item.productVO 中的值。
+                Object.assign(item, finalSource);
+            });
+
             // 如果广东仓和江苏仓同时没有货的话，那么就属于订货商品，不需要显示
             // 如果没有价格区间，证明是停售商品
             var newList = SearchListHelper.listData.filter(item => !(parseInt(item.jsWarehouseStockNumber || 0) <= 0 && parseInt(item.gdWarehouseStockNumber || 0) <= 0) && item.productPriceList.length > 0);
