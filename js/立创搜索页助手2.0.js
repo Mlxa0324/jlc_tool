@@ -386,6 +386,25 @@
             background-color: #0069d9;
             border-color: #0062cc;
           }
+          /* 加载动画 */
+          .loading-spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #409EFF;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+          }
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          .empty-state-progress {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #409EFF;
+          }
         `)
                     .appendTo('head');
             }
@@ -1375,10 +1394,10 @@
             SearchListHelper.instance = this;
         }
 
-        static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false) {
+        static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false, onProgress = null) {
             SearchListHelper.fetchStatus = false;
             // TODO: 新接口添加并发功能
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock);
+            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, onProgress);
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
@@ -1395,14 +1414,14 @@
         }
 
         // 渲染页面
-        async renderListItems() {
+        async renderListItems(onProgress = null) {
             const stock = 'js';
             const searchValue = $('#global-seach-input').val() || '';
             let brandId = null;
             if (location.pathname.indexOf('brand') >= 0) {
                 brandId = /\d+/.exec(location.pathname)[0] || null;
             }
-            await SearchListHelper.start(searchValue, brandId, 300, stock, false);
+            await SearchListHelper.start(searchValue, brandId, 300, stock, false, onProgress);
         }
 
         render() {
@@ -1527,13 +1546,13 @@
                         <div class="card-header">
                             <div class="tab-container">
                                 <div class="tab-group">
-                                <button class="tab-button" data-group="region" data-value="广东">广东</button>
-                                <button class="tab-button active" data-group="region" data-value="江苏">江苏</button>
+                                <button class="tab-button active" data-group="region" data-value="广东">广东</button>
+                                <button class="tab-button" data-group="region" data-value="江苏">江苏</button>
                                 </div>
                                 <div class="tab-group">
-                                <button class="tab-button" data-group="userType" data-value="all">全部</button>
+                                <button class="tab-button active" data-group="userType" data-value="all">全部</button>
                                 <button class="tab-button" data-group="userType" data-value="true">新人</button>
-                                <button class="tab-button active" data-group="userType" data-value="false">非新人</button>
+                                <button class="tab-button" data-group="userType" data-value="false">非新人</button>
                                 </div>
                             </div>
                         </div>
@@ -1547,25 +1566,46 @@
 
 
                 // 使用 jQuery 为按钮绑定点击事件
-$('#searchListButton').on('click', async () => {
-                    $('#cardContainer').toggle();
-                    $(this).attr('show', !$(this).attr('show'));
-                    // 初始化
-                    const emptyState = new EmptyState('#listContainer', {
-                        icon: 'fa fa-search',
-                        title: '没有找到结果 或 正在请求数据，请稍等。。',
-                        showAction: false,
-                        onAction: function() {
-                            console.log('执行刷新操作');
+                const self = this;
+                $('#searchListButton').on('click', async function() {
+                    const $btn = $(this);
+                    const isShow = $btn.attr('show') !== 'true';
+                    $btn.attr('show', isShow);
+
+                    if (isShow) {
+                        $('#cardContainer').show();
+                        // 初始化带加载动画的空状态
+                        const emptyState = new EmptyState('#listContainer', {
+                            icon: 'loading-spinner',  // 使用加载动画
+                            title: '正在加载数据...',
+                            description: '请稍候，正在获取商品列表'
+                        });
+                        emptyState.show();
+
+                        // 进度回调函数
+                        const onProgress = (progress) => {
+                            if (progress.status === 'loading') {
+                                emptyState.update({
+                                    title: `正在加载第 ${progress.page} 页...`,
+                                    description: `已加载 ${progress.loaded} 条商品数据`
+                                });
+                            } else if (progress.status === 'done') {
+                                emptyState.update({
+                                    title: '加载完成',
+                                    description: `共加载 ${progress.loaded} 条商品数据`
+                                });
+                            }
+                        };
+
+                        try {
+                            await self.renderListItems(onProgress);
+                        } finally {
+                            emptyState.hide();
+                            emptyState.destroy();
                         }
-                    });
-                    // 显示空状态
-                    emptyState.show();
-                    if ($(this).attr('show')) {
-                        await this.renderListItems();
+                    } else {
+                        $('#cardContainer').hide();
                     }
-                    emptyState.hide();
-                    emptyState.destroy();
                 });
 
                 // 点击 Tab 按钮
@@ -2187,9 +2227,10 @@ $('#searchListButton').on('click', async () => {
          * @param brandsId 品牌id，可为空，不为空时提高搜索准确率
          * @param maxCount 最大商品数量，为空时返回所有商品
          * @param stock 仓库，js/gd
+         * @param onProgress 进度回调函数，参数为 {loaded: number, page: number}
          * @returns {Promise<unknown>}
          */
-        static getBrandsProducts_new(brandsName, brandsId = null, maxCount = null, stock = 'js') {
+        static getBrandsProducts_new(brandsName, brandsId = null, maxCount = null, stock = 'js', onProgress = null) {
 
             // sortNumber 10 广东有货排序
             // sortNumber 12 江苏有货排序
@@ -2200,6 +2241,10 @@ $('#searchListButton').on('click', async () => {
                 let counts = 0;
                 const sortNumber = !brandsId || brandsId.length == 0 ? 0 : (stock == 'js' ? 1 : 2);
                 const getData = (page) => {
+                    // 触发进度回调
+                    if (onProgress) {
+                        onProgress({ loaded: counts, page: page, status: 'loading' });
+                    }
                     let data = {
                         "currentPage": page,
                         "pageSize": 30,
@@ -2227,10 +2272,16 @@ $('#searchListButton').on('click', async () => {
                         res = typeof res === 'object'? res : JSON.parse(res)
                         if (!res.code || res.code !== 200) return reject(res.msg || '获取品牌商品列表失败')
                         const list = res?.result?.searchResult?.productRecordList;
-                        if (!list || list.length === 0) return resolve(products)
+                        if (!list || list.length === 0) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
                         products = products.concat(list)
                         counts += list.length
-                        if (maxCount && counts >= maxCount) return resolve(products)
+                        if (maxCount && counts >= maxCount) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
                         getData(page + 1)
                     }).catch(err => {
                         reject(err)
