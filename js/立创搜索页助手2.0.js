@@ -1377,10 +1377,10 @@
         static searchPageRealSize = 200;
         // 查询结果暂存
         static listData = [];
-        // 缓存的筛选参数
+        // 缓存的筛选参数（品牌页）
         static cachedFilterParams = null;
-        // 是否首次加载页面
-        static isFirstLoad = true;
+        // 缓存的筛选参数（搜索页）
+        static cachedSearchFilterParams = null;
 
         // 初始化默认选中状态
         static defaultTabs = {
@@ -1392,7 +1392,8 @@
          * 初始化请求拦截器，监听品牌页筛选请求
          */
         static initRequestInterceptor() {
-            const targetUrl = 'list.szlcsc.com/brand/product';
+            const brandTargetUrl = 'list.szlcsc.com/brand/product';
+            const searchTargetUrl = 'so.szlcsc.com/query/product';
 
             // 拦截 XMLHttpRequest
             const originalXhrOpen = XMLHttpRequest.prototype.open;
@@ -1400,42 +1401,62 @@
 
             XMLHttpRequest.prototype.open = function(method, url, ...args) {
                 this._url = url;
+                this._method = method;
                 return originalXhrOpen.apply(this, [method, url, ...args]);
             };
 
             XMLHttpRequest.prototype.send = function(body) {
-                if (this._url && this._url.includes(targetUrl)) {
+                // 品牌页 GET 请求拦截
+                if (this._url && this._url.includes(brandTargetUrl)) {
                     const urlObj = new URL(this._url, window.location.origin);
                     const params = Object.fromEntries(urlObj.searchParams.entries());
+                    SearchListHelper.cachedFilterParams = params;
+                    console.log('[筛选拦截-品牌页] 缓存参数:', params);
+                }
 
-                    if (!SearchListHelper.isFirstLoad) {
-                        SearchListHelper.cachedFilterParams = params;
-                        console.log('[筛选拦截] 检测到筛选变更，缓存参数:', params);
-                    } else {
-                        SearchListHelper.isFirstLoad = false;
+                // 搜索页 POST 请求拦截
+                if (this._url && this._url.includes(searchTargetUrl) && this._method?.toUpperCase() === 'POST') {
+                    try {
+                        const params = typeof body === 'string' ? JSON.parse(body) : body;
+                        SearchListHelper.cachedSearchFilterParams = params;
+                        console.log('[筛选拦截-搜索页] 缓存参数:', params);
+                    } catch (e) {
+                        console.warn('[筛选拦截-搜索页] 解析请求体失败:', e);
                     }
                 }
+
                 return originalXhrSend.apply(this, [body]);
             };
 
             // 拦截 fetch
             const originalFetch = window.fetch;
-            window.fetch = function(url, options) {
-                if (typeof url === 'string' && url.includes(targetUrl)) {
-                    const urlObj = new URL(url, window.location.origin);
-                    const params = Object.fromEntries(urlObj.searchParams.entries());
+            window.fetch = function(url, options = {}) {
+                const urlStr = typeof url === 'string' ? url : url?.url || '';
 
-                    if (!SearchListHelper.isFirstLoad) {
-                        SearchListHelper.cachedFilterParams = params;
-                        console.log('[筛选拦截] 检测到筛选变更 (fetch)，缓存参数:', params);
-                    } else {
-                        SearchListHelper.isFirstLoad = false;
+                // 品牌页 GET 请求拦截
+                if (urlStr.includes(brandTargetUrl)) {
+                    const urlObj = new URL(urlStr, window.location.origin);
+                    const params = Object.fromEntries(urlObj.searchParams.entries());
+                    SearchListHelper.cachedFilterParams = params;
+                    console.log('[筛选拦截-品牌页] (fetch) 缓存参数:', params);
+                }
+
+                // 搜索页 POST 请求拦截
+                if (urlStr.includes(searchTargetUrl) && options.method?.toUpperCase() === 'POST') {
+                    try {
+                        const body = options.body;
+                        const params = typeof body === 'string' ? JSON.parse(body) : body;
+                        SearchListHelper.cachedSearchFilterParams = params;
+                        console.log('[筛选拦截-搜索页] (fetch) 缓存参数:', params);
+                    } catch (e) {
+                        console.warn('[筛选拦截-搜索页] 解析请求体失败:', e);
                     }
                 }
+
                 return originalFetch.apply(this, [url, options]);
             };
 
-            console.log('[筛选拦截] 请求拦截器已初始化');
+            console.log('[筛选拦截] 请求拦截器已初始化 (品牌页+搜索页)');
         }
 
         constructor() {
@@ -1453,11 +1474,109 @@
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false, onProgress = null) {
             SearchListHelper.fetchStatus = false;
-            // TODO: 新接口添加并发功能
-            SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, onProgress);
+
+            // 根据页面类型选择不同的数据获取方式
+            const isSearchPage = location.href.includes('so.szlcsc.com');
+
+            if (isSearchPage) {
+                // 搜索页使用 getSearchProducts 方法
+                SearchListHelper.listData = await SearchListHelper.getSearchProducts(brandsNameOrSearchText, maxCount, onProgress);
+            } else {
+                // 品牌页使用 getBrandsProducts_new 方法
+                SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, onProgress);
+            }
+
             console.log(SearchListHelper.listData);
             SearchListHelper.setCouponSign();
             SearchListHelper.renderMinPriceSearch();
+        }
+
+        /**
+         * 获取搜索页商品列表（使用缓存的筛选参数）
+         * @param keyword 搜索关键词
+         * @param maxCount 最大商品数量
+         * @param onProgress 进度回调函数
+         * @returns {Promise<Array>}
+         */
+        static getSearchProducts(keyword, maxCount = null, onProgress = null) {
+            return new Promise((resolve, reject) => {
+                const url = 'https://so.szlcsc.com/query/product';
+                let products = [];
+                let counts = 0;
+
+                const getData = (page) => {
+                    // 触发进度回调
+                    if (onProgress) {
+                        onProgress({ loaded: counts, page: page, status: 'loading' });
+                    }
+
+                    // 默认参数
+                    let data = {
+                        "currentPage": page,
+                        "pageSize": 30,
+                        "catalogIdFilter": "",
+                        "brandIdFilter": "",
+                        "standardFilter": "",
+                        "arrangeFilter": "",
+                        "labelFilter": "",
+                        "authenticationFilter": "",
+                        "keyword": keyword,
+                        "sortNumber": 0,
+                        "satisfyStockType": "",
+                        "startPrice": "",
+                        "endPrice": "",
+                        "demandNumber": "",
+                        "spotFilter": 1,
+                        "discountFilter": 1,
+                        "hasDataFile": false,
+                        "brandPlaceFilter": "",
+                        "secondKeyword": "",
+                        "queryParameterValue": "",
+                        "lastParamName": ""
+                    };
+
+                    // 如果有缓存的筛选参数，合并到请求参数中
+                    if (SearchListHelper.cachedSearchFilterParams) {
+                        const cached = SearchListHelper.cachedSearchFilterParams;
+                        data = {
+                            ...data,
+                            catalogIdFilter: cached.catalogIdFilter || "",
+                            brandIdFilter: cached.brandIdFilter || "",
+                            standardFilter: cached.standardFilter || "",
+                            arrangeFilter: cached.arrangeFilter || "",
+                            labelFilter: cached.labelFilter || "",
+                            authenticationFilter: cached.authenticationFilter || "",
+                            brandPlaceFilter: cached.brandPlaceFilter || "",
+                            startPrice: cached.startPrice || "",
+                            endPrice: cached.endPrice || "",
+                            queryParameterValue: cached.queryParameterValue || "",
+                            lastParamName: cached.lastParamName || ""
+                        };
+                        console.log('[筛选同步-搜索页] 使用缓存的筛选参数:', data);
+                    }
+
+                    Util.postJsonAjax(url, data).then(res => {
+                        if (!res) return reject('获取搜索商品列表失败');
+                        res = typeof res === 'object' ? res : JSON.parse(res);
+                        if (!res.code || res.code !== 200) return reject(res.msg || '获取搜索商品列表失败');
+                        const list = res?.result?.productRecordList;
+                        if (!list || list.length === 0) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
+                        products = products.concat(list);
+                        counts += list.length;
+                        if (maxCount && counts >= maxCount) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
+                        getData(page + 1);
+                    }).catch(err => {
+                        reject(err);
+                    });
+                };
+                getData(1);
+            });
         }
 
         // 设置商品列表的券标记
