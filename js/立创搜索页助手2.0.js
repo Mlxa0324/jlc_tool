@@ -786,7 +786,9 @@
                     url: url,
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        // 添加请求头,绕过阿里云WAF
+                        'referer': 'https://so.szlcsc.com/global.html'
                     },
                     data: JSON.stringify(data), // 确保数据被正确转换为JSON字符串
                     onload: (r) => {
@@ -1469,7 +1471,9 @@
             SearchListHelper.instance = this;
 
             // 初始化请求拦截器
-            SearchListHelper.initRequestInterceptor();
+            setTimeout(() => {
+                SearchListHelper.initRequestInterceptor();
+            }, 1500);
         }
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false, onProgress = null) {
