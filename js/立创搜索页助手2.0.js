@@ -1555,11 +1555,11 @@
                         console.log('[筛选同步-搜索页] 使用缓存的筛选参数:', data);
                     }
 
-                    Util.postJsonAjax(url, data).then(res => {
+                    Util.postAjaxJSON(url, data).then(res => {
                         if (!res) return reject('获取搜索商品列表失败');
                         res = typeof res === 'object' ? res : JSON.parse(res);
                         if (!res.code || res.code !== 200) return reject(res.msg || '获取搜索商品列表失败');
-                        const list = res?.result?.productRecordList;
+                        const list = res?.result?.searchResult?.productRecordList;
                         if (!list || list.length === 0) {
                             if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
                             return resolve(products);
