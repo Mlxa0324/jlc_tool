@@ -1377,12 +1377,66 @@
         static searchPageRealSize = 200;
         // 查询结果暂存
         static listData = [];
+        // 缓存的筛选参数
+        static cachedFilterParams = null;
+        // 是否首次加载页面
+        static isFirstLoad = true;
 
         // 初始化默认选中状态
         static defaultTabs = {
             region: '江苏',
-            userType: false
+            userType: "all"
         };
+
+        /**
+         * 初始化请求拦截器，监听品牌页筛选请求
+         */
+        static initRequestInterceptor() {
+            const targetUrl = 'list.szlcsc.com/brand/product';
+
+            // 拦截 XMLHttpRequest
+            const originalXhrOpen = XMLHttpRequest.prototype.open;
+            const originalXhrSend = XMLHttpRequest.prototype.send;
+
+            XMLHttpRequest.prototype.open = function(method, url, ...args) {
+                this._url = url;
+                return originalXhrOpen.apply(this, [method, url, ...args]);
+            };
+
+            XMLHttpRequest.prototype.send = function(body) {
+                if (this._url && this._url.includes(targetUrl)) {
+                    const urlObj = new URL(this._url, window.location.origin);
+                    const params = Object.fromEntries(urlObj.searchParams.entries());
+
+                    if (!SearchListHelper.isFirstLoad) {
+                        SearchListHelper.cachedFilterParams = params;
+                        console.log('[筛选拦截] 检测到筛选变更，缓存参数:', params);
+                    } else {
+                        SearchListHelper.isFirstLoad = false;
+                    }
+                }
+                return originalXhrSend.apply(this, [body]);
+            };
+
+            // 拦截 fetch
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (typeof url === 'string' && url.includes(targetUrl)) {
+                    const urlObj = new URL(url, window.location.origin);
+                    const params = Object.fromEntries(urlObj.searchParams.entries());
+
+                    if (!SearchListHelper.isFirstLoad) {
+                        SearchListHelper.cachedFilterParams = params;
+                        console.log('[筛选拦截] 检测到筛选变更 (fetch)，缓存参数:', params);
+                    } else {
+                        SearchListHelper.isFirstLoad = false;
+                    }
+                }
+                return originalFetch.apply(this, [url, options]);
+            };
+
+            console.log('[筛选拦截] 请求拦截器已初始化');
+        }
 
         constructor() {
             // 如果实例已存在，直接返回
@@ -1392,6 +1446,9 @@
 
             // 保存当前实例
             SearchListHelper.instance = this;
+
+            // 初始化请求拦截器
+            SearchListHelper.initRequestInterceptor();
         }
 
         static async start(brandsNameOrSearchText, brandsId, maxCount, stock, parallel = false, onProgress = null) {
@@ -2245,6 +2302,7 @@
                     if (onProgress) {
                         onProgress({ loaded: counts, page: page, status: 'loading' });
                     }
+                    // 默认参数
                     let data = {
                         "currentPage": page,
                         "pageSize": 30,
@@ -2266,6 +2324,25 @@
                         "secondKeyword": "",
                         "queryParameterValue": "",
                         "lastParamName": ""
+                    }
+                    // 如果有缓存的筛选参数，合并到请求参数中
+                    if (SearchListHelper.cachedFilterParams) {
+                        const cached = SearchListHelper.cachedFilterParams;
+                        // 保留缓存中的筛选条件，但覆盖分页参数
+                        data = {
+                            ...data,
+                            catalogIdFilter: cached.catalogIdFilter || "",
+                            standardFilter: cached.standardFilter || "",
+                            arrangeFilter: cached.arrangeFilter || "",
+                            labelFilter: cached.labelFilter || "",
+                            brandPlaceFilter: cached.brandPlaceFilter || "",
+                            smtLabelFilter: cached.smtLabelFilter || "",
+                            startPrice: cached.startPrice || "",
+                            endPrice: cached.endPrice || "",
+                            queryParameterValue: cached.queryParameterValue || "",
+                            lastParamName: cached.lastParamName || ""
+                        };
+                        console.log('[筛选同步] 使用缓存的筛选参数:', data);
                     }
                     Util.getAjax(url + Util.jsonToUrlParam(data)).then(res => {
                         if (!res) return reject('获取品牌商品列表失败')
