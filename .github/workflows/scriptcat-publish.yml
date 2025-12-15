@@ -16,31 +16,11 @@ jobs:
     # 仅在 push 的 head_commit.message 包含 "版本发布" 时执行
     if: ${{ github.event.head_commit != null && contains(github.event.head_commit.message, '版本发布') }}
     env:
-      SCRIPT_CAT_WEBHOOK_URL: ${{ secrets.SCRIPT_CAT_WEBHOOK_URL }}
-      SCRIPT_CAT_WEBHOOK_KEY: ${{ secrets.SCRIPT_CAT_API_KEY }}
       WECHAT_WORK_WEBHOOK_URL: ${{ secrets.WECHAT_WEBHOOK }}
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
-      - name: Call ScriptCat webhook
-        id: scriptcat
-        run: |
-          set -euo pipefail
-
-          # 拼接 URL，如果用户把 key 放在 URL 中则无需使用下面的 ?key= 拼接
-          if [ -n "${SCRIPT_CAT_WEBHOOK_KEY:-}" ]; then
-            url="${SCRIPT_CAT_WEBHOOK_URL}?key=${SCRIPT_CAT_WEBHOOK_KEY}"
-          else
-            url="${SCRIPT_CAT_WEBHOOK_URL}"
-          fi
-
-          # 向 ScriptCat 发送请求并输出 HTTP 状态码作为步骤输出
-          http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$url" \
-            -H "Content-Type: application/json")
-
-          echo "scriptcat_status=$http_code" >> $GITHUB_OUTPUT
 
       - name: Send concise message to WeChat Work
         id: wechat
