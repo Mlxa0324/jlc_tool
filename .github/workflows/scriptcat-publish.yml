@@ -29,14 +29,6 @@ jobs:
         run: |
           set -euo pipefail
 
-          # 构建要发送的 payload（按需调整）
-          payload=$(jq -n \
-            --arg repo "${GITHUB_REPOSITORY}" \
-            --arg ref "${GITHUB_REF}" \
-            --arg pusher "${GITHUB_ACTOR}" \
-            --arg message "${{ github.event.head_commit.message }}" \
-            '{repository: $repo, ref: $ref, pusher: $pusher, message: $message}')
-
           # 拼接 URL，如果用户把 key 放在 URL 中则无需使用下面的 ?key= 拼接
           if [ -n "${SCRIPT_CAT_WEBHOOK_KEY:-}" ]; then
             url="${SCRIPT_CAT_WEBHOOK_URL}?key=${SCRIPT_CAT_WEBHOOK_KEY}"
@@ -46,8 +38,7 @@ jobs:
 
           # 向 ScriptCat 发送请求并输出 HTTP 状态码作为步骤输出
           http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$url" \
-            -H "Content-Type: application/json" \
-            -d "$payload" || echo "000")
+            -H "Content-Type: application/json")
 
           echo "scriptcat_status=$http_code" >> $GITHUB_OUTPUT
 
