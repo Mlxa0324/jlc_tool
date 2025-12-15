@@ -1,0 +1,81 @@
+# GitHub Actions workflow — 仅在 push 的提交备注包含 "版本发布" 时触发
+# 环境变量（请在仓库 Settings -> Secrets 中添加）
+# - SCRIPT_CAT_WEBHOOK_URL: ScriptCat webhook 地址（不含 key 的情况）
+# - SCRIPT_CAT_WEBHOOK_KEY: ScriptCat 的密钥（如果 webhook URL 已包含 key，可留空）
+# - WECHAT_WORK_WEBHOOK_URL: 企业微信机器人 webhook 地址
+
+name: ScriptCat Publish Notifier
+
+on:
+  push: {}
+
+jobs:
+  notify-scriptcat:
+    name: Notify ScriptCat and WeChat
+    runs-on: ubuntu-latest
+    # 仅在 push 的 head_commit.message 包含 "版本发布" 时执行
+    if: ${{ github.event.head_commit != null && contains(github.event.head_commit.message, '版本发布') }}
+    env:
+      SCRIPT_CAT_WEBHOOK_URL: ${{ secrets.SCRIPT_CAT_WEBHOOK_URL }}
+      SCRIPT_CAT_WEBHOOK_KEY: ${{ secrets.SCRIPT_CAT_WEBHOOK_KEY }}
+      WECHAT_WORK_WEBHOOK_URL: ${{ secrets.WECHAT_WORK_WEBHOOK_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Call ScriptCat webhook
+        id: scriptcat
+        run: |
+          set -euo pipefail
+
+          # 构建要发送的 payload（按需调整）
+          payload=$(jq -n \
+            --arg repo "${GITHUB_REPOSITORY}" \
+            --arg ref "${GITHUB_REF}" \
+            --arg pusher "${GITHUB_ACTOR}" \
+            --arg message "${{ github.event.head_commit.message }}" \
+            '{repository: $repo, ref: $ref, pusher: $pusher, message: $message}')
+
+          # 拼接 URL，如果用户把 key 放在 URL 中则无需使用下面的 ?key= 拼接
+          if [ -n "${SCRIPT_CAT_WEBHOOK_KEY:-}" ]; then
+            url="${SCRIPT_CAT_WEBHOOK_URL}?key=${SCRIPT_CAT_WEBHOOK_KEY}"
+          else
+            url="${SCRIPT_CAT_WEBHOOK_URL}"
+          fi
+
+          # 向 ScriptCat 发送请求并输出 HTTP 状态码作为步骤输出
+          http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "$url" \
+            -H "Content-Type: application/json" \
+            -d "$payload" || echo "000")
+
+          echo "scriptcat_status=$http_code" >> $GITHUB_OUTPUT
+
+      - name: Send concise message to WeChat Work
+        id: wechat
+        run: |
+          set -euo pipefail
+
+          status="${{ steps.scriptcat.outputs.scriptcat_status }}"
+
+          # 判断是否为 2xx 响应
+          if echo "$status" | grep -E '^[23][0-9][0-9]$' >/dev/null; then
+            result="成功"
+          else
+            result="失败"
+          fi
+
+          short_sha=$(echo "${GITHUB_SHA}" | cut -c1-7)
+          content="ScriptCat 推送${result} (HTTP ${status}) — ${GITHUB_REPOSITORY}@${short_sha}"
+
+          # 企业微信机器人要求的 payload 格式（text）
+          wechat_payload=$(jq -n --arg c "$content" '{msgtype:"text", text:{content:$c}}')
+
+          curl -s -X POST "${WECHAT_WORK_WEBHOOK_URL}" \
+            -H "Content-Type: application/json" \
+            -d "$wechat_payload" || true
+
+      - name: Fail job if ScriptCat failed (可选)
+        if: ${{ !startsWith(steps.scriptcat.outputs.scriptcat_status, '2') }}
+        run: |
+          echo "ScriptCat webhook 返回非 2xx 状态: ${{ steps.scriptcat.outputs.scriptcat_status }}"
+          exit 1

@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         JLC_SHOP_SEARCH_TOOL_2.0
 // @namespace    http://tampermonkey.net/
-// @version      2.1.4
+// @version      2.1.5
 // @description  JLC_SHOP_SEARCH_TOOL_2.0.
 // @author       Lx
 // @match        https://so.szlcsc.com/global.html**
