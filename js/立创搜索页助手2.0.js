@@ -1383,6 +1383,8 @@
         static cachedFilterParams = null;
         // 缓存的筛选参数（搜索页）
         static cachedSearchFilterParams = null;
+        // 缓存的筛选参数（分类页）
+        static cachedCatalogFilterParams = null;
 
         // 初始化默认选中状态
         static defaultTabs = {
@@ -1396,6 +1398,7 @@
         static initRequestInterceptor() {
             const brandTargetUrl = 'list.szlcsc.com/brand/product';
             const searchTargetUrl = 'so.szlcsc.com/query/product';
+            const catalogTargetUrl = 'list.szlcsc.com/parameter';
 
             // 拦截 XMLHttpRequest
             const originalXhrOpen = XMLHttpRequest.prototype.open;
@@ -1427,6 +1430,17 @@
                     }
                 }
 
+                // 分类页 POST 请求拦截
+                if (this._url && this._url.includes(catalogTargetUrl) && this._method?.toUpperCase() === 'POST') {
+                    try {
+                        const params = typeof body === 'string' ? JSON.parse(body) : body;
+                        SearchListHelper.cachedCatalogFilterParams = params;
+                        console.log('[筛选拦截-分类页] 缓存参数:', params);
+                    } catch (e) {
+                        console.warn('[筛选拦截-分类页] 解析请求体失败:', e);
+                    }
+                }
+
                 return originalXhrSend.apply(this, [body]);
             };
 
@@ -1455,10 +1469,22 @@
                     }
                 }
 
+                // 分类页 POST 请求拦截
+                if (urlStr.includes(catalogTargetUrl) && options.method?.toUpperCase() === 'POST') {
+                    try {
+                        const body = options.body;
+                        const params = typeof body === 'string' ? JSON.parse(body) : body;
+                        SearchListHelper.cachedCatalogFilterParams = params;
+                        console.log('[筛选拦截-分类页] (fetch) 缓存参数:', params);
+                    } catch (e) {
+                        console.warn('[筛选拦截-分类页] 解析请求体失败:', e);
+                    }
+                }
+
                 return originalFetch.apply(this, [url, options]);
             };
 
-            console.log('[筛选拦截] 请求拦截器已初始化 (品牌页+搜索页)');
+            console.log('[筛选拦截] 请求拦截器已初始化 (品牌页+搜索页+分类页)');
         }
 
         constructor() {
@@ -1481,10 +1507,17 @@
 
             // 根据页面类型选择不同的数据获取方式
             const isSearchPage = location.href.includes('so.szlcsc.com');
+            const isCatalogPage = location.href.includes('list.szlcsc.com/catalog');
 
             if (isSearchPage) {
                 // 搜索页使用 getSearchProducts 方法
                 SearchListHelper.listData = await SearchListHelper.getSearchProducts(brandsNameOrSearchText, maxCount, onProgress);
+            } else if (isCatalogPage) {
+                // 分类页使用 getCatalogProducts 方法
+                // 从URL中提取catalogId，例如 /catalog/381.html -> 381
+                const catalogMatch = location.href.match(/\/catalog\/(\d+)/);
+                const catalogId = catalogMatch ? catalogMatch[1] : '';
+                SearchListHelper.listData = await SearchListHelper.getCatalogProducts(catalogId, maxCount, onProgress);
             } else {
                 // 品牌页使用 getBrandsProducts_new 方法
                 SearchListHelper.listData = await SearchListHelper.getBrandsProducts_new(brandsNameOrSearchText, brandsId, maxCount, stock, onProgress);
@@ -1563,6 +1596,99 @@
                         if (!res) return reject('获取搜索商品列表失败');
                         res = typeof res === 'object' ? res : JSON.parse(res);
                         if (!res.code || res.code !== 200) return reject(res.msg || '获取搜索商品列表失败');
+                        const list = res?.result?.searchResult?.productRecordList;
+                        if (!list || list.length === 0) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
+                        products = products.concat(list);
+                        counts += list.length;
+                        if (maxCount && counts >= maxCount) {
+                            if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
+                            return resolve(products);
+                        }
+                        getData(page + 1);
+                    }).catch(err => {
+                        reject(err);
+                    });
+                };
+                getData(1);
+            });
+        }
+
+        /**
+         * 获取分类页商品列表（使用缓存的筛选参数）
+         * @param catalogId 分类ID
+         * @param maxCount 最大商品数量
+         * @param onProgress 进度回调函数
+         * @returns {Promise<Array>}
+         */
+        static getCatalogProducts(catalogId, maxCount = null, onProgress = null) {
+            return new Promise((resolve, reject) => {
+                const url = 'https://list.szlcsc.com/category/product';
+                let products = [];
+                let counts = 0;
+
+                const getData = (page) => {
+                    // 触发进度回调
+                    if (onProgress) {
+                        onProgress({ loaded: counts, page: page, status: 'loading' });
+                    }
+
+                    // 默认参数
+                    let data = {
+                        "currentPage": page,
+                        "pageSize": 30,
+                        "catalogIdFilter": catalogId || "",
+                        "brandIdFilter": "",
+                        "standardFilter": "",
+                        "brandPlaceFilter": "",
+                        "brandOriginFilter": "",
+                        "labelFilter": "",
+                        "arrangeFilter": "",
+                        "smtLabelFilter": "",
+                        "spotFilter": 1,
+                        "discountFilter": 1,
+                        "startPrice": "",
+                        "endPrice": "",
+                        "sortNumber": 0,
+                        "queryParameterValue": "",
+                        "lastParamName": "",
+                        "keyword": "",
+                        "secondKeyword": "",
+                        "hasDataFile": false,
+                        "demandNumber": "",
+                        "satisfyStockType": "",
+                        "queryProductTypeCode": "",
+                        "authenticationFilter": ""
+                    };
+
+                    // 如果有缓存的筛选参数，合并到请求参数中
+                    if (SearchListHelper.cachedCatalogFilterParams) {
+                        const cached = SearchListHelper.cachedCatalogFilterParams;
+                        data = {
+                            ...data,
+                            catalogIdFilter: cached.catalogIdFilter || catalogId || "",
+                            brandIdFilter: cached.brandIdFilter || "",
+                            standardFilter: cached.standardFilter || "",
+                            brandPlaceFilter: cached.brandPlaceFilter || "",
+                            brandOriginFilter: cached.brandOriginFilter || "",
+                            labelFilter: cached.labelFilter || "",
+                            arrangeFilter: cached.arrangeFilter || "",
+                            smtLabelFilter: cached.smtLabelFilter || "",
+                            startPrice: cached.startPrice || "",
+                            endPrice: cached.endPrice || "",
+                            queryParameterValue: cached.queryParameterValue || "",
+                            lastParamName: cached.lastParamName || "",
+                            authenticationFilter: cached.authenticationFilter || ""
+                        };
+                        console.log('[筛选同步-分类页] 使用缓存的筛选参数:', data);
+                    }
+
+                    Util.postAjaxJSON(url, data).then(res => {
+                        if (!res) return reject('获取分类商品列表失败');
+                        res = typeof res === 'object' ? res : JSON.parse(res);
+                        if (!res.code || res.code !== 200) return reject(res.msg || '获取分类商品列表失败');
                         const list = res?.result?.searchResult?.productRecordList;
                         if (!list || list.length === 0) {
                             if (onProgress) onProgress({ loaded: counts, page: page, status: 'done' });
