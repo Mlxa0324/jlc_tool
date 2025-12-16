@@ -1003,30 +1003,44 @@
         /**
          * 搜索列表中，对品牌颜色进行上色
          * list.szlcsc.com/catalog
+         * 优化：只处理未标记的元素，遍历DOM而非遍历品牌Map
          */
         static catalogBrandColor() {
+            // 只查询未处理的元素
+            const $unprocessed = $('div[title], li[title], span[title], a.brand-name[title]')
+                .not('[data-brand-colored]');
+
+            if ($unprocessed.length === 0) return;
+
             const brands = Array.from(Base.allOneCouponMap.entries());
             let index = 0;
 
             function processBatch() {
-                const batchSize = 10; // 每帧处理10个品牌
-                const end = Math.min(index + batchSize, brands.length);
+                const batchSize = 20; // 每帧处理20个元素
+                const elements = $unprocessed.toArray();
+                const end = Math.min(index + batchSize, elements.length);
 
                 for (; index < end; index++) {
-                    const [brandName, brandDetail] = brands[index];
-                    const $brandEle = $(`div[title*="${brandName}"], li[title*="${brandName}"], span[title*="${brandName}"], a.brand-name[title*="${brandName}"]`)
-                        .not('[style*="background-color"]')
-                        .not('.isNew, .isNotNew');
+                    const el = elements[index];
+                    const $el = $(el);
+                    const title = $el.prop('title') || '';
 
-                    if ($brandEle.length > 0) {
-                        $brandEle.prop('title', $brandEle.prop('title') + `（${brandDetail.isNew ? '新人券' : '非新人券'}）`);
-                        $brandEle.css({
-                            "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
-                        }).addClass(brandDetail.isNew ? 'isNew' : 'isNotNew');
+                    // 标记为已处理，避免重复查询
+                    $el.attr('data-brand-colored', 'true');
+
+                    // 在内存中匹配品牌
+                    for (const [brandName, brandDetail] of brands) {
+                        if (title.includes(brandName)) {
+                            $el.prop('title', title + `（${brandDetail.isNew ? '新人券' : '非新人券'}）`);
+                            $el.css({
+                                "background-color": brandDetail.isNew ? '#00bfffb8' : '#7fffd4b8'
+                            }).addClass(brandDetail.isNew ? 'isNew' : 'isNotNew');
+                            break; // 找到匹配就退出
+                        }
                     }
                 }
 
-                if (index < brands.length) {
+                if (index < elements.length) {
                     requestAnimationFrame(processBatch);
                 }
             }
@@ -2642,6 +2656,16 @@
 
     // 分类品牌颜色定时器开启状态，默认false
     let catalogBrandColorTaskIsStartStatus = false;
+    let catalogBrandColorObserver = null;
+
+    // 防抖函数
+    function debounce(fn, delay) {
+        let timer = null;
+        return function (...args) {
+            if (timer) clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
 
     // 搜索页启动
     function searchStart() {
@@ -2653,9 +2677,27 @@
         searchPageHelper.getAllCoupon();
         // // 搜索页按钮组渲染
         searchPageHelper.btnsRender();
-        // // 定时上色
+        // // 使用 MutationObserver 代替 setInterval 进行上色
         if (!catalogBrandColorTaskIsStartStatus) {
-            setInterval(SearchPageHelper.catalogBrandColor, 3000);
+            const debouncedColor = debounce(SearchPageHelper.catalogBrandColor, 500);
+
+            // 先执行一次
+            SearchPageHelper.catalogBrandColor();
+
+            // 监听DOM变化
+            catalogBrandColorObserver = new MutationObserver((mutations) => {
+                // 只在有新增节点时执行
+                const hasNewNodes = mutations.some(m => m.addedNodes.length > 0);
+                if (hasNewNodes) {
+                    debouncedColor();
+                }
+            });
+
+            catalogBrandColorObserver.observe(document.body, {
+                childList: true,
+                subtree: true
+            });
+
             catalogBrandColorTaskIsStartStatus = true;
         }
 
